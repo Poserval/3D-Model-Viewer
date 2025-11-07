@@ -17,6 +17,7 @@ class ModelViewerApp {
         this.animationId = null;
         this.isSTLAutoRotate = true;
         this.stlLoaderAvailable = false;
+        this.MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 МБ вместо 10 МБ
         this.init();
     }
 
@@ -92,9 +93,11 @@ class ModelViewerApp {
         const file = event.target.files[0];
         if (!file) return;
 
-        // Проверка размера файла (до 10MB)
-        if (file.size > 10 * 1024 * 1024) {
-            alert('Файл слишком большой. Максимальный размер: 10MB');
+        // Проверка размера файла (до 20MB)
+        if (file.size > this.MAX_FILE_SIZE) {
+            const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
+            const maxSizeMB = (this.MAX_FILE_SIZE / (1024 * 1024)).toFixed(0);
+            alert(`Файл слишком большой. Размер: ${fileSizeMB}MB. Максимальный размер: ${maxSizeMB}MB`);
             return;
         }
 
