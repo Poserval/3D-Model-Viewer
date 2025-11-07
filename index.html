@@ -7,10 +7,10 @@
     <meta name="theme-color" content="#007AFF">
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
-    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-    <!-- Исправленные ссылки на Three.js с STLLoader -->
+    
+    <!-- ТОЛЬКО ОДИН Three.js и STLLoader -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/STLLoader.js"></script>
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 </head>
 <body>
     <!-- Главный экран -->
@@ -24,7 +24,7 @@
                 <model-viewer id="preview-model" class="preview-model" hidden></model-viewer>
                 <canvas id="preview-canvas" class="preview-canvas" hidden></canvas>
             </div>
-            <input type="file" id="file-input" accept=".gltf,.glb,.obj,.stl" hidden>
+            <input type="file" id="file-input" accept=".gltf,.glb,.obj" hidden>
             <button id="select-file-btn" class="btn primary">Выбрать файл</button>
             <button id="open-3d-btn" class="btn secondary" disabled>Открыть в 3D</button>
             <div id="file-name" class="file-name"></div>
@@ -43,7 +43,6 @@
                 auto-rotate
                 shadow-intensity="1">
             </model-viewer>
-            <canvas id="viewer-canvas" class="viewer-canvas" hidden></canvas>
         </div>
         <div class="viewer-controls">
             <button id="auto-rotate-btn" class="control-btn" data-active="true">
