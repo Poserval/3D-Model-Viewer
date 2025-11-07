@@ -35,6 +35,7 @@ class ModelViewerApp {
         this.previewPlaceholder = document.getElementById('preview-placeholder');
         this.previewCanvas = document.getElementById('preview-canvas');
         this.viewerCanvas = document.getElementById('viewer-canvas');
+        this.previewArea = document.getElementById('preview-area'); // ← ДОБАВЛЕНО!
 
         this.bindEvents();
     }
