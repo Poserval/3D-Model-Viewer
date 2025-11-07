@@ -47,10 +47,25 @@ body {
     gap: 20px;
 }
 
-h1 {
-    font-size: 24px;
-    font-weight: 600;
+/* Стили для логотипа */
+.app-logo {
     margin-bottom: 10px;
+    text-align: center;
+}
+
+.logo-image {
+    height: 80px;
+    width: auto;
+    max-width: 200px;
+}
+
+.header-logo {
+    display: none;
+}
+
+.logo-image-small {
+    height: 32px;
+    width: auto;
 }
 
 /* Область превью */
@@ -199,6 +214,32 @@ h1 {
 .control-btn[data-active="false"] {
     background: rgba(255,255,255,0.9);
     color: var(--text-color);
+}
+
+/* Адаптивность */
+@media (min-width: 768px) {
+    .container {
+        max-width: 400px;
+        margin: 0 auto;
+    }
+    
+    .preview-area {
+        width: 250px;
+        height: 250px;
+    }
+    
+    .logo-image {
+        height: 100px;
+    }
+    
+    .header-logo {
+        display: block;
+        margin-right: 10px;
+    }
+    
+    .viewer-title {
+        margin-right: 0;
+    }
 }
 
 /* Анимации */
