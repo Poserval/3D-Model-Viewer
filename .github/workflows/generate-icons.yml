@@ -2,7 +2,7 @@ name: Generate Icons and Deploy
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
@@ -10,25 +10,65 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v4
     
     - name: Setup Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: '18'
         cache: 'npm'
     
     - name: Install dependencies
-      run: npm ci
+      run: |
+        npm install
+        npm list
     
-    - name: Generate icons
-      run: npm run generate-icons
-      
-    - name: Build app
-      run: npm run build
-      
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./dist
+    - name: Create src directories
+      run: |
+        mkdir -p src/icons
+        mkdir -p src/js
+    
+    - name: Generate basic icons (fallback)
+      run: |
+        echo "📱 Creating basic icon structure..."
+        # Создаем простую SVG иконку
+        cat > src/icons/icon.svg << 'EOF'
+        <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="512" height="512" rx="96" fill="#007AFF"/>
+          <path d="M256 128L128 256L256 384L384 256L256 128Z" fill="white"/>
+          <path d="M192 224L256 160L320 224L256 288L192 224Z" fill="white" fill-opacity="0.8"/>
+          <path d="M224 192L256 160L288 192L256 224L224 192Z" fill="white" fill-opacity="0.6"/>
+        </svg>
+        EOF
+        echo "✅ Created basic SVG icon"
+    
+    - name: Create essential files
+      run: |
+        # Создаем минимальный style.css
+        cat > src/style.css << 'EOF'
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+          font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+          background: #FFFFFF; 
+          color: #000000;
+          padding: 20px;
+          text-align: center;
+        }
+        .container { max-width: 400px; margin: 0 auto; }
+        .btn { 
+          background: #007AFF; 
+          color: white; 
+          border: none; 
+          padding: 15px 20px; 
+          border-radius: 10px; 
+          font-size: 16px; 
+          margin: 10px; 
+          cursor: pointer; 
+        }
+        EOF
+        
+        # Создаем минимальный script.js
+        cat > src/script.js << 'EOF'
+        console.log('3D Model Viewer loaded');
+        document.getElementById('load-btn')?.addEventListener('
