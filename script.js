@@ -15,7 +15,8 @@ class ModelViewerApp {
         this.stlCamera = null;
         this.stlMesh = null;
         this.animationId = null;
-        this.isSTLAutoRotate = true; // Автоповорот для STL включен по умолчанию
+        this.isSTLAutoRotate = true;
+        this.stlLoaderAvailable = false;
         this.init();
     }
 
@@ -38,7 +39,22 @@ class ModelViewerApp {
         this.viewerCanvas = document.getElementById('viewer-canvas');
         this.previewArea = document.getElementById('preview-area');
 
+        // Проверяем доступность STLLoader
+        this.checkSTLLoader();
         this.bindEvents();
+    }
+
+    checkSTLLoader() {
+        // Ждем загрузки Three.js и STLLoader
+        setTimeout(() => {
+            if (typeof THREE !== 'undefined' && typeof STLLoader !== 'undefined') {
+                this.stlLoaderAvailable = true;
+                console.log('STLLoader доступен');
+            } else {
+                this.stlLoaderAvailable = false;
+                console.warn('STLLoader недоступен. STL файлы не будут работать.');
+            }
+        }, 1000);
     }
 
     bindEvents() {
@@ -87,6 +103,12 @@ class ModelViewerApp {
         
         if (!validFormats.includes(fileExtension)) {
             alert('Пожалуйста, выберите файл в формате GLTF, GLB, OBJ или STL');
+            return;
+        }
+
+        // Проверка для STL файлов
+        if (fileExtension === '.stl' && !this.stlLoaderAvailable) {
+            alert('STL загрузчик недоступен. Пожалуйста, используйте GLTF или GLB форматы.');
             return;
         }
 
@@ -139,9 +161,8 @@ class ModelViewerApp {
 
     async loadSTLPreview(file) {
         return new Promise((resolve, reject) => {
-            // Проверяем что STLLoader доступен
-            if (typeof STLLoader === 'undefined') {
-                reject(new Error('STLLoader не загружен. Проверьте подключение Three.js'));
+            if (!this.stlLoaderAvailable) {
+                reject(new Error('STL загрузчик недоступен'));
                 return;
             }
 
@@ -267,9 +288,8 @@ class ModelViewerApp {
 
     async openSTLViewer(file) {
         return new Promise((resolve, reject) => {
-            // Проверяем что STLLoader доступен
-            if (typeof STLLoader === 'undefined') {
-                reject(new Error('STLLoader не загружен. Проверьте подключение Three.js'));
+            if (!this.stlLoaderAvailable) {
+                reject(new Error('STL загрузчик недоступен'));
                 return;
             }
 
