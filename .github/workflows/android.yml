@@ -1,0 +1,42 @@
+name: Android Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build web app
+      run: npm run build
+    
+    - name: Install Capacitor
+      run: npm install @capacitor/cli @capacitor/core @capacitor/android
+    
+    - name: Sync Android
+      run: npx cap sync android
+    
+    - name: Build APK
+      run: |
+        cd android
+        ./gradlew assembleRelease
+      
+    - name: Upload APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: app-release
+        path: android/app/build/outputs/apk/release/app-release.apk
