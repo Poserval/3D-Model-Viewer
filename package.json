@@ -1,0 +1,29 @@
+{
+  "name": "3d-model-viewer",
+  "version": "1.0.0",
+  "description": "Минималистичный просмотрщик 3D моделей для мобильных устройств",
+  "main": "src/index.html",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "cap:android": "cap sync android && cap open android"
+  },
+  "keywords": ["3d", "viewer", "pwa", "mobile", "capacitor"],
+  "author": "3D Model Viewer Team",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^4.4.0",
+    "vite-plugin-pwa": "^0.16.0"
+  },
+  "dependencies": {
+    "@capacitor/android": "^5.0.0",
+    "@capacitor/core": "^5.0.0",
+    "@capacitor/cli": "^5.0.0"
+  },
+  "capacitor": {
+    "appId": "com.threedviewer.app",
+    "appName": "3D Model Viewer",
+    "webDir": "dist"
+  }
+}
