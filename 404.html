@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Model Viewer</title>
+    <meta name="theme-color" content="#007AFF">
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="icons/icon-app-192.png" type="image/png">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+    
+    <script>
+        // Автоматическое перенаправление на главную страницу
+        window.addEventListener('load', function() {
+            // Перенаправляем на главную страницу
+            window.location.href = '/';
+        });
+    </script>
+</head>
+<body>
+    <!-- Простой экран загрузки на случай если редирект задержится -->
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-align: center; padding: 20px;">
+        <div class="app-logo">
+            <img src="icons/logo-header.png" alt="3D Viewer" class="logo-image">
+        </div>
+        <h1 style="margin: 20px 0; color: #007AFF;">3D Model Viewer</h1>
+        <p style="color: #8E8E93; margin-bottom: 30px;">Перенаправление на главную страницу...</p>
+        <div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #007AFF; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+    </div>
+
+    <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .app-logo {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .logo-image {
+            height: 80px;
+            width: auto;
+            max-width: 200px;
+        }
+    </style>
+</body>
+</html>
