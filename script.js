@@ -5,6 +5,100 @@ const APP_STATES = {
     VIEWER: 'viewer'
 };
 
+// Простой STL Loader так как внешний не работает
+class SimpleSTLLoader {
+    parse(data) {
+        const geometry = new THREE.BufferGeometry();
+        
+        // Проверяем бинарный или текстовый STL
+        const isBinary = !this.isASCII(data);
+        
+        if (isBinary) {
+            return this.parseBinary(data);
+        } else {
+            return this.parseASCII(data);
+        }
+    }
+
+    isASCII(data) {
+        // Простая проверка - если первые 5 байт содержат "solid" - это ASCII
+        const header = new Uint8Array(data, 0, 5);
+        const headerString = String.fromCharCode.apply(null, header);
+        return headerString.toLowerCase() === 'solid';
+    }
+
+    parseBinary(data) {
+        const geometry = new THREE.BufferGeometry();
+        const faces = new DataView(data).getUint32(80, true);
+        
+        const vertices = [];
+        const normals = [];
+        
+        const dataOffset = 84;
+        const faceLength = 12 * 4 + 2;
+        
+        for (let face = 0; face < faces; face++) {
+            const start = dataOffset + face * faceLength;
+            const normal = [
+                this.readFloat(data, start),
+                this.readFloat(data, start + 4),
+                this.readFloat(data, start + 8)
+            ];
+            
+            for (let i = 1; i <= 3; i++) {
+                const vertexStart = start + i * 12;
+                vertices.push(
+                    this.readFloat(data, vertexStart),
+                    this.readFloat(data, vertexStart + 4),
+                    this.readFloat(data, vertexStart + 8)
+                );
+                normals.push(...normal);
+            }
+        }
+        
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+        geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+        
+        return geometry;
+    }
+
+    parseASCII(data) {
+        const geometry = new THREE.BufferGeometry();
+        const text = new TextDecoder().decode(data);
+        const vertices = [];
+        const normals = [];
+        
+        const lines = text.split('\n');
+        let normal = [0, 0, 0];
+        
+        for (const line of lines) {
+            const trimmed = line.trim();
+            
+            if (trimmed.startsWith('facet normal')) {
+                const parts = trimmed.split(/\s+/);
+                normal = [parseFloat(parts[2]), parseFloat(parts[3]), parseFloat(parts[4])];
+            } else if (trimmed.startsWith('vertex')) {
+                const parts = trimmed.split(/\s+/);
+                vertices.push(
+                    parseFloat(parts[1]),
+                    parseFloat(parts[2]), 
+                    parseFloat(parts[3])
+                );
+                normals.push(...normal);
+            }
+        }
+        
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+        geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+        
+        return geometry;
+    }
+
+    readFloat(data, offset) {
+        return new DataView(data).getFloat32(offset, true);
+    }
+}
+
 class ModelViewerApp {
     constructor() {
         this.currentState = APP_STATES.MAIN;
@@ -15,6 +109,7 @@ class ModelViewerApp {
         this.stlCamera = null;
         this.stlMesh = null;
         this.animationId = null;
+        this.stlLoader = new SimpleSTLLoader();
         this.init();
     }
 
@@ -138,18 +233,11 @@ class ModelViewerApp {
 
     async loadSTLPreview(file) {
         return new Promise((resolve, reject) => {
-            // Проверяем что STLLoader доступен
-            if (typeof STLLoader === 'undefined') {
-                reject(new Error('STLLoader не загружен. Проверьте подключение Three.js'));
-                return;
-            }
-
-            const loader = new STLLoader();
             const reader = new FileReader();
 
             reader.onload = (event) => {
                 try {
-                    const geometry = loader.parse(event.target.result);
+                    const geometry = this.stlLoader.parse(event.target.result);
                     
                     // Создаем сцену Three.js
                     const scene = new THREE.Scene();
@@ -205,7 +293,7 @@ class ModelViewerApp {
                     resolve();
                     
                 } catch (error) {
-                    reject(error);
+                    reject(new Error('Ошибка загрузки STL файла: ' + error.message));
                 }
             };
 
@@ -255,18 +343,11 @@ class ModelViewerApp {
 
     async openSTLViewer(file) {
         return new Promise((resolve, reject) => {
-            // Проверяем что STLLoader доступен
-            if (typeof STLLoader === 'undefined') {
-                reject(new Error('STLLoader не загружен. Проверьте подключение Three.js'));
-                return;
-            }
-
-            const loader = new STLLoader();
             const reader = new FileReader();
 
             reader.onload = (event) => {
                 try {
-                    const geometry = loader.parse(event.target.result);
+                    const geometry = this.stlLoader.parse(event.target.result);
                     
                     // Создаем сцену
                     this.stlScene = new THREE.Scene();
@@ -329,7 +410,7 @@ class ModelViewerApp {
                     resolve();
                     
                 } catch (error) {
-                    reject(error);
+                    reject(new Error('Ошибка загрузки STL файла: ' + error.message));
                 }
             };
 
