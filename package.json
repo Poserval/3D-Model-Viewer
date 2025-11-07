@@ -1,8 +1,7 @@
 {
   "name": "3d-model-viewer",
   "version": "1.0.0",
-  "description": "Минималистичный просмотрщик 3D моделей",
-  "type": "module",
+  "type": "module", 
   "scripts": {
     "dev": "vite",
     "build": "vite build",
