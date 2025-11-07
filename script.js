@@ -164,6 +164,19 @@ class ModelViewerApp {
         this.resetCameraBtn.addEventListener('click', () => {
             this.resetCamera();
         });
+
+        // Обработка изменения размера окна
+        window.addEventListener('resize', () => {
+            this.onWindowResize();
+        });
+    }
+
+    onWindowResize() {
+        if (this.stlCamera && this.stlRenderer) {
+            this.stlCamera.aspect = window.innerWidth / window.innerHeight;
+            this.stlCamera.updateProjectionMatrix();
+            this.stlRenderer.setSize(window.innerWidth, window.innerHeight);
+        }
     }
 
     handleFileSelect(event) {
@@ -349,7 +362,12 @@ class ModelViewerApp {
                 try {
                     const geometry = this.stlLoader.parse(event.target.result);
                     
-                    // Создаем сцену
+                    // Очищаем предыдущую сцену если есть
+                    if (this.stlScene) {
+                        this.stlScene.dispose();
+                    }
+                    
+                    // Создаем новую сцену
                     this.stlScene = new THREE.Scene();
                     const material = new THREE.MeshPhongMaterial({ 
                         color: 0x007AFF, 
@@ -371,7 +389,7 @@ class ModelViewerApp {
                     // Камера
                     this.stlCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
                     
-                    // Настраиваем камеру
+                    // Настраиваем камеру чтобы модель была видна полностью
                     const box = new THREE.Box3().setFromObject(this.stlMesh);
                     const center = box.getCenter(new THREE.Vector3());
                     const size = box.getSize(new THREE.Vector3());
@@ -384,18 +402,24 @@ class ModelViewerApp {
                     this.stlCamera.position.set(center.x, center.y, cameraZ);
                     this.stlCamera.lookAt(center);
 
-                    // Рендерер
-                    this.stlRenderer = new THREE.WebGLRenderer({ 
-                        antialias: true,
-                        alpha: true,
-                        canvas: this.viewerCanvas
-                    });
-                    this.stlRenderer.setSize(window.innerWidth, window.innerHeight);
-                    this.stlRenderer.setClearColor(0x000000, 0);
+                    // Создаем новый рендерер если его нет
+                    if (!this.stlRenderer) {
+                        this.stlRenderer = new THREE.WebGLRenderer({ 
+                            antialias: true,
+                            alpha: true,
+                            canvas: this.viewerCanvas
+                        });
+                    }
                     
-                    // Скрываем model-viewer, показываем canvas
+                    this.stlRenderer.setSize(window.innerWidth, window.innerHeight);
+                    this.stlRenderer.setClearColor(0xffffff, 1); // Белый фон для лучшей видимости
+                    
+                    // ВАЖНО: Показываем canvas, скрываем model-viewer
                     this.mainModel.hidden = true;
                     this.viewerCanvas.hidden = false;
+
+                    // Сразу рендерим первый кадр
+                    this.stlRenderer.render(this.stlScene, this.stlCamera);
 
                     // Запускаем анимацию
                     this.animateSTL();
@@ -407,9 +431,11 @@ class ModelViewerApp {
                     // Добавляем обработчики жестов для STL
                     this.setupSTLControls();
 
+                    console.log('STL viewer запущен успешно');
                     resolve();
                     
                 } catch (error) {
+                    console.error('Ошибка в openSTLViewer:', error);
                     reject(new Error('Ошибка загрузки STL файла: ' + error.message));
                 }
             };
@@ -420,13 +446,16 @@ class ModelViewerApp {
     }
 
     animateSTL() {
-        if (!this.stlScene || !this.stlCamera || !this.stlRenderer) return;
+        if (!this.stlScene || !this.stlCamera || !this.stlRenderer) {
+            console.log('Анимация остановлена: нет сцены, камеры или рендерера');
+            return;
+        }
 
         this.animationId = requestAnimationFrame(() => this.animateSTL());
         
         // Медленное вращение
         if (this.stlMesh) {
-            this.stlMesh.rotation.y += 0.01;
+            this.stlMesh.rotation.y += 0.005; // Медленнее для лучшего контроля
         }
         
         this.stlRenderer.render(this.stlScene, this.stlCamera);
@@ -437,16 +466,22 @@ class ModelViewerApp {
         let previousTouch = null;
         let previousPinchDistance = null;
 
-        this.viewerCanvas.addEventListener('touchstart', (e) => {
+        // Очищаем старые обработчики
+        this.viewerCanvas.removeEventListener('touchstart', this.touchStartHandler);
+        this.viewerCanvas.removeEventListener('touchmove', this.touchMoveHandler);
+        this.viewerCanvas.removeEventListener('touchend', this.touchEndHandler);
+
+        // Создаем новые обработчики
+        this.touchStartHandler = (e) => {
             if (e.touches.length === 1) {
                 isDragging = true;
                 previousTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
             } else if (e.touches.length === 2) {
                 previousPinchDistance = this.getPinchDistance(e.touches);
             }
-        });
+        };
 
-        this.viewerCanvas.addEventListener('touchmove', (e) => {
+        this.touchMoveHandler = (e) => {
             if (!this.stlMesh) return;
 
             e.preventDefault();
@@ -469,13 +504,18 @@ class ModelViewerApp {
                 this.stlMesh.scale.multiplyScalar(scaleFactor);
                 previousPinchDistance = currentDistance;
             }
-        });
+        };
 
-        this.viewerCanvas.addEventListener('touchend', () => {
+        this.touchEndHandler = () => {
             isDragging = false;
             previousTouch = null;
             previousPinchDistance = null;
-        });
+        };
+
+        // Добавляем обработчики
+        this.viewerCanvas.addEventListener('touchstart', this.touchStartHandler);
+        this.viewerCanvas.addEventListener('touchmove', this.touchMoveHandler);
+        this.viewerCanvas.addEventListener('touchend', this.touchEndHandler);
     }
 
     getPinchDistance(touches) {
