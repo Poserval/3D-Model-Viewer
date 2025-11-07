@@ -17,7 +17,7 @@ class ModelViewerApp {
         this.animationId = null;
         this.isSTLAutoRotate = true;
         this.stlLoaderAvailable = false;
-        this.MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 МБ вместо 10 МБ
+        this.MAX_FILE_SIZE = 20 * 1024 * 1024;
         this.init();
     }
 
@@ -148,17 +148,40 @@ class ModelViewerApp {
     }
 
     async loadStandardPreview(file) {
-        const fileURL = URL.createObjectURL(file);
-        
-        // Скрываем canvas, показываем model-viewer
-        this.previewCanvas.hidden = true;
-        this.previewModel.hidden = false;
-        
-        this.previewModel.src = fileURL;
-
         return new Promise((resolve, reject) => {
-            this.previewModel.addEventListener('load', () => resolve());
-            this.previewModel.addEventListener('error', (e) => reject(new Error('Не удалось загрузить модель')));
+            const fileURL = URL.createObjectURL(file);
+            
+            // Скрываем canvas, показываем model-viewer
+            this.previewCanvas.hidden = true;
+            this.previewModel.hidden = false;
+            
+            this.previewModel.src = fileURL;
+
+            // Ждем полной загрузки модели в превью
+            const onLoad = () => {
+                this.previewModel.removeEventListener('load', onLoad);
+                this.previewModel.removeEventListener('error', onError);
+                console.log('Превью модели загружено успешно');
+                resolve();
+            };
+
+            const onError = (e) => {
+                this.previewModel.removeEventListener('load', onLoad);
+                this.previewModel.removeEventListener('error', onError);
+                console.error('Ошибка загрузки превью:', e);
+                reject(new Error('Не удалось загрузить модель для превью'));
+            };
+
+            this.previewModel.addEventListener('load', onLoad);
+            this.previewModel.addEventListener('error', onError);
+
+            // Таймаут на случай если события не сработают
+            setTimeout(() => {
+                this.previewModel.removeEventListener('load', onLoad);
+                this.previewModel.removeEventListener('error', onError);
+                console.log('Превью загружено (таймаут)');
+                resolve();
+            }, 3000);
         });
     }
 
@@ -240,7 +263,12 @@ class ModelViewerApp {
     }
 
     async openViewer() {
-        if (!this.currentFile) return;
+        if (!this.currentFile) {
+            console.log('Нет выбранного файла');
+            return;
+        }
+
+        console.log('Открываем просмотрщик для:', this.currentFile.name);
 
         try {
             this.viewerTitle.textContent = this.currentFile.name;
@@ -255,9 +283,12 @@ class ModelViewerApp {
                 await this.openStandardViewer(this.currentFile);
             }
 
+            // Переключаем экраны
             this.mainScreen.classList.remove('active');
             this.viewerScreen.classList.add('active');
             this.currentState = APP_STATES.VIEWER;
+
+            console.log('Успешно перешли в режим просмотра');
 
         } catch (error) {
             console.error('Ошибка открытия просмотрщика:', error);
@@ -266,26 +297,51 @@ class ModelViewerApp {
     }
 
     async openStandardViewer(file) {
-        const fileURL = URL.createObjectURL(file);
-        
-        this.viewerCanvas.hidden = true;
-        this.mainModel.hidden = false;
-        this.mainModel.src = fileURL;
-
-        // Включаем автоповорот для стандартных моделей
-        this.mainModel.autoRotate = true;
-        
-        // Показываем controls для стандартных моделей
-        this.autoRotateBtn.style.display = 'block';
-        this.resetCameraBtn.style.display = 'block';
-
-        // Обновляем кнопку автоповорота
-        this.autoRotateBtn.setAttribute('data-active', 'true');
-        this.autoRotateBtn.innerHTML = '⏸️';
-
         return new Promise((resolve, reject) => {
-            this.mainModel.addEventListener('load', () => resolve());
-            this.mainModel.addEventListener('error', () => reject(new Error('Не удалось загрузить модель')));
+            const fileURL = URL.createObjectURL(file);
+            
+            console.log('Загружаем модель в основной просмотрщик:', file.name);
+            
+            this.viewerCanvas.hidden = true;
+            this.mainModel.hidden = false;
+            this.mainModel.src = fileURL;
+
+            // Включаем автоповорот для стандартных моделей
+            this.mainModel.autoRotate = true;
+            
+            // Показываем controls для стандартных моделей
+            this.autoRotateBtn.style.display = 'block';
+            this.resetCameraBtn.style.display = 'block';
+
+            // Обновляем кнопку автоповорота
+            this.autoRotateBtn.setAttribute('data-active', 'true');
+            this.autoRotateBtn.innerHTML = '⏸️';
+
+            // Ждем загрузки модели в основном просмотрщике
+            const onLoad = () => {
+                this.mainModel.removeEventListener('load', onLoad);
+                this.mainModel.removeEventListener('error', onError);
+                console.log('Основная модель загружена успешно');
+                resolve();
+            };
+
+            const onError = (e) => {
+                this.mainModel.removeEventListener('load', onLoad);
+                this.mainModel.removeEventListener('error', onError);
+                console.error('Ошибка загрузки основной модели:', e);
+                reject(new Error('Не удалось загрузить модель в просмотрщик'));
+            };
+
+            this.mainModel.addEventListener('load', onLoad);
+            this.mainModel.addEventListener('error', onError);
+
+            // Таймаут на случай если события не сработают
+            setTimeout(() => {
+                this.mainModel.removeEventListener('load', onLoad);
+                this.mainModel.removeEventListener('error', onError);
+                console.log('Основная модель загружена (таймаут)');
+                resolve();
+            }, 5000);
         });
     }
 
