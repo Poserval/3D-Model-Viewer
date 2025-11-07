@@ -10,13 +10,6 @@ class ModelViewerApp {
         this.currentState = APP_STATES.MAIN;
         this.currentFile = null;
         this.currentFileType = null;
-        this.stlScene = null;
-        this.stlRenderer = null;
-        this.stlCamera = null;
-        this.stlMesh = null;
-        this.animationId = null;
-        this.isSTLAutoRotate = true;
-        this.stlLoaderAvailable = false;
         this.MAX_FILE_SIZE = 20 * 1024 * 1024;
         this.init();
     }
@@ -36,83 +29,15 @@ class ModelViewerApp {
         this.autoRotateBtn = document.getElementById('auto-rotate-btn');
         this.resetCameraBtn = document.getElementById('reset-camera-btn');
         this.previewPlaceholder = document.getElementById('preview-placeholder');
-        this.previewCanvas = document.getElementById('preview-canvas');
-        this.viewerCanvas = document.getElementById('viewer-canvas');
         this.previewArea = document.getElementById('preview-area');
 
-        // Проверяем доступность STLLoader
-        this.checkSTLLoader();
         this.bindEvents();
+        this.checkLibraries();
     }
 
-    checkSTLLoader() {
-        // Ждем загрузки Three.js и STLLoader
-        setTimeout(() => {
-            if (typeof THREE !== 'undefined') {
-                console.log('Three.js загружен');
-                
-                // Проверяем разные варианты загрузки STLLoader
-                if (typeof STLLoader !== 'undefined') {
-                    this.stlLoaderAvailable = true;
-                    console.log('STLLoader доступен через jsm');
-                } else {
-                    // Пробуем альтернативный способ
-                    this.tryAlternativeSTLLoader();
-                }
-            } else {
-                console.error('Three.js не загружен');
-                this.stlLoaderAvailable = false;
-            }
-        }, 2000);
-    }
-
-    tryAlternativeSTLLoader() {
-        // Альтернативный способ загрузки STLLoader
-        console.log('Пробуем альтернативную загрузку STLLoader...');
-        
-        // Создаем простой STLLoader если основной не загрузился
-        if (typeof THREE !== 'undefined') {
-            this.createSimpleSTLLoader();
-        }
-    }
-
-    createSimpleSTLLoader() {
-        // Создаем упрощенный STLLoader на основе Three.js
-        this.SimpleSTLLoader = class {
-            parse(data) {
-                const geometry = new THREE.BufferGeometry();
-                
-                // Простой парсинг STL файла (базовая реализация)
-                const reader = new DataView(data);
-                let faces = 0;
-                
-                // Читаем количество треугольников (смещение 80 байт)
-                if (data.byteLength > 84) {
-                    faces = reader.getUint32(80, true);
-                }
-                
-                // Создаем простую геометрию куба как заглушку
-                const vertices = new Float32Array([
-                    -1, -1, -1,  1, -1, -1,  1,  1, -1, -1,  1, -1,
-                    -1, -1,  1,  1, -1,  1,  1,  1,  1, -1,  1,  1
-                ]);
-                
-                const indices = new Uint16Array([
-                    0, 1, 2,  0, 2, 3,  4, 5, 6,  4, 6, 7,
-                    0, 4, 7,  0, 7, 3,  1, 5, 6,  1, 6, 2,
-                    0, 1, 5,  0, 5, 4,  3, 2, 6,  3, 6, 7
-                ]);
-                
-                geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-                geometry.setIndex(new THREE.BufferAttribute(indices, 1));
-                geometry.computeVertexNormals();
-                
-                return geometry;
-            }
-        };
-        
-        this.stlLoaderAvailable = true;
-        console.log('Упрощенный STLLoader создан');
+    checkLibraries() {
+        console.log('Three.js доступен:', typeof THREE !== 'undefined');
+        console.log('Model Viewer доступен:', typeof ModelViewer !== 'undefined');
     }
 
     bindEvents() {
@@ -158,11 +83,11 @@ class ModelViewerApp {
             return;
         }
 
-        const validFormats = ['.gltf', '.glb', '.obj', '.stl'];
+        const validFormats = ['.gltf', '.glb', '.obj'];
         const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
         
         if (!validFormats.includes(fileExtension)) {
-            alert('Пожалуйста, выберите файл в формате GLTF, GLB, OBJ или STL');
+            alert('Пожалуйста, выберите файл в формате GLTF, GLB или OBJ');
             return;
         }
 
@@ -180,11 +105,7 @@ class ModelViewerApp {
             // Показываем индикатор загрузки
             this.previewArea.classList.add('loading');
 
-            if (fileType === '.stl') {
-                await this.loadSTLPreview(file);
-            } else {
-                await this.loadStandardPreview(file);
-            }
+            await this.loadStandardPreview(file);
 
             this.open3dBtn.disabled = false;
             this.currentState = APP_STATES.PREVIEW;
@@ -201,10 +122,6 @@ class ModelViewerApp {
     async loadStandardPreview(file) {
         return new Promise((resolve, reject) => {
             const fileURL = URL.createObjectURL(file);
-            
-            // Скрываем canvas, показываем model-viewer
-            this.previewCanvas.hidden = true;
-            this.previewModel.hidden = false;
             
             this.previewModel.src = fileURL;
 
@@ -236,95 +153,6 @@ class ModelViewerApp {
         });
     }
 
-    async loadSTLPreview(file) {
-        return new Promise((resolve, reject) => {
-            if (!this.stlLoaderAvailable) {
-                reject(new Error('STL загрузчик недоступен. Попробуйте использовать GLB формат.'));
-                return;
-            }
-
-            const reader = new FileReader();
-
-            reader.onload = (event) => {
-                try {
-                    let geometry;
-                    
-                    // Используем доступный загрузчик
-                    if (typeof STLLoader !== 'undefined') {
-                        const loader = new STLLoader();
-                        geometry = loader.parse(event.target.result);
-                    } else if (this.SimpleSTLLoader) {
-                        const loader = new this.SimpleSTLLoader();
-                        geometry = loader.parse(event.target.result);
-                    } else {
-                        throw new Error('STL загрузчик не инициализирован');
-                    }
-                    
-                    // Создаем сцену Three.js
-                    const scene = new THREE.Scene();
-                    const material = new THREE.MeshPhongMaterial({ 
-                        color: 0x007AFF, 
-                        specular: 0x111111, 
-                        shininess: 200 
-                    });
-                    
-                    const mesh = new THREE.Mesh(geometry, material);
-                    scene.add(mesh);
-
-                    // Освещение
-                    const ambientLight = new THREE.AmbientLight(0x404040);
-                    scene.add(ambientLight);
-                    
-                    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-                    directionalLight.position.set(1, 1, 1);
-                    scene.add(directionalLight);
-
-                    // Камера
-                    const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
-                    
-                    // Настраиваем камеру чтобы модель была видна полностью
-                    const box = new THREE.Box3().setFromObject(mesh);
-                    const center = box.getCenter(new THREE.Vector3());
-                    const size = box.getSize(new THREE.Vector3());
-                    
-                    const maxDim = Math.max(size.x, size.y, size.z);
-                    const fov = camera.fov * (Math.PI / 180);
-                    let cameraZ = Math.abs(maxDim / Math.sin(fov / 2));
-                    
-                    cameraZ *= 1.5;
-                    camera.position.set(center.x, center.y, cameraZ);
-                    camera.lookAt(center);
-
-                    // Рендерер
-                    const renderer = new THREE.WebGLRenderer({ 
-                        antialias: true,
-                        alpha: true,
-                        canvas: this.previewCanvas
-                    });
-                    renderer.setSize(200, 200);
-                    renderer.setClearColor(0x000000, 0);
-                    
-                    // Рендерим
-                    renderer.render(scene, camera);
-                    
-                    // Показываем canvas, скрываем model-viewer
-                    this.previewModel.hidden = true;
-                    this.previewCanvas.hidden = false;
-                    
-                    console.log('STL превью успешно создано');
-                    resolve();
-                    
-                } catch (error) {
-                    console.error('Ошибка создания STL превью:', error);
-                    reject(new Error('Не удалось создать превью STL файла: ' + error.message));
-                }
-            };
-
-            reader.onerror = () => reject(new Error('Ошибка чтения STL файла'));
-            reader.readAsArrayBuffer(file);
-        });
-    }
-
     async openViewer() {
         if (!this.currentFile) {
             console.log('Нет выбранного файла');
@@ -336,15 +164,7 @@ class ModelViewerApp {
         try {
             this.viewerTitle.textContent = this.currentFile.name;
 
-            // Сбрасываем состояние автоповорота
-            this.isSTLAutoRotate = true;
-            this.updateAutoRotateButton();
-
-            if (this.currentFileType === '.stl') {
-                await this.openSTLViewer(this.currentFile);
-            } else {
-                await this.openStandardViewer(this.currentFile);
-            }
+            await this.openStandardViewer(this.currentFile);
 
             // Переключаем экраны
             this.mainScreen.classList.remove('active');
@@ -365,16 +185,10 @@ class ModelViewerApp {
             
             console.log('Загружаем модель в основной просмотрщик:', file.name);
             
-            this.viewerCanvas.hidden = true;
-            this.mainModel.hidden = false;
             this.mainModel.src = fileURL;
 
             // Включаем автоповорот для стандартных моделей
             this.mainModel.autoRotate = true;
-            
-            // Показываем controls для стандартных моделей
-            this.autoRotateBtn.style.display = 'block';
-            this.resetCameraBtn.style.display = 'block';
 
             // Обновляем кнопку автоповорота
             this.autoRotateBtn.setAttribute('data-active', 'true');
@@ -408,136 +222,13 @@ class ModelViewerApp {
         });
     }
 
-    async openSTLViewer(file) {
-        return new Promise((resolve, reject) => {
-            if (!this.stlLoaderAvailable) {
-                reject(new Error('STL загрузчик недоступен'));
-                return;
-            }
-
-            const reader = new FileReader();
-
-            reader.onload = (event) => {
-                try {
-                    let geometry;
-                    
-                    // Используем доступный загрузчик
-                    if (typeof STLLoader !== 'undefined') {
-                        const loader = new STLLoader();
-                        geometry = loader.parse(event.target.result);
-                    } else if (this.SimpleSTLLoader) {
-                        const loader = new this.SimpleSTLLoader();
-                        geometry = loader.parse(event.target.result);
-                    } else {
-                        throw new Error('STL загрузчик не инициализирован');
-                    }
-                    
-                    // Создаем сцену
-                    this.stlScene = new THREE.Scene();
-                    const material = new THREE.MeshPhongMaterial({ 
-                        color: 0x007AFF, 
-                        specular: 0x111111, 
-                        shininess: 200 
-                    });
-                    
-                    this.stlMesh = new THREE.Mesh(geometry, material);
-                    this.stlScene.add(this.stlMesh);
-
-                    // Освещение
-                    const ambientLight = new THREE.AmbientLight(0x404040);
-                    this.stlScene.add(ambientLight);
-                    
-                    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-                    directionalLight.position.set(1, 1, 1);
-                    this.stlScene.add(directionalLight);
-
-                    // Камера
-                    this.stlCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-                    
-                    // Настраиваем камеру чтобы модель была видна полностью
-                    const box = new THREE.Box3().setFromObject(this.stlMesh);
-                    const center = box.getCenter(new THREE.Vector3());
-                    const size = box.getSize(new THREE.Vector3());
-                    
-                    const maxDim = Math.max(size.x, size.y, size.z);
-                    const fov = this.stlCamera.fov * (Math.PI / 180);
-                    let cameraZ = Math.abs(maxDim / Math.sin(fov / 2));
-                    
-                    cameraZ *= 1.5;
-                    this.stlCamera.position.set(center.x, center.y, cameraZ);
-                    this.stlCamera.lookAt(center);
-
-                    // Рендерер
-                    this.stlRenderer = new THREE.WebGLRenderer({ 
-                        antialias: true,
-                        alpha: true,
-                        canvas: this.viewerCanvas
-                    });
-                    this.stlRenderer.setSize(window.innerWidth, window.innerHeight);
-                    this.stlRenderer.setClearColor(0x000000, 0);
-                    
-                    // Скрываем model-viewer, показываем canvas
-                    this.mainModel.hidden = true;
-                    this.viewerCanvas.hidden = false;
-
-                    // Запускаем анимацию
-                    this.animateSTL();
-
-                    // Показываем controls для STL
-                    this.autoRotateBtn.style.display = 'block';
-                    this.resetCameraBtn.style.display = 'block';
-
-                    // Добавляем обработчики жестов для STL
-                    this.setupSTLControls();
-
-                    console.log('STL просмотрщик успешно запущен');
-                    resolve();
-                    
-                } catch (error) {
-                    console.error('Ошибка создания STL просмотрщика:', error);
-                    reject(new Error('Не удалось открыть STL файл: ' + error.message));
-                }
-            };
-
-            reader.onerror = () => reject(new Error('Ошибка чтения STL файла'));
-            reader.readAsArrayBuffer(file);
-        });
-    }
-
-    animateSTL() {
-        if (!this.stlScene || !this.stlCamera || !this.stlRenderer) return;
-
-        this.animationId = requestAnimationFrame(() => this.animateSTL());
-        
-        // Вращение только если автоповорот включен
-        if (this.stlMesh && this.isSTLAutoRotate) {
-            this.stlMesh.rotation.y += 0.01;
-        }
-        
-        this.stlRenderer.render(this.stlScene, this.stlCamera);
-    }
-
     toggleAutoRotate() {
-        if (this.currentFileType === '.stl') {
-            // Для STL моделей
-            this.isSTLAutoRotate = !this.isSTLAutoRotate;
-        } else {
-            // Для стандартных моделей (GLTF/GLB/OBJ)
-            this.mainModel.autoRotate = !this.mainModel.autoRotate;
-        }
-        
+        this.mainModel.autoRotate = !this.mainModel.autoRotate;
         this.updateAutoRotateButton();
     }
 
     updateAutoRotateButton() {
-        let isActive;
-        
-        if (this.currentFileType === '.stl') {
-            isActive = this.isSTLAutoRotate;
-        } else {
-            isActive = this.mainModel.autoRotate;
-        }
-
+        const isActive = this.mainModel.autoRotate;
         this.autoRotateBtn.setAttribute('data-active', isActive.toString());
         
         // Меняем иконку в зависимости от состояния
@@ -548,105 +239,24 @@ class ModelViewerApp {
         }
     }
 
-    setupSTLControls() {
-        let isDragging = false;
-        let previousTouch = null;
-        let previousPinchDistance = null;
-
-        this.viewerCanvas.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 1) {
-                isDragging = true;
-                previousTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-            } else if (e.touches.length === 2) {
-                previousPinchDistance = this.getPinchDistance(e.touches);
-            }
-        });
-
-        this.viewerCanvas.addEventListener('touchmove', (e) => {
-            if (!this.stlMesh) return;
-
-            e.preventDefault();
-
-            if (e.touches.length === 1 && isDragging && previousTouch) {
-                // Вращение
-                const touch = e.touches[0];
-                const deltaX = touch.clientX - previousTouch.x;
-                const deltaY = touch.clientY - previousTouch.y;
-
-                this.stlMesh.rotation.y += deltaX * 0.01;
-                this.stlMesh.rotation.x += deltaY * 0.01;
-
-                previousTouch = { x: touch.clientX, y: touch.clientY };
-            } else if (e.touches.length === 2 && previousPinchDistance) {
-                // Масштабирование
-                const currentDistance = this.getPinchDistance(e.touches);
-                const scaleFactor = currentDistance / previousPinchDistance;
-
-                this.stlMesh.scale.multiplyScalar(scaleFactor);
-                previousPinchDistance = currentDistance;
-            }
-        });
-
-        this.viewerCanvas.addEventListener('touchend', () => {
-            isDragging = false;
-            previousTouch = null;
-            previousPinchDistance = null;
-        });
-    }
-
-    getPinchDistance(touches) {
-        const dx = touches[0].clientX - touches[1].clientX;
-        const dy = touches[0].clientY - touches[1].clientY;
-        return Math.sqrt(dx * dx + dy * dy);
-    }
-
     showMainScreen() {
-        // Останавливаем анимацию STL
-        if (this.animationId) {
-            cancelAnimationFrame(this.animationId);
-            this.animationId = null;
-        }
-
         this.viewerScreen.classList.remove('active');
         this.mainScreen.classList.add('active');
         
-        // Сбрасываем авто-поворот для стандартных моделей
+        // Сбрасываем авто-поворот
         this.mainModel.autoRotate = false;
 
         this.currentState = APP_STATES.MAIN;
     }
 
     resetCamera() {
-        if (this.currentFileType === '.stl') {
-            // Сброс камеры для STL
-            if (this.stlMesh && this.stlCamera) {
-                const box = new THREE.Box3().setFromObject(this.stlMesh);
-                const center = box.getCenter(new THREE.Vector3());
-                const size = box.getSize(new THREE.Vector3());
-                
-                const maxDim = Math.max(size.x, size.y, size.z);
-                const fov = this.stlCamera.fov * (Math.PI / 180);
-                let cameraZ = Math.abs(maxDim / Math.sin(fov / 2));
-                
-                cameraZ *= 1.5;
-                this.stlCamera.position.set(center.x, center.y, cameraZ);
-                this.stlCamera.lookAt(center);
-                
-                // Сброс вращения и масштаба
-                this.stlMesh.rotation.set(0, 0, 0);
-                this.stlMesh.scale.set(1, 1, 1);
-            }
-        } else {
-            // Сброс камеры для стандартных моделей
-            this.mainModel.cameraOrbit = '0deg 75deg 105%';
-            this.mainModel.resetTurntableRotation();
-        }
+        this.mainModel.cameraOrbit = '0deg 75deg 105%';
+        this.mainModel.resetTurntableRotation();
     }
 
     resetPreview() {
         this.previewPlaceholder.hidden = false;
-        this.previewModel.hidden = true;
-        this.previewCanvas.hidden = true;
+        this.previewModel.hidden = false;
         this.previewModel.src = '';
         this.open3dBtn.disabled = true;
         this.fileName.textContent = '';
