@@ -3,64 +3,13 @@
   "version": "1.0.0",
   "description": "Минималистичный просмотрщик 3D моделей для мобильных устройств",
   "type": "module",
-  "main": "src/index.html",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "generate-icons": "node generate-icons.js",
-    "generate-screenshots": "node generate-screenshots.js",
-    "build:icons": "npm run generate-icons && npm run build",
-    "build:full": "npm run generate-icons && npm run build",
-    "cap:init": "npx cap init",
-    "cap:add:android": "npx cap add android",
-    "cap:sync": "npx cap sync",
-    "cap:open:android": "npx cap open android",
-    "cap:build:android": "npm run build && npx cap sync android",
-    "android:build": "npm run build:full && cd android && ./gradlew assembleRelease",
-    "android:debug": "npm run build:full && cd android && ./gradlew assembleDebug",
-    "deploy:gh-pages": "npm run build:full && npx gh-pages -d dist"
-  },
-  "keywords": [
-    "3d",
-    "viewer",
-    "pwa",
-    "mobile",
-    "capacitor",
-    "webgl",
-    "model-viewer",
-    "github-pages"
-  ],
-  "author": "3D Model Viewer Team",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/USERNAME/3d-model-viewer.git"
-  },
-  "homepage": "https://USERNAME.github.io/3d-model-viewer",
-  "dependencies": {
-    "@google/model-viewer": "^3.1.1"
+    "generate-icons": "node generate-icons.js"
   },
   "devDependencies": {
-    "vite": "^5.0.0",
-    "vite-plugin-pwa": "^0.17.4",
-    "sharp": "^0.32.0",
-    "puppeteer": "^21.0.0",
-    "lighthouse": "^11.0.0",
-    "gh-pages": "^6.0.0"
-  },
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
-  },
-  "browserslist": [
-    "last 2 Android versions",
-    "last 2 Chrome versions",
-    "last 2 Safari versions"
-  ],
-  "capacitor": {
-    "appId": "com.threedviewer.app",
-    "appName": "3D Model Viewer",
-    "webDir": "dist"
+    "vite": "^5.0.0"
   }
 }
