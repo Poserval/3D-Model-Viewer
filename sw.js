@@ -1,7 +1,8 @@
-const CACHE_NAME = '3d-viewer-v1.4';
+const CACHE_NAME = '3d-viewer-v1.5';
 const urlsToCache = [
     '/',
     '/index.html',
+    '/404.html',
     '/style.css',
     '/script.js',
     '/manifest.json',
@@ -31,6 +32,11 @@ self.addEventListener('fetch', (event) => {
                 }
                 
                 return fetch(event.request).then((response) => {
+                    // Если страница не найдена (404), возвращаем главную страницу
+                    if (response.status === 404) {
+                        return caches.match('/index.html');
+                    }
+                    
                     // Проверяем валидный ли ответ
                     if(!response || response.status !== 200 || response.type !== 'basic') {
                         return response;
@@ -45,6 +51,10 @@ self.addEventListener('fetch', (event) => {
                         });
 
                     return response;
+                }).catch((error) => {
+                    // Если ошибка сети, возвращаем главную страницу
+                    console.log('Fetch failed; returning offline page instead.', error);
+                    return caches.match('/index.html');
                 });
             })
     );
