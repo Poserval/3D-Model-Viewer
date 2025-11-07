@@ -11,15 +11,15 @@
     "generate-icons": "node generate-icons.js",
     "generate-screenshots": "node generate-screenshots.js",
     "build:icons": "npm run generate-icons && npm run build",
-    "build:full": "npm run generate-icons && npm run build && npm run cap:sync",
-    "cap:init": "cap init",
-    "cap:add:android": "cap add android",
-    "cap:sync": "cap sync",
-    "cap:open:android": "cap open android",
-    "cap:build:android": "npm run build && cap sync android",
+    "build:full": "npm run generate-icons && npm run build",
+    "cap:init": "npx cap init",
+    "cap:add:android": "npx cap add android",
+    "cap:sync": "npx cap sync",
+    "cap:open:android": "npx cap open android",
+    "cap:build:android": "npm run build && npx cap sync android",
     "android:build": "npm run build:full && cd android && ./gradlew assembleRelease",
     "android:debug": "npm run build:full && cd android && ./gradlew assembleDebug",
-    "pwa:audit": "lighthouse http://localhost:3000 --view --output html --output-path ./lighthouse-report.html"
+    "deploy:gh-pages": "npm run build:full && npx gh-pages -d dist"
   },
   "keywords": [
     "3d",
@@ -28,25 +28,26 @@
     "mobile",
     "capacitor",
     "webgl",
-    "model-viewer"
+    "model-viewer",
+    "github-pages"
   ],
   "author": "3D Model Viewer Team",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/3d-model-viewer"
+    "url": "https://github.com/USERNAME/3d-model-viewer.git"
   },
+  "homepage": "https://USERNAME.github.io/3d-model-viewer",
   "dependencies": {
-    "@capacitor/android": "^5.5.0",
-    "@capacitor/cli": "^5.5.0",
-    "@capacitor/core": "^5.5.0"
+    "@google/model-viewer": "^3.1.1"
   },
   "devDependencies": {
     "vite": "^5.0.0",
     "vite-plugin-pwa": "^0.17.4",
     "sharp": "^0.32.0",
     "puppeteer": "^21.0.0",
-    "lighthouse": "^11.0.0"
+    "lighthouse": "^11.0.0",
+    "gh-pages": "^6.0.0"
   },
   "engines": {
     "node": ">=18.0.0",
