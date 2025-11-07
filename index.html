@@ -8,7 +8,9 @@
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     
-    <!-- ТОЛЬКО ОДИН Three.js и STLLoader -->
+    <!-- Favicon -->
+    <link rel="icon" href="icons/icon-app-192.png" type="image/png">
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 </head>
@@ -16,13 +18,16 @@
     <!-- Главный экран -->
     <div id="main-screen" class="screen active">
         <div class="container">
-            <h1>3D Viewer</h1>
+            <!-- Заменяем текст на логотип -->
+            <div class="app-logo">
+                <img src="icons/logo-header.png" alt="3D Viewer" class="logo-image">
+            </div>
+            
             <div id="preview-area" class="preview-area">
                 <div id="preview-placeholder" class="preview-placeholder">
                     <span>Выберите 3D модель</span>
                 </div>
                 <model-viewer id="preview-model" class="preview-model" hidden></model-viewer>
-                <canvas id="preview-canvas" class="preview-canvas" hidden></canvas>
             </div>
             <input type="file" id="file-input" accept=".gltf,.glb,.obj" hidden>
             <button id="select-file-btn" class="btn primary">Выбрать файл</button>
@@ -35,6 +40,10 @@
     <div id="viewer-screen" class="screen">
         <header class="header">
             <button id="back-btn" class="back-btn">←</button>
+            <!-- Логотип в header -->
+            <div class="header-logo">
+                <img src="icons/logo-header.png" alt="3D Viewer" class="logo-image-small">
+            </div>
             <h2 id="viewer-title" class="viewer-title"></h2>
         </header>
         <div class="viewer-container">
