@@ -35,7 +35,7 @@ class ModelViewerApp {
         this.previewPlaceholder = document.getElementById('preview-placeholder');
         this.previewCanvas = document.getElementById('preview-canvas');
         this.viewerCanvas = document.getElementById('viewer-canvas');
-        this.previewArea = document.getElementById('preview-area'); // ← ДОБАВЛЕНО!
+        this.previewArea = document.getElementById('preview-area');
 
         this.bindEvents();
     }
@@ -138,6 +138,12 @@ class ModelViewerApp {
 
     async loadSTLPreview(file) {
         return new Promise((resolve, reject) => {
+            // Проверяем что STLLoader доступен
+            if (typeof STLLoader === 'undefined') {
+                reject(new Error('STLLoader не загружен. Проверьте подключение Three.js'));
+                return;
+            }
+
             const loader = new STLLoader();
             const reader = new FileReader();
 
@@ -249,6 +255,12 @@ class ModelViewerApp {
 
     async openSTLViewer(file) {
         return new Promise((resolve, reject) => {
+            // Проверяем что STLLoader доступен
+            if (typeof STLLoader === 'undefined') {
+                reject(new Error('STLLoader не загружен. Проверьте подключение Three.js'));
+                return;
+            }
+
             const loader = new STLLoader();
             const reader = new FileReader();
 
