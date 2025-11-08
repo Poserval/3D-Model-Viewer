@@ -31,6 +31,11 @@ class ModelViewerApp {
         this.previewPlaceholder = document.getElementById('preview-placeholder');
         this.previewArea = document.getElementById('preview-area');
 
+        // Элементы индикатора загрузки
+        this.loadingIndicator = document.getElementById('loading-indicator');
+        this.progressFill = document.querySelector('.progress-fill');
+        this.progressText = document.querySelector('.progress-text');
+
         this.bindEvents();
         this.checkLibraries();
         
@@ -173,10 +178,16 @@ class ModelViewerApp {
 
         console.log('🎮 Открываем просмотрщик для:', this.currentFile.name);
 
+        // ПОКАЗЫВАЕМ ИНДИКАТОР ЗАГРУЗКИ
+        this.showLoadingIndicator();
+
         try {
             this.viewerTitle.textContent = this.currentFile.name;
 
             await this.openStandardViewer(this.currentFile);
+
+            // СКРЫВАЕМ ИНДИКАТОР ПЕРЕД ПЕРЕХОДОМ
+            this.hideLoadingIndicator();
 
             // Переключаем экраны
             this.mainScreen.classList.remove('active');
@@ -186,9 +197,57 @@ class ModelViewerApp {
             console.log('✅ Успешно перешли в режим просмотра');
 
         } catch (error) {
+            // СКРЫВАЕМ ИНДИКАТОР ПРИ ОШИБКЕ
+            this.hideLoadingIndicator();
             console.error('Ошибка открытия просмотрщика:', error);
             alert('❌ Ошибка при открытии модели:\n' + error.message);
         }
+    }
+
+    showLoadingIndicator() {
+        this.loadingIndicator.hidden = false;
+        
+        // Запускаем анимацию прогресса (имитация)
+        this.startProgressAnimation();
+    }
+
+    hideLoadingIndicator() {
+        this.loadingIndicator.hidden = true;
+        this.resetProgress();
+    }
+
+    startProgressAnimation() {
+        let progress = 0;
+        const maxProgress = 90; // До 90%, остальное - реальная загрузка
+        
+        // Быстро заполняем до 30%
+        const quickInterval = setInterval(() => {
+            progress += 10;
+            this.updateProgress(progress);
+            
+            if (progress >= 30) {
+                clearInterval(quickInterval);
+                // Медленно заполняем до 90%
+                const slowInterval = setInterval(() => {
+                    progress += 2;
+                    this.updateProgress(progress);
+                    
+                    if (progress >= maxProgress) {
+                        clearInterval(slowInterval);
+                    }
+                }, 200);
+            }
+        }, 100);
+    }
+
+    updateProgress(percent) {
+        this.progressFill.style.width = percent + '%';
+        this.progressText.textContent = percent + '%';
+    }
+
+    resetProgress() {
+        this.progressFill.style.width = '0%';
+        this.progressText.textContent = '0%';
     }
 
     async openStandardViewer(file) {
@@ -210,6 +269,10 @@ class ModelViewerApp {
             const onLoad = () => {
                 this.mainModel.removeEventListener('load', onLoad);
                 this.mainModel.removeEventListener('error', onError);
+                
+                // ДОБАВЛЯЕМ: Завершаем прогресс при успешной загрузке
+                this.updateProgress(100);
+                
                 console.log('✅ Основная модель загружена');
                 resolve();
             };
@@ -228,6 +291,10 @@ class ModelViewerApp {
             setTimeout(() => {
                 this.mainModel.removeEventListener('load', onLoad);
                 this.mainModel.removeEventListener('error', onError);
+                
+                // ДОБАВЛЯЕМ: Завершаем прогресс при таймауте
+                this.updateProgress(100);
+                
                 console.log('⏰ Основная модель загружена (таймаут)');
                 resolve();
             }, 5000);
