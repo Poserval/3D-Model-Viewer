@@ -33,7 +33,8 @@ class ModelViewerApp {
 
         this.bindEvents();
         this.checkLibraries();
-        this.registerServiceWorker();
+        
+        console.log('🚀 3D Model Viewer запущен');
     }
 
     checkLibraries() {
@@ -43,25 +44,11 @@ class ModelViewerApp {
         
         console.log('📚 Model Viewer доступен:', modelViewerAvailable);
         
-        // Three.js может быть внутри Model Viewer
         const threeAvailable = typeof THREE !== 'undefined';
         console.log('📚 Three.js доступен:', threeAvailable);
         
         if (!modelViewerAvailable) {
             console.warn('⚠️ Model Viewer не загрузился');
-        }
-    }
-
-    registerServiceWorker() {
-        // Минимальная регистрация SW чтобы ярлык работал
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js')
-                .then((registration) => {
-                    console.log('✅ Service Worker зарегистрирован');
-                })
-                .catch((error) => {
-                    console.log('❌ Service Worker не зарегистрирован:', error.message);
-                });
         }
     }
 
