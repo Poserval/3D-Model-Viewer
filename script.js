@@ -10,7 +10,7 @@ class ModelViewerApp {
         this.currentState = APP_STATES.MAIN;
         this.currentFile = null;
         this.currentFileType = null;
-        this.MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB для FBX и других тяжелых форматов
+        this.MAX_FILE_SIZE = 200 * 1024 * 1024; // 200MB для тяжелых FBX файлов
         this.init();
     }
 
@@ -99,7 +99,7 @@ class ModelViewerApp {
     }
 
     validateFile(file) {
-        // Проверка размера файла (до 100MB)
+        // Проверка размера файла (до 200MB)
         if (file.size > this.MAX_FILE_SIZE) {
             const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
             const maxSizeMB = (this.MAX_FILE_SIZE / (1024 * 1024)).toFixed(0);
