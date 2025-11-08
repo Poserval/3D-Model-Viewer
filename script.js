@@ -45,7 +45,6 @@ class ModelViewerApp {
         console.log('Three.js доступен:', typeof THREE !== 'undefined');
         console.log('STLLoader доступен:', typeof THREE.STLLoader !== 'undefined');
         console.log('FBXLoader доступен:', typeof THREE.FBXLoader !== 'undefined');
-        console.log('OrbitControls доступен:', typeof THREE.OrbitControls !== 'undefined');
     }
 
     initializeElements() {
@@ -161,7 +160,6 @@ class ModelViewerApp {
         
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
         directionalLight.position.set(5, 5, 5);
-        directionalLight.castShadow = true;
         scene.add(directionalLight);
     }
 
@@ -306,14 +304,45 @@ class ModelViewerApp {
                     
                     this.clearThreeJSScene(this.previewScene);
                     
-                    // Обрабатываем материалы
-                    this.setupModelMaterials(object);
+                    let modelObject;
                     
-                    this.previewScene.add(object);
-                    this.previewModelObject = object;
+                    // РАЗЛИЧНАЯ ОБРАБОТКА ДЛЯ STL И FBX
+                    if (extension === '.stl') {
+                        // STL возвращает геометрию - создаем меш
+                        const geometry = object;
+                        const material = new THREE.MeshStandardMaterial({ 
+                            color: 0x888888,
+                            roughness: 0.7,
+                            metalness: 0.2
+                        });
+                        modelObject = new THREE.Mesh(geometry, material);
+                    } else {
+                        // FBX возвращает готовый объект
+                        modelObject = object;
+                        // Обрабатываем материалы для FBX
+                        if (modelObject.traverse) {
+                            modelObject.traverse((child) => {
+                                if (child.isMesh && child.material) {
+                                    // Улучшаем материалы FBX
+                                    if (!child.material.isMeshStandardMaterial) {
+                                        const oldMaterial = child.material;
+                                        child.material = new THREE.MeshStandardMaterial({
+                                            color: oldMaterial.color || 0x888888,
+                                            map: oldMaterial.map,
+                                            roughness: 0.7,
+                                            metalness: 0.2
+                                        });
+                                    }
+                                }
+                            });
+                        }
+                    }
                     
-                    this.centerModel(object);
-                    this.fitCameraToObject(this.previewCamera, object, 2);
+                    this.previewScene.add(modelObject);
+                    this.previewModelObject = modelObject;
+                    
+                    this.centerModel(modelObject);
+                    this.fitCameraToObject(this.previewCamera, modelObject, 2);
                     
                     this.hidePreviewPlaceholder();
                     resolve();
@@ -333,32 +362,6 @@ class ModelViewerApp {
             } catch (loaderError) {
                 console.error('Ошибка создания загрузчика:', loaderError);
                 reject(new Error('Ошибка инициализации загрузчика'));
-            }
-        });
-    }
-
-    setupModelMaterials(object) {
-        object.traverse((child) => {
-            if (child.isMesh) {
-                // Если у меша нет материала, создаем стандартный
-                if (!child.material) {
-                    child.material = new THREE.MeshStandardMaterial({ 
-                        color: 0x888888,
-                        roughness: 0.7,
-                        metalness: 0.2
-                    });
-                }
-                
-                // Если материал есть, но это базовый материал без свойств PBR
-                if (child.material && !child.material.isMeshStandardMaterial) {
-                    const oldMaterial = child.material;
-                    child.material = new THREE.MeshStandardMaterial({
-                        color: oldMaterial.color || 0x888888,
-                        map: oldMaterial.map,
-                        roughness: 0.7,
-                        metalness: 0.2
-                    });
-                }
             }
         });
     }
@@ -432,12 +435,8 @@ class ModelViewerApp {
         
         objectsToRemove.forEach(obj => scene.remove(obj));
         
-        if (this.previewModelObject) {
-            this.previewModelObject = null;
-        }
-        if (this.mainModelObject) {
-            this.mainModelObject = null;
-        }
+        this.previewModelObject = null;
+        this.mainModelObject = null;
     }
 
     hideAllRenderers() {
@@ -537,14 +536,41 @@ class ModelViewerApp {
                     
                     this.clearThreeJSScene(this.mainScene);
                     
-                    // Обрабатываем материалы
-                    this.setupModelMaterials(object);
+                    let modelObject;
                     
-                    this.mainScene.add(object);
-                    this.mainModelObject = object;
+                    // ТАКАЯ ЖЕ ЛОГИКА КАК В ПРЕВЬЮ
+                    if (extension === '.stl') {
+                        const geometry = object;
+                        const material = new THREE.MeshStandardMaterial({ 
+                            color: 0x888888,
+                            roughness: 0.7,
+                            metalness: 0.2
+                        });
+                        modelObject = new THREE.Mesh(geometry, material);
+                    } else {
+                        modelObject = object;
+                        if (modelObject.traverse) {
+                            modelObject.traverse((child) => {
+                                if (child.isMesh && child.material) {
+                                    if (!child.material.isMeshStandardMaterial) {
+                                        const oldMaterial = child.material;
+                                        child.material = new THREE.MeshStandardMaterial({
+                                            color: oldMaterial.color || 0x888888,
+                                            map: oldMaterial.map,
+                                            roughness: 0.7,
+                                            metalness: 0.2
+                                        });
+                                    }
+                                }
+                            });
+                        }
+                    }
                     
-                    this.centerModel(object);
-                    this.fitCameraToObject(this.mainCamera, object, 1.5);
+                    this.mainScene.add(modelObject);
+                    this.mainModelObject = modelObject;
+                    
+                    this.centerModel(modelObject);
+                    this.fitCameraToObject(this.mainCamera, modelObject, 1.5);
                     
                     // Инициализация OrbitControls
                     if (!this.mainControls) {
@@ -552,8 +578,6 @@ class ModelViewerApp {
                         this.mainControls.enableDamping = true;
                         this.mainControls.dampingFactor = 0.05;
                         this.mainControls.screenSpacePanning = false;
-                        this.mainControls.minDistance = 0.1;
-                        this.mainControls.maxDistance = 1000;
                     }
                     
                     this.updateMainThreeJSSize();
@@ -602,7 +626,6 @@ class ModelViewerApp {
         this.viewerScreen.classList.add('active');
         this.currentState = APP_STATES.VIEWER;
         
-        // Обновляем размер Three.js при переключении
         setTimeout(() => {
             this.updateMainThreeJSSize();
         }, 100);
