@@ -5,12 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D Model Viewer</title>
     <meta name="theme-color" content="#007AFF">
+    
+    <!-- Предзагрузка критичных ресурсов -->
+    <link rel="preload" href="style.css" as="style">
+    <link rel="preload" href="script.js" as="script">
+    
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     
     <!-- Favicon -->
     <link rel="icon" href="icons/icon-app-192.png" type="image/png">
     
+    <!-- Подключение Three.js и Model Viewer -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 </head>
@@ -19,7 +25,7 @@
     <div id="main-screen" class="screen active">
         <div class="container">
             <div class="app-logo">
-                <img src="icons/logo-header.png" alt="3D Viewer" class="logo-image">
+                <img src="icons/logo-header.png" alt="3D Viewer" class="logo-image" loading="eager">
             </div>
             
             <div id="preview-area" class="preview-area">
@@ -42,38 +48,41 @@
             </div>
             
             <input type="file" id="file-input" accept=".gltf,.glb,.obj" hidden>
-            <button id="select-file-btn" class="btn primary">Выбрать файл</button>
-            <button id="open-3d-btn" class="btn secondary" disabled>Открыть в 3D</button>
-            <div id="file-name" class="file-name"></div>
+            <button id="select-file-btn" class="btn primary" type="button">Выбрать файл</button>
+            <button id="open-3d-btn" class="btn secondary" type="button" disabled>Открыть в 3D</button>
+            <div id="file-name" class="file-name" aria-live="polite"></div>
         </div>
     </div>
 
     <!-- Экран просмотра -->
     <div id="viewer-screen" class="screen">
         <header class="header">
-            <button id="back-btn" class="back-btn">←</button>
+            <button id="back-btn" class="back-btn" type="button" aria-label="Назад">←</button>
             <div class="header-logo">
-                <img src="icons/logo-header.png" alt="3D Viewer" class="logo-image-small">
+                <img src="icons/logo-header.png" alt="3D Viewer" class="logo-image-small" loading="eager">
             </div>
-            <h2 id="viewer-title" class="viewer-title"></h2>
+            <h2 id="viewer-title" class="viewer-title" aria-live="polite"></h2>
         </header>
+        
         <div class="viewer-container">
             <model-viewer id="main-model" class="main-model" 
                 camera-controls 
                 auto-rotate
-                shadow-intensity="1">
+                shadow-intensity="1"
+                aria-label="3D модель">
             </model-viewer>
         </div>
+        
         <div class="viewer-controls">
-            <button id="auto-rotate-btn" class="control-btn" data-active="true">
+            <button id="auto-rotate-btn" class="control-btn" type="button" aria-pressed="true" aria-label="Автоповорот">
                 ⏸️
             </button>
-            <button id="reset-camera-btn" class="control-btn">
+            <button id="reset-camera-btn" class="control-btn" type="button" aria-label="Сбросить камеру">
                 🎯
             </button>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script src="script.js" defer></script>
 </body>
 </html>
