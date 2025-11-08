@@ -1,53 +1,19 @@
-const CACHE_NAME = '3d-viewer-v1.6';
-const urlsToCache = [
-    '/',
-    '/index.html',
-    '/style.css',
-    '/script.js',
-    '/manifest.json',
-    '/icons/icon-app-192.png',
-    '/icons/icon-app-512.png',
-    '/icons/logo-header.png'
-];
+// Минимальный Service Worker чтобы PWA не падала с 404
+const CACHE_NAME = '3d-viewer-minimal-v1';
 
 self.addEventListener('install', (event) => {
-    console.log('✅ Service Worker установлен');
-    event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then((cache) => {
-                console.log('✅ Кэш открыт');
-                return cache.addAll(urlsToCache);
-            })
-    );
-});
-
-self.addEventListener('fetch', (event) => {
-    event.respondWith(
-        caches.match(event.request)
-            .then((response) => {
-                // Всегда возвращаем index.html для навигационных запросов
-                if (event.request.mode === 'navigate') {
-                    return caches.match('/index.html');
-                }
-                
-                // Для остальных запросов используем кэш или сеть
-                return response || fetch(event.request);
-            })
-    );
+    console.log('🛠️ Service Worker: установлен (минимальная версия)');
+    // Немедленно активируем новый SW
+    self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-    console.log('✅ Service Worker активирован');
-    event.waitUntil(
-        caches.keys().then((cacheNames) => {
-            return Promise.all(
-                cacheNames.map((cacheName) => {
-                    if (cacheName !== CACHE_NAME) {
-                        console.log('🗑️ Удаляем старый кэш:', cacheName);
-                        return caches.delete(cacheName);
-                    }
-                })
-            );
-        })
-    );
+    console.log('🛠️ Service Worker: активирован');
+    // Немедленно берем контроль над клиентами
+    event.waitUntil(self.clients.claim());
+});
+
+self.addEventListener('fetch', (event) => {
+    // Всегда используем сеть, не кэшируем
+    event.respondWith(fetch(event.request));
 });
