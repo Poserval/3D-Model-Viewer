@@ -7,8 +7,6 @@
     <meta name="theme-color" content="#007AFF">
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
-    
-    <!-- Favicon -->
     <link rel="icon" href="icons/icon-app-192.png" type="image/png">
 </head>
 <body>
@@ -81,21 +79,11 @@
         </div>
     </div>
 
-    <!-- Подключаем скрипты -->
+    <!-- Three.js и загрузчики -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    
-    <!-- Современные загрузчики Three.js (исправленная версия) -->
-    <script type="module">
-        import { STLLoader } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/STLLoader.js';
-        import { FBXLoader } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/FBXLoader.js';
-        import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/controls/OrbitControls.js';
-        
-        // Сделаем глобально доступными для script.js
-        window.STLLoader = STLLoader;
-        window.FBXLoader = FBXLoader;
-        window.OrbitControls = OrbitControls;
-        console.log('Three.js загрузчики успешно инициализированы');
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     
     <!-- Model Viewer -->
     <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
