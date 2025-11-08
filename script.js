@@ -41,11 +41,10 @@ class ModelViewerApp {
         this.bindEvents();
         
         console.log('🚀 3D Model Viewer запущен');
-        console.log('Three.js загрузчики доступны:', {
-            STLLoader: typeof STLLoader !== 'undefined',
-            FBXLoader: typeof FBXLoader !== 'undefined',
-            OrbitControls: typeof OrbitControls !== 'undefined'
-        });
+        console.log('Three.js доступен:', typeof THREE !== 'undefined');
+        console.log('STLLoader доступен:', typeof THREE.STLLoader !== 'undefined');
+        console.log('FBXLoader доступен:', typeof THREE.FBXLoader !== 'undefined');
+        console.log('OrbitControls доступен:', typeof THREE.OrbitControls !== 'undefined');
     }
 
     initializeElements() {
@@ -157,7 +156,6 @@ class ModelViewerApp {
 
     async showPreview(file, fileType) {
         try {
-            // СКРЫВАЕМ НАДПИСЬ СРАЗУ ПРИ НАЧАЛЕ ЗАГРУЗКИ
             this.hidePreviewPlaceholder();
             this.open3dBtn.disabled = true;
             this.fileName.textContent = file.name;
@@ -182,13 +180,11 @@ class ModelViewerApp {
         }
     }
 
-    // НОВЫЙ МЕТОД: Скрытие надписи
     hidePreviewPlaceholder() {
         this.previewPlaceholder.style.display = 'none';
         this.previewPlaceholder.hidden = true;
     }
 
-    // НОВЫЙ МЕТОД: Показ надписи
     showPreviewPlaceholder() {
         this.previewPlaceholder.style.display = 'flex';
         this.previewPlaceholder.hidden = false;
@@ -203,20 +199,14 @@ class ModelViewerApp {
             const onLoad = () => {
                 this.previewModel.removeEventListener('load', onLoad);
                 this.previewModel.removeEventListener('error', onError);
-                
-                // УБЕДИМСЯ ЧТО НАДПИСЬ СКРЫТА ПОСЛЕ ЗАГРУЗКИ
                 this.hidePreviewPlaceholder();
-                
                 resolve();
             };
 
             const onError = (e) => {
                 this.previewModel.removeEventListener('load', onLoad);
                 this.previewModel.removeEventListener('error', onError);
-                
-                // ПОКАЗЫВАЕМ НАДПИСЬ ПРИ ОШИБКЕ
                 this.showPreviewPlaceholder();
-                
                 reject(new Error('Не удалось загрузить модель в Model Viewer'));
             };
 
@@ -226,10 +216,7 @@ class ModelViewerApp {
             setTimeout(() => {
                 this.previewModel.removeEventListener('load', onLoad);
                 this.previewModel.removeEventListener('error', onError);
-                
-                // УБЕДИМСЯ ЧТО НАДПИСЬ СКРЫТА ПОСЛЕ ТАЙМАУТА
                 this.hidePreviewPlaceholder();
-                
                 resolve();
             }, 3000);
         });
@@ -239,12 +226,6 @@ class ModelViewerApp {
         return new Promise((resolve, reject) => {
             if (typeof THREE === 'undefined') {
                 reject(new Error('Three.js не загружен'));
-                return;
-            }
-
-            // Проверяем доступность загрузчиков
-            if (typeof STLLoader === 'undefined' || typeof FBXLoader === 'undefined') {
-                reject(new Error('Three.js загрузчики не доступны'));
                 return;
             }
 
@@ -258,10 +239,10 @@ class ModelViewerApp {
             try {
                 switch (extension) {
                     case '.stl':
-                        loader = new STLLoader();
+                        loader = new THREE.STLLoader();
                         break;
                     case '.fbx':
-                        loader = new FBXLoader();
+                        loader = new THREE.FBXLoader();
                         break;
                     default:
                         reject(new Error(`Неизвестный формат: ${extension}`));
@@ -283,9 +264,7 @@ class ModelViewerApp {
                     
                     this.animatePreview();
                     
-                    // УБЕДИМСЯ ЧТО НАДПИСЬ СКРЫТА ПОСЛЕ УСПЕШНОЙ ЗАГРУЗКИ
                     this.hidePreviewPlaceholder();
-                    
                     resolve();
                 }, 
                 (progress) => {
@@ -297,7 +276,6 @@ class ModelViewerApp {
                 },
                 (error) => {
                     console.error('Ошибка загрузки:', error);
-                    // ПОКАЗЫВАЕМ НАДПИСЬ ПРИ ОШИБКЕ
                     this.showPreviewPlaceholder();
                     reject(new Error('Не удалось загрузить модель в Three.js: ' + error.message));
                 });
@@ -330,8 +308,6 @@ class ModelViewerApp {
                 canvas: this.mainThreejs,
                 antialias: true
             });
-            
-            // Устанавливаем размер для основного canvas
             this.updateMainThreeJSSize();
         }
         
@@ -344,7 +320,6 @@ class ModelViewerApp {
         this.mainCamera.position.set(0, 0, 5);
     }
 
-    // НОВЫЙ МЕТОД: Обновление размера основного Three.js
     updateMainThreeJSSize() {
         if (this.mainRenderer && this.mainThreejs) {
             const container = this.mainThreejs.parentElement;
@@ -358,7 +333,6 @@ class ModelViewerApp {
     }
 
     setupLighting(scene) {
-        // Очищаем старое освещение
         const lightsToRemove = [];
         scene.children.forEach(child => {
             if (child instanceof THREE.Light) {
@@ -367,7 +341,6 @@ class ModelViewerApp {
         });
         lightsToRemove.forEach(light => scene.remove(light));
         
-        // Добавляем новое освещение
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         scene.add(ambientLight);
         
@@ -550,10 +523,10 @@ class ModelViewerApp {
             try {
                 switch (extension) {
                     case '.stl':
-                        loader = new STLLoader();
+                        loader = new THREE.STLLoader();
                         break;
                     case '.fbx':
-                        loader = new FBXLoader();
+                        loader = new THREE.FBXLoader();
                         break;
                     default:
                         reject(new Error(`Неизвестный формат: ${extension}`));
@@ -573,9 +546,8 @@ class ModelViewerApp {
                     this.centerModel(object);
                     this.fitCameraToObject(this.mainCamera, object, 1.5);
                     
-                    // Инициализация OrbitControls
                     if (!this.mainControls) {
-                        this.mainControls = new OrbitControls(this.mainCamera, this.mainThreejs);
+                        this.mainControls = new THREE.OrbitControls(this.mainCamera, this.mainThreejs);
                         this.mainControls.enableDamping = true;
                         this.mainControls.dampingFactor = 0.05;
                     }
@@ -626,7 +598,6 @@ class ModelViewerApp {
         this.viewerScreen.classList.add('active');
         this.currentState = APP_STATES.VIEWER;
         
-        // Обновляем размер Three.js при переключении
         setTimeout(() => {
             this.updateMainThreeJSSize();
         }, 100);
@@ -680,7 +651,6 @@ class ModelViewerApp {
     }
 
     resetPreview() {
-        // ПОКАЗЫВАЕМ НАДПИСЬ ПРИ СБРОСЕ
         this.showPreviewPlaceholder();
         this.hideAllRenderers();
         if (this.previewModel) {
