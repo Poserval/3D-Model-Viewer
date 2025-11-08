@@ -33,6 +33,7 @@ class ModelViewerApp {
 
         this.bindEvents();
         this.checkLibraries();
+        this.registerServiceWorker();
     }
 
     checkLibraries() {
@@ -49,6 +50,47 @@ class ModelViewerApp {
         if (!modelViewerAvailable) {
             console.warn('Model Viewer не загрузился. Проверьте подключение.');
         }
+    }
+
+    registerServiceWorker() {
+        // Регистрируем Service Worker только если он доступен и файл существует
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then((registration) => {
+                    console.log('✅ Service Worker зарегистрирован: ', registration);
+                })
+                .catch((registrationError) => {
+                    console.log('❌ Service Worker регистрация провалилась: ', registrationError);
+                    // Создаем простой Service Worker если файл не найден
+                    this.createFallbackServiceWorker();
+                });
+        } else {
+            console.log('❌ Service Worker не поддерживается браузером');
+        }
+    }
+
+    createFallbackServiceWorker() {
+        // Создаем простой Service Worker программно если файл не найден
+        const swContent = `
+            const CACHE_NAME = '3d-viewer-fallback';
+            self.addEventListener('install', (event) => {
+                console.log('Fallback Service Worker установлен');
+            });
+            self.addEventListener('fetch', (event) => {
+                event.respondWith(fetch(event.request));
+            });
+        `;
+        
+        const blob = new Blob([swContent], { type: 'application/javascript' });
+        const swUrl = URL.createObjectURL(blob);
+        
+        navigator.serviceWorker.register(swUrl)
+            .then((registration) => {
+                console.log('✅ Fallback Service Worker зарегистрирован');
+            })
+            .catch((error) => {
+                console.log('❌ Fallback Service Worker тоже провалился: ', error);
+            });
     }
 
     bindEvents() {
@@ -280,16 +322,3 @@ class ModelViewerApp {
 document.addEventListener('DOMContentLoaded', () => {
     new ModelViewerApp();
 });
-
-// Service Worker регистрация
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-            .then((registration) => {
-                console.log('SW registered: ', registration);
-            })
-            .catch((registrationError) => {
-                console.log('SW registration failed: ', registrationError);
-            });
-    });
-}
