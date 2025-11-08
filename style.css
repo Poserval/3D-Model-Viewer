@@ -66,16 +66,17 @@ body {
     max-width: 200px;
 }
 
-/* ИСПРАВЛЯЕМ: УБИРАЕМ display: none ДЛЯ ХЕДЕРА */
+/* ХЕДЕР - ПЕРЕДЕЛЫВАЕМ ПОЛНОСТЬЮ */
 .header-logo {
-    display: block; /* МЕНЯЕМ С none НА block */
+    display: flex !important;
+    align-items: center;
     margin-right: 10px;
 }
 
-/* УВЕЛИЧИВАЕМ ИКОНКУ ХЕДЕРА */
 .logo-image-small {
-    height: 128px; /* УВЕЛИЧИЛИ ДО 128px */
-    width: auto;
+    height: 60px !important; /* ЖЕСТКО ЗАДАЕМ РАЗМЕР */
+    width: auto !important;
+    max-width: none !important;
 }
 
 /* Preview Area */
@@ -92,7 +93,6 @@ body {
     overflow: hidden;
 }
 
-/* ИСПРАВЛЕННОЕ ПОЗИЦИОНИРОВАНИЕ НАДПИСИ */
 .preview-placeholder {
     position: absolute;
     top: 0;
@@ -232,12 +232,12 @@ body {
     top: 0;
     left: 0;
     right: 0;
-    height: 44px;
+    height: 60px; /* УВЕЛИЧИВАЕМ ВЫСОТУ ХЕДЕРА ПОД БОЛЬШУЮ ИКОНКУ */
     background: rgba(255,255,255,0.8);
     backdrop-filter: blur(10px);
     display: flex;
     align-items: center;
-    padding: 0 10px;
+    padding: 0 15px;
     z-index: 10;
 }
 
@@ -321,16 +321,6 @@ body {
     
     .logo-image {
         height: 100px;
-    }
-    
-    /* УБИРАЕМ ПОВТОРНЫЙ СТИЛЬ ДЛЯ ХЕДЕРА */
-    .header-logo {
-        display: block;
-        margin-right: 10px;
-    }
-    
-    .viewer-title {
-        margin-right: 0;
     }
 }
 
