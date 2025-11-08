@@ -11,7 +11,6 @@ class ModelViewerApp {
         this.currentFile = null;
         this.currentFileType = null;
         this.MAX_FILE_SIZE = 20 * 1024 * 1024;
-        this.currentTheme = 'light'; // СВЕТЛАЯ ТЕМА ПО УМОЛЧАНИЮ
         this.init();
     }
 
@@ -36,9 +35,6 @@ class ModelViewerApp {
         this.loadingIndicator = document.getElementById('loading-indicator');
         this.progressFill = document.querySelector('.progress-fill');
         this.progressText = document.querySelector('.progress-text');
-
-        // Кнопка переключения темы
-        this.themeToggleBtn = document.getElementById('theme-toggle-btn');
 
         this.bindEvents();
         this.checkModelViewer();
@@ -86,40 +82,6 @@ class ModelViewerApp {
         this.resetCameraBtn.addEventListener('click', () => {
             this.resetCamera();
         });
-
-        // Переключение темы
-        this.themeToggleBtn.addEventListener('click', () => {
-            this.toggleTheme();
-        });
-    }
-
-    // Метод переключения между светлой и темной темой - ИСПРАВЛЕННЫЙ
-    toggleTheme() {
-        if (this.currentTheme === 'light') {
-            // Переключаем на темную тему
-            this.currentTheme = 'dark';
-            this.viewerScreen.classList.add('dark-theme');
-            this.themeToggleBtn.innerHTML = '☀️';
-            this.themeToggleBtn.setAttribute('data-theme', 'dark');
-            
-            // ДОБАВЛЯЕМ СТИЛЬ ДЛЯ MODEL-VIEWER В ТЕМНОЙ ТЕМЕ
-            this.mainModel.style.backgroundColor = 'transparent';
-            this.mainModel.style.setProperty('--poster-color', 'transparent');
-            
-            console.log('🎨 Переключили на темную тему');
-        } else {
-            // Переключаем на светлую тему
-            this.currentTheme = 'light';
-            this.viewerScreen.classList.remove('dark-theme');
-            this.themeToggleBtn.innerHTML = '🌙';
-            this.themeToggleBtn.setAttribute('data-theme', 'light');
-            
-            // УБИРАЕМ СТИЛИ ДЛЯ MODEL-VIEWER
-            this.mainModel.style.backgroundColor = 'transparent';
-            this.mainModel.style.setProperty('--poster-color', 'transparent');
-            
-            console.log('🎨 Переключили на светлую тему');
-        }
     }
 
     handleFileSelect(event) {
@@ -292,10 +254,6 @@ class ModelViewerApp {
             // Обновляем кнопку автоповорота
             this.autoRotateBtn.setAttribute('data-active', 'true');
             this.autoRotateBtn.innerHTML = '⏸️';
-
-            // УСТАНАВЛИВАЕМ ПРОЗРАЧНЫЙ ФОН ДЛЯ MODEL-VIEWER
-            this.mainModel.style.backgroundColor = 'transparent';
-            this.mainModel.style.setProperty('--poster-color', 'transparent');
 
             // Ждем загрузки модели в основном просмотрщике
             const onLoad = () => {
