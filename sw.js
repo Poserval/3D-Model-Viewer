@@ -11,11 +11,11 @@ const urlsToCache = [
 ];
 
 self.addEventListener('install', (event) => {
-    console.log('Service Worker installing...');
+    console.log('✅ Service Worker установлен');
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => {
-                console.log('Opened cache');
+                console.log('✅ Кэш открыт');
                 return cache.addAll(urlsToCache);
             })
     );
@@ -37,12 +37,13 @@ self.addEventListener('fetch', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
+    console.log('✅ Service Worker активирован');
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             return Promise.all(
                 cacheNames.map((cacheName) => {
                     if (cacheName !== CACHE_NAME) {
-                        console.log('Deleting old cache:', cacheName);
+                        console.log('🗑️ Удаляем старый кэш:', cacheName);
                         return caches.delete(cacheName);
                     }
                 })
