@@ -208,12 +208,7 @@ body {
 
 /* ===== VIEWER SCREEN ===== */
 .viewer-screen {
-    background: #FFFFFF; /* СВЕТЛЫЙ ФОН ПО УМОЛЧАНИЮ */
-    transition: background-color 0.3s ease;
-}
-
-.viewer-screen.dark-theme {
-    background: #000000; /* ТЕМНЫЙ ФОН */
+    background: #000000;
 }
 
 .header {
@@ -250,20 +245,11 @@ body {
 .viewer-container {
     flex: 1;
     position: relative;
-    background: transparent; /* ПРОЗРАЧНЫЙ ФОН ДЛЯ КОНТЕЙНЕРА */
 }
 
 .main-model {
     width: 100%;
     height: 100%;
-    --poster-color: transparent; /* ПРОЗРАЧНЫЙ ФОН ДЛЯ MODEL-VIEWER */
-    background-color: transparent; /* ПРОЗРАЧНЫЙ ФОН */
-}
-
-/* СТИЛИ ДЛЯ MODEL-VIEWER В ТЕМНОЙ ТЕМЕ */
-.viewer-screen.dark-theme .main-model {
-    --poster-color: transparent;
-    background-color: transparent;
 }
 
 .viewer-controls {
