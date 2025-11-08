@@ -42,10 +42,9 @@ class ModelViewerApp {
         
         console.log('🚀 3D Model Viewer запущен');
         console.log('Three.js доступен:', typeof THREE !== 'undefined');
-        console.log('STLLoader доступен:', typeof STLLoader !== 'undefined');
-        console.log('FBXLoader доступен:', typeof FBXLoader !== 'undefined');
-        console.log('OrbitControls доступен:', typeof OrbitControls !== 'undefined');
-        console.log('fflate доступен:', typeof fflate !== 'undefined');
+        console.log('STLLoader доступен:', typeof THREE.STLLoader !== 'undefined');
+        console.log('FBXLoader доступен:', typeof THREE.FBXLoader !== 'undefined');
+        console.log('OrbitControls доступен:', typeof THREE.OrbitControls !== 'undefined');
     }
 
     initializeElements() {
@@ -240,10 +239,10 @@ class ModelViewerApp {
             try {
                 switch (extension) {
                     case '.stl':
-                        loader = new STLLoader();
+                        loader = new THREE.STLLoader();
                         break;
                     case '.fbx':
-                        loader = new FBXLoader();
+                        loader = new THREE.FBXLoader();
                         break;
                     default:
                         reject(new Error(`Неизвестный формат: ${extension}`));
@@ -524,10 +523,10 @@ class ModelViewerApp {
             try {
                 switch (extension) {
                     case '.stl':
-                        loader = new STLLoader();
+                        loader = new THREE.STLLoader();
                         break;
                     case '.fbx':
-                        loader = new FBXLoader();
+                        loader = new THREE.FBXLoader();
                         break;
                     default:
                         reject(new Error(`Неизвестный формат: ${extension}`));
@@ -548,7 +547,7 @@ class ModelViewerApp {
                     this.fitCameraToObject(this.mainCamera, object, 1.5);
                     
                     if (!this.mainControls) {
-                        this.mainControls = new OrbitControls(this.mainCamera, this.mainThreejs);
+                        this.mainControls = new THREE.OrbitControls(this.mainCamera, this.mainThreejs);
                         this.mainControls.enableDamping = true;
                         this.mainControls.dampingFactor = 0.05;
                     }
