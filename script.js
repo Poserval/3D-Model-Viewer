@@ -36,8 +36,19 @@ class ModelViewerApp {
     }
 
     checkLibraries() {
-        console.log('Three.js доступен:', typeof THREE !== 'undefined');
-        console.log('Model Viewer доступен:', typeof ModelViewer !== 'undefined');
+        // Правильная проверка Model Viewer (он загружается как модуль)
+        const modelViewerAvailable = typeof customElements !== 'undefined' && 
+                                   customElements.get('model-viewer') !== undefined;
+        
+        console.log('Model Viewer доступен:', modelViewerAvailable);
+        
+        // Three.js может быть внутри Model Viewer
+        const threeAvailable = typeof THREE !== 'undefined';
+        console.log('Three.js доступен:', threeAvailable);
+        
+        if (!modelViewerAvailable) {
+            console.warn('Model Viewer не загрузился. Проверьте подключение.');
+        }
     }
 
     bindEvents() {
