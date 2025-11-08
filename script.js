@@ -33,24 +33,35 @@ class ModelViewerApp {
 
         this.bindEvents();
         this.checkLibraries();
-        
-        // Service Worker отключен - файл sw.js недоступен
-        console.log('ℹ️ Service Worker отключен - сосредоточимся на основном функционале');
+        this.registerServiceWorker();
     }
 
     checkLibraries() {
-        // Правильная проверка Model Viewer (он загружается как модуль)
+        // Правильная проверка Model Viewer
         const modelViewerAvailable = typeof customElements !== 'undefined' && 
                                    customElements.get('model-viewer') !== undefined;
         
-        console.log('Model Viewer доступен:', modelViewerAvailable);
+        console.log('📚 Model Viewer доступен:', modelViewerAvailable);
         
         // Three.js может быть внутри Model Viewer
         const threeAvailable = typeof THREE !== 'undefined';
-        console.log('Three.js доступен:', threeAvailable);
+        console.log('📚 Three.js доступен:', threeAvailable);
         
         if (!modelViewerAvailable) {
-            console.warn('Model Viewer не загрузился. Проверьте подключение.');
+            console.warn('⚠️ Model Viewer не загрузился');
+        }
+    }
+
+    registerServiceWorker() {
+        // Минимальная регистрация SW чтобы ярлык работал
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then((registration) => {
+                    console.log('✅ Service Worker зарегистрирован');
+                })
+                .catch((error) => {
+                    console.log('❌ Service Worker не зарегистрирован:', error.message);
+                });
         }
     }
 
@@ -93,7 +104,7 @@ class ModelViewerApp {
         if (file.size > this.MAX_FILE_SIZE) {
             const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
             const maxSizeMB = (this.MAX_FILE_SIZE / (1024 * 1024)).toFixed(0);
-            alert(`Файл слишком большой. Размер: ${fileSizeMB}MB. Максимальный размер: ${maxSizeMB}MB`);
+            alert(`📁 Файл слишком большой\nРазмер: ${fileSizeMB}MB\nМаксимальный размер: ${maxSizeMB}MB`);
             return;
         }
 
@@ -101,7 +112,7 @@ class ModelViewerApp {
         const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
         
         if (!validFormats.includes(fileExtension)) {
-            alert('Пожалуйста, выберите файл в формате GLTF, GLB или OBJ');
+            alert('❌ Пожалуйста, выберите файл в формате:\nGLTF, GLB или OBJ');
             return;
         }
 
@@ -126,7 +137,7 @@ class ModelViewerApp {
 
         } catch (error) {
             console.error('Ошибка показа превью:', error);
-            alert('Ошибка при обработке файла: ' + error.message);
+            alert('❌ Ошибка при обработке файла:\n' + error.message);
             this.resetPreview();
         } finally {
             this.previewArea.classList.remove('loading');
@@ -143,14 +154,14 @@ class ModelViewerApp {
             const onLoad = () => {
                 this.previewModel.removeEventListener('load', onLoad);
                 this.previewModel.removeEventListener('error', onError);
-                console.log('Превью модели загружено успешно');
+                console.log('✅ Превью модели загружено');
                 resolve();
             };
 
             const onError = (e) => {
                 this.previewModel.removeEventListener('load', onLoad);
                 this.previewModel.removeEventListener('error', onError);
-                console.error('Ошибка загрузки превью:', e);
+                console.error('❌ Ошибка загрузки превью:', e);
                 reject(new Error('Не удалось загрузить модель для превью'));
             };
 
@@ -161,7 +172,7 @@ class ModelViewerApp {
             setTimeout(() => {
                 this.previewModel.removeEventListener('load', onLoad);
                 this.previewModel.removeEventListener('error', onError);
-                console.log('Превью загружено (таймаут)');
+                console.log('⏰ Превью загружено (таймаут)');
                 resolve();
             }, 3000);
         });
@@ -173,7 +184,7 @@ class ModelViewerApp {
             return;
         }
 
-        console.log('Открываем просмотрщик для:', this.currentFile.name);
+        console.log('🎮 Открываем просмотрщик для:', this.currentFile.name);
 
         try {
             this.viewerTitle.textContent = this.currentFile.name;
@@ -185,11 +196,11 @@ class ModelViewerApp {
             this.viewerScreen.classList.add('active');
             this.currentState = APP_STATES.VIEWER;
 
-            console.log('Успешно перешли в режим просмотра');
+            console.log('✅ Успешно перешли в режим просмотра');
 
         } catch (error) {
             console.error('Ошибка открытия просмотрщика:', error);
-            alert('Ошибка при открытии модели: ' + error.message);
+            alert('❌ Ошибка при открытии модели:\n' + error.message);
         }
     }
 
@@ -197,7 +208,7 @@ class ModelViewerApp {
         return new Promise((resolve, reject) => {
             const fileURL = URL.createObjectURL(file);
             
-            console.log('Загружаем модель в основной просмотрщик:', file.name);
+            console.log('🔄 Загружаем модель в основной просмотрщик:', file.name);
             
             this.mainModel.src = fileURL;
 
@@ -212,14 +223,14 @@ class ModelViewerApp {
             const onLoad = () => {
                 this.mainModel.removeEventListener('load', onLoad);
                 this.mainModel.removeEventListener('error', onError);
-                console.log('Основная модель загружена успешно');
+                console.log('✅ Основная модель загружена');
                 resolve();
             };
 
             const onError = (e) => {
                 this.mainModel.removeEventListener('load', onLoad);
                 this.mainModel.removeEventListener('error', onError);
-                console.error('Ошибка загрузки основной модели:', e);
+                console.error('❌ Ошибка загрузки основной модели:', e);
                 reject(new Error('Не удалось загрузить модель в просмотрщик'));
             };
 
@@ -230,7 +241,7 @@ class ModelViewerApp {
             setTimeout(() => {
                 this.mainModel.removeEventListener('load', onLoad);
                 this.mainModel.removeEventListener('error', onError);
-                console.log('Основная модель загружена (таймаут)');
+                console.log('⏰ Основная модель загружена (таймаут)');
                 resolve();
             }, 5000);
         });
