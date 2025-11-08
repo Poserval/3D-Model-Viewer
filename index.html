@@ -11,14 +11,16 @@
     <!-- Favicon -->
     <link rel="icon" href="icons/icon-app-192.png" type="image/png">
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- УБИРАЕМ Three.js - он уже есть в Model Viewer -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script> -->
+    
     <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 </head>
 <body>
     <!-- Главный экран -->
     <div id="main-screen" class="screen active">
         <div class="container">
-            <!-- Заменяем текст на логотип -->
+            <!-- Логотип вместо текста -->
             <div class="app-logo">
                 <img src="icons/logo-header.png" alt="3D Viewer" class="logo-image">
             </div>
