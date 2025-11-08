@@ -66,17 +66,14 @@ body {
     max-width: 200px;
 }
 
-/* ХЕДЕР - ПЕРЕДЕЛЫВАЕМ ПОЛНОСТЬЮ */
 .header-logo {
-    display: flex !important;
-    align-items: center;
+    display: block;
     margin-right: 10px;
 }
 
 .logo-image-small {
-    height: 60px !important; /* ЖЕСТКО ЗАДАЕМ РАЗМЕР */
-    width: auto !important;
-    max-width: none !important;
+    height: 60px;
+    width: auto;
 }
 
 /* Preview Area */
@@ -232,7 +229,7 @@ body {
     top: 0;
     left: 0;
     right: 0;
-    height: 60px; /* УВЕЛИЧИВАЕМ ВЫСОТУ ХЕДЕРА ПОД БОЛЬШУЮ ИКОНКУ */
+    height: 60px;
     background: rgba(255,255,255,0.8);
     backdrop-filter: blur(10px);
     display: flex;
