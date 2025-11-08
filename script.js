@@ -93,7 +93,7 @@ class ModelViewerApp {
         });
     }
 
-    // Метод переключения между светлой и темной темой
+    // Метод переключения между светлой и темной темой - ИСПРАВЛЕННЫЙ
     toggleTheme() {
         if (this.currentTheme === 'light') {
             // Переключаем на темную тему
@@ -101,6 +101,11 @@ class ModelViewerApp {
             this.viewerScreen.classList.add('dark-theme');
             this.themeToggleBtn.innerHTML = '☀️';
             this.themeToggleBtn.setAttribute('data-theme', 'dark');
+            
+            // ДОБАВЛЯЕМ СТИЛЬ ДЛЯ MODEL-VIEWER В ТЕМНОЙ ТЕМЕ
+            this.mainModel.style.backgroundColor = 'transparent';
+            this.mainModel.style.setProperty('--poster-color', 'transparent');
+            
             console.log('🎨 Переключили на темную тему');
         } else {
             // Переключаем на светлую тему
@@ -108,6 +113,11 @@ class ModelViewerApp {
             this.viewerScreen.classList.remove('dark-theme');
             this.themeToggleBtn.innerHTML = '🌙';
             this.themeToggleBtn.setAttribute('data-theme', 'light');
+            
+            // УБИРАЕМ СТИЛИ ДЛЯ MODEL-VIEWER
+            this.mainModel.style.backgroundColor = 'transparent';
+            this.mainModel.style.setProperty('--poster-color', 'transparent');
+            
             console.log('🎨 Переключили на светлую тему');
         }
     }
@@ -219,14 +229,14 @@ class ModelViewerApp {
         }
     }
 
-    // Методы для управления индикатором - ИСПРАВЛЕННЫЕ
+    // Методы для управления индикатором
     showLoadingIndicator() {
-        this.loadingIndicator.classList.add('active'); // ДОБАВЛЯЕМ КЛАСС ACTIVE
+        this.loadingIndicator.classList.add('active');
         this.startProgressAnimation();
     }
 
     hideLoadingIndicator() {
-        this.loadingIndicator.classList.remove('active'); // УБИРАЕМ КЛАСС ACTIVE
+        this.loadingIndicator.classList.remove('active');
         this.resetProgress();
     }
 
@@ -282,6 +292,10 @@ class ModelViewerApp {
             // Обновляем кнопку автоповорота
             this.autoRotateBtn.setAttribute('data-active', 'true');
             this.autoRotateBtn.innerHTML = '⏸️';
+
+            // УСТАНАВЛИВАЕМ ПРОЗРАЧНЫЙ ФОН ДЛЯ MODEL-VIEWER
+            this.mainModel.style.backgroundColor = 'transparent';
+            this.mainModel.style.setProperty('--poster-color', 'transparent');
 
             // Ждем загрузки модели в основном просмотрщике
             const onLoad = () => {
