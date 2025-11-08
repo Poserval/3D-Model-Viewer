@@ -33,7 +33,9 @@ class ModelViewerApp {
 
         this.bindEvents();
         this.checkLibraries();
-        this.registerServiceWorker();
+        
+        // Service Worker отключен - файл sw.js недоступен
+        console.log('ℹ️ Service Worker отключен - сосредоточимся на основном функционале');
     }
 
     checkLibraries() {
@@ -49,45 +51,6 @@ class ModelViewerApp {
         
         if (!modelViewerAvailable) {
             console.warn('Model Viewer не загрузился. Проверьте подключение.');
-        }
-    }
-
-    registerServiceWorker() {
-        // Регистрируем Service Worker только если он доступен
-        if ('serviceWorker' in navigator) {
-            // Пробуем разные возможные пути
-            const possiblePaths = [
-                '/sw.js',
-                '/3d-model-viewer/sw.js',
-                'sw.js',
-                './sw.js'
-            ];
-            
-            const tryRegister = (index) => {
-                if (index >= possiblePaths.length) {
-                    console.log('❌ Все пути к Service Worker не сработали');
-                    console.log('ℹ️ PWA будет работать без оффлайн-режима');
-                    return;
-                }
-                
-                const path = possiblePaths[index];
-                console.log(`🔄 Пробуем путь: ${path}`);
-                
-                navigator.serviceWorker.register(path)
-                    .then((registration) => {
-                        console.log(`✅ Service Worker зарегистрирован по пути: ${path}`, registration);
-                    })
-                    .catch((error) => {
-                        console.log(`❌ Путь ${path} не сработал:`, error.message);
-                        // Пробуем следующий путь
-                        tryRegister(index + 1);
-                    });
-            };
-            
-            // Начинаем с первого пути
-            tryRegister(0);
-        } else {
-            console.log('❌ Service Worker не поддерживается браузером');
         }
     }
 
