@@ -10,7 +10,7 @@ class ModelViewerApp {
         this.currentState = APP_STATES.MAIN;
         this.currentFile = null;
         this.currentFileType = null;
-        this.MAX_FILE_SIZE = 200 * 1024 * 1024; // 200MB для тяжелых FBX файлов
+        this.MAX_FILE_SIZE = 200 * 1024 * 1024; // 200MB для тяжелых файлов
         this.init();
     }
 
@@ -107,11 +107,11 @@ class ModelViewerApp {
             return false;
         }
 
-        const validFormats = ['.glb', '.fbx', '.obj', '.3mf'];
+        const validFormats = ['.glb', '.gltf', '.obj'];
         const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
         
         if (!validFormats.includes(fileExtension)) {
-            alert('❌ Пожалуйста, выберите файл в формате:\nGLB, FBX, OBJ или 3MF');
+            alert('❌ Пожалуйста, выберите файл в формате:\nGLB, GLTF или OBJ');
             return false;
         }
 
@@ -120,7 +120,7 @@ class ModelViewerApp {
 
     async showPreview(file, fileType) {
         try {
-            this.previewPlaceholder.hidden = true;
+            this.previewPlaceholder.hidden = true; // Скрываем надпись
             this.open3dBtn.disabled = true;
             this.fileName.textContent = file.name;
 
@@ -141,6 +141,7 @@ class ModelViewerApp {
             const fileURL = URL.createObjectURL(file);
             
             this.previewModel.src = fileURL;
+            this.previewModel.hidden = false; // Показываем модель
 
             // Ждем полной загрузки модели в превью
             const onLoad = () => {
@@ -333,8 +334,8 @@ class ModelViewerApp {
     }
 
     resetPreview() {
-        this.previewPlaceholder.hidden = false;
-        this.previewModel.hidden = false;
+        this.previewPlaceholder.hidden = false; // ПОКАЗЫВАЕМ надпись снова
+        this.previewModel.hidden = true; // Скрываем модель
         this.previewModel.src = '';
         this.open3dBtn.disabled = true;
         this.fileName.textContent = '';
