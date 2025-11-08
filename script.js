@@ -219,14 +219,14 @@ class ModelViewerApp {
         }
     }
 
-    // Методы для управления индикатором
+    // Методы для управления индикатором - ИСПРАВЛЕННЫЕ
     showLoadingIndicator() {
-        this.loadingIndicator.hidden = false;
+        this.loadingIndicator.classList.add('active'); // ДОБАВЛЯЕМ КЛАСС ACTIVE
         this.startProgressAnimation();
     }
 
     hideLoadingIndicator() {
-        this.loadingIndicator.hidden = true;
+        this.loadingIndicator.classList.remove('active'); // УБИРАЕМ КЛАСС ACTIVE
         this.resetProgress();
     }
 
