@@ -11,6 +11,14 @@
     <!-- Favicon -->
     <link rel="icon" href="icons/icon-app-192.png" type="image/png">
     
+    <!-- Three.js и лоадеры -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/3MFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <!-- Model Viewer -->
     <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 </head>
 <body>
@@ -25,7 +33,12 @@
                 <div id="preview-placeholder" class="preview-placeholder">
                     <span>Выберите 3D модель</span>
                 </div>
+                
+                <!-- Model Viewer для GLB/GLTF/OBJ -->
                 <model-viewer id="preview-model" class="preview-model" hidden></model-viewer>
+                
+                <!-- Three.js Canvas для STL/FBX/3MF -->
+                <canvas id="preview-threejs" class="preview-threejs" hidden></canvas>
                 
                 <!-- Индикатор загрузки -->
                 <div id="loading-indicator" class="loading-indicator">
@@ -40,7 +53,7 @@
                 </div>
             </div>
             
-            <input type="file" id="file-input" accept=".glb,.fbx,.obj,.3mf" hidden>
+            <input type="file" id="file-input" accept=".glb,.gltf,.obj,.stl,.fbx,.3mf" hidden>
             <button id="select-file-btn" class="btn primary">Выбрать файл</button>
             <button id="open-3d-btn" class="btn secondary" disabled>Открыть в 3D</button>
             <div id="file-name" class="file-name"></div>
@@ -57,11 +70,16 @@
             <h2 id="viewer-title" class="viewer-title"></h2>
         </header>
         <div class="viewer-container">
+            <!-- Model Viewer для GLB/GLTF/OBJ -->
             <model-viewer id="main-model" class="main-model" 
                 camera-controls 
                 auto-rotate
-                shadow-intensity="1">
+                shadow-intensity="1"
+                hidden>
             </model-viewer>
+            
+            <!-- Three.js Canvas для STL/FBX/3MF -->
+            <canvas id="main-threejs" class="main-threejs" hidden></canvas>
         </div>
         <div class="viewer-controls">
             <button id="auto-rotate-btn" class="control-btn" data-active="true">
