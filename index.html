@@ -11,16 +11,13 @@
     <!-- Favicon -->
     <link rel="icon" href="icons/icon-app-192.png" type="image/png">
     
-    <!-- УБИРАЕМ Three.js - он уже есть в Model Viewer -->
-    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script> -->
-    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 </head>
 <body>
     <!-- Главный экран -->
     <div id="main-screen" class="screen active">
         <div class="container">
-            <!-- Логотип вместо текста -->
             <div class="app-logo">
                 <img src="icons/logo-header.png" alt="3D Viewer" class="logo-image">
             </div>
@@ -31,6 +28,19 @@
                 </div>
                 <model-viewer id="preview-model" class="preview-model" hidden></model-viewer>
             </div>
+
+            <!-- Индикатор загрузки -->
+            <div id="loading-indicator" class="loading-indicator" hidden>
+                <div class="loading-spinner"></div>
+                <div class="loading-text">Загрузка модели...</div>
+                <div class="loading-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                    <div class="progress-text">0%</div>
+                </div>
+            </div>
+            
             <input type="file" id="file-input" accept=".gltf,.glb,.obj" hidden>
             <button id="select-file-btn" class="btn primary">Выбрать файл</button>
             <button id="open-3d-btn" class="btn secondary" disabled>Открыть в 3D</button>
@@ -42,7 +52,6 @@
     <div id="viewer-screen" class="screen">
         <header class="header">
             <button id="back-btn" class="back-btn">←</button>
-            <!-- Логотип в header -->
             <div class="header-logo">
                 <img src="icons/logo-header.png" alt="3D Viewer" class="logo-image-small">
             </div>
