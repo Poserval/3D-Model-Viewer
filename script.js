@@ -140,6 +140,7 @@ class ModelViewerApp {
 
     async showPreview(file, fileType) {
         try {
+            // СКРЫВАЕМ НАДПИСЬ СРАЗУ ПРИ НАЧАЛЕ ЗАГРУЗКИ
             this.previewPlaceholder.hidden = true;
             this.open3dBtn.disabled = true;
             this.fileName.textContent = file.name;
@@ -173,12 +174,20 @@ class ModelViewerApp {
             const onLoad = () => {
                 this.previewModel.removeEventListener('load', onLoad);
                 this.previewModel.removeEventListener('error', onError);
+                
+                // УБЕДИМСЯ ЧТО НАДПИСЬ СКРЫТА ПОСЛЕ ЗАГРУЗКИ
+                this.previewPlaceholder.hidden = true;
+                
                 resolve();
             };
 
             const onError = (e) => {
                 this.previewModel.removeEventListener('load', onLoad);
                 this.previewModel.removeEventListener('error', onError);
+                
+                // ПОКАЗЫВАЕМ НАДПИСЬ ПРИ ОШИБКЕ
+                this.previewPlaceholder.hidden = false;
+                
                 reject(new Error('Не удалось загрузить модель в Model Viewer'));
             };
 
@@ -188,6 +197,10 @@ class ModelViewerApp {
             setTimeout(() => {
                 this.previewModel.removeEventListener('load', onLoad);
                 this.previewModel.removeEventListener('error', onError);
+                
+                // УБЕДИМСЯ ЧТО НАДПИСЬ СКРЫТА ПОСЛЕ ТАЙМАУТА
+                this.previewPlaceholder.hidden = true;
+                
                 resolve();
             }, 3000);
         });
@@ -230,6 +243,9 @@ class ModelViewerApp {
                 
                 this.animatePreview();
                 
+                // УБЕДИМСЯ ЧТО НАДПИСЬ СКРЫТА ПОСЛЕ УСПЕШНОЙ ЗАГРУЗКИ
+                this.previewPlaceholder.hidden = true;
+                
                 resolve();
             }, 
             (progress) => {
@@ -239,13 +255,15 @@ class ModelViewerApp {
                 }
             },
             (error) => {
+                // ПОКАЗЫВАЕМ НАДПИСЬ ПРИ ОШИБКЕ
+                this.previewPlaceholder.hidden = false;
                 reject(new Error('Не удалось загрузить модель в Three.js'));
             });
         });
     }
 
     initThreeJS() {
-        if (this.previewRenderer) return; // Уже инициализирован
+        if (this.previewRenderer) return;
 
         // Для превью
         this.previewScene = new THREE.Scene();
@@ -563,6 +581,7 @@ class ModelViewerApp {
     }
 
     resetPreview() {
+        // ПОКАЗЫВАЕМ НАДПИСЬ ПРИ СБРОСЕ
         this.previewPlaceholder.hidden = false;
         this.hideAllRenderers();
         if (this.previewModel) {
