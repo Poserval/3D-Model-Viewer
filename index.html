@@ -27,7 +27,7 @@
                 <!-- Model Viewer для GLB/GLTF/OBJ -->
                 <model-viewer id="preview-model" class="preview-model" hidden></model-viewer>
                 
-                <!-- Three.js Canvas для STL/FBX/3MF -->
+                <!-- Three.js Canvas для STL/FBX -->
                 <canvas id="preview-threejs" class="preview-threejs" hidden></canvas>
                 
                 <!-- Индикатор загрузки -->
@@ -43,7 +43,7 @@
                 </div>
             </div>
             
-            <input type="file" id="file-input" accept=".glb,.gltf,.obj,.stl,.fbx,.3mf" hidden>
+            <input type="file" id="file-input" accept=".glb,.gltf,.obj,.stl,.fbx" hidden>
             <button id="select-file-btn" class="btn primary">Выбрать файл</button>
             <button id="open-3d-btn" class="btn secondary" disabled>Открыть в 3D</button>
             <div id="file-name" class="file-name"></div>
@@ -68,7 +68,7 @@
                 hidden>
             </model-viewer>
             
-            <!-- Three.js Canvas для STL/FBX/3MF -->
+            <!-- Three.js Canvas для STL/FBX -->
             <canvas id="main-threejs" class="main-threejs" hidden></canvas>
         </div>
         <div class="viewer-controls">
@@ -81,11 +81,10 @@
         </div>
     </div>
 
-    <!-- Подключаем скрипты В КОНЦЕ после DOM -->
+    <!-- Подключаем скрипты -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/3MFLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     
     <!-- Model Viewer -->
