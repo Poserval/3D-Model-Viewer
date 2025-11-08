@@ -27,8 +27,8 @@
                 </div>
                 <model-viewer id="preview-model" class="preview-model" hidden></model-viewer>
                 
-                <!-- ИНДИКАТОР ЗАГРУЗКИ ПЕРЕМЕЩЕН ВНУТРЬ PREVIEW-AREA -->
-                <div id="loading-indicator" class="loading-indicator" hidden>
+                <!-- ИНДИКАТОР ЗАГРУЗКИ - БЕЗ АТРИБУТА HIDDEN, УПРАВЛЯЕМ ЧЕРЕЗ CSS -->
+                <div id="loading-indicator" class="loading-indicator">
                     <div class="loading-spinner"></div>
                     <div class="loading-text">Загрузка модели...</div>
                     <div class="loading-progress">
