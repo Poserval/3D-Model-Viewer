@@ -10,7 +10,7 @@ class ModelViewerApp {
         this.currentState = APP_STATES.MAIN;
         this.currentFile = null;
         this.currentFileType = null;
-        this.MAX_FILE_SIZE = 20 * 1024 * 1024;
+        this.MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB для FBX и других тяжелых форматов
         this.init();
     }
 
@@ -88,25 +88,34 @@ class ModelViewerApp {
         const file = event.target.files[0];
         if (!file) return;
 
-        // Проверка размера файла (до 20MB)
-        if (file.size > this.MAX_FILE_SIZE) {
-            const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
-            const maxSizeMB = (this.MAX_FILE_SIZE / (1024 * 1024)).toFixed(0);
-            alert(`📁 Файл слишком большой\nРазмер: ${fileSizeMB}MB\nМаксимальный размер: ${maxSizeMB}MB`);
-            return;
-        }
-
-        const validFormats = ['.gltf', '.glb', '.obj'];
-        const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
-        
-        if (!validFormats.includes(fileExtension)) {
-            alert('❌ Пожалуйста, выберите файл в формате:\nGLTF, GLB или OBJ');
+        // Проверка файла
+        if (!this.validateFile(file)) {
             return;
         }
 
         this.currentFile = file;
-        this.currentFileType = fileExtension;
-        this.showPreview(file, fileExtension);
+        this.currentFileType = '.' + file.name.split('.').pop().toLowerCase();
+        this.showPreview(file, this.currentFileType);
+    }
+
+    validateFile(file) {
+        // Проверка размера файла (до 100MB)
+        if (file.size > this.MAX_FILE_SIZE) {
+            const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
+            const maxSizeMB = (this.MAX_FILE_SIZE / (1024 * 1024)).toFixed(0);
+            alert(`📁 Файл слишком большой\nРазмер: ${fileSizeMB}MB\nМаксимальный размер: ${maxSizeMB}MB`);
+            return false;
+        }
+
+        const validFormats = ['.glb', '.fbx', '.obj', '.3mf'];
+        const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+        
+        if (!validFormats.includes(fileExtension)) {
+            alert('❌ Пожалуйста, выберите файл в формате:\nGLB, FBX, OBJ или 3MF');
+            return false;
+        }
+
+        return true;
     }
 
     async showPreview(file, fileType) {
