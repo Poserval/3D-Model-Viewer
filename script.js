@@ -8,7 +8,7 @@ const APP_STATES = {
 // Форматы для каждого рендерера
 const RENDERER_FORMATS = {
     MODEL_VIEWER: ['.glb', '.gltf', '.obj'],
-    THREE_JS: ['.stl', '.fbx', '.3mf']
+    THREE_JS: ['.stl', '.fbx']
 };
 
 class ModelViewerApp {
@@ -20,18 +20,15 @@ class ModelViewerApp {
         this.MAX_FILE_SIZE = 200 * 1024 * 1024;
         
         this.autoRotate = true;
-        this.threeInitialized = false;
         
-        console.log('🚀 Инициализация приложения...');
         this.init();
     }
 
     init() {
         this.initializeElements();
         this.bindEvents();
-        this.checkLibraries();
         
-        console.log('✅ Приложение запущено');
+        console.log('🚀 3D Model Viewer запущен');
     }
 
     initializeElements() {
@@ -59,70 +56,39 @@ class ModelViewerApp {
         this.loadingIndicator = document.getElementById('loading-indicator');
         this.progressFill = document.querySelector('.progress-fill');
         this.progressText = document.querySelector('.progress-text');
-
-        console.log('✅ Элементы инициализированы');
-    }
-
-    checkLibraries() {
-        // Проверяем Three.js
-        const threeAvailable = typeof THREE !== 'undefined';
-        console.log('📚 Three.js доступен:', threeAvailable);
-        
-        // Проверяем Model Viewer
-        const modelViewerAvailable = typeof customElements !== 'undefined' && 
-                                   customElements.get('model-viewer') !== undefined;
-        console.log('📚 Model Viewer доступен:', modelViewerAvailable);
-        
-        if (!threeAvailable) {
-            console.error('❌ Three.js не загрузился');
-        }
-        if (!modelViewerAvailable) {
-            console.warn('⚠️ Model Viewer не загрузился');
-        }
     }
 
     bindEvents() {
-        console.log('🔗 Привязываем события...');
-        
         // Кнопка выбора файла
         this.selectFileBtn.addEventListener('click', () => {
-            console.log('🎯 Нажата кнопка выбора файла');
             this.fileInput.click();
         });
 
         // Загрузка файла
         this.fileInput.addEventListener('change', (e) => {
-            console.log('📁 Файл выбран:', e.target.files[0]?.name);
             this.handleFileSelect(e);
         });
 
         // Открытие 3D просмотра
         this.open3dBtn.addEventListener('click', () => {
-            console.log('🎮 Нажата кнопка "Открыть в 3D"');
             this.openViewer();
         });
 
         // Назад к главному экрану
         this.backBtn.addEventListener('click', () => {
-            console.log('🔙 Нажата кнопка "Назад"');
             this.showMainScreen();
         });
 
         // Управление в просмотрщике
         this.autoRotateBtn.addEventListener('click', () => {
-            console.log('🔄 Нажата кнопка автоповорота');
             this.toggleAutoRotate();
         });
 
         this.resetCameraBtn.addEventListener('click', () => {
-            console.log('🎯 Нажата кнопка сброса камеры');
             this.resetCamera();
         });
-
-        console.log('✅ События привязаны');
     }
 
-    // Определение рендерера для формата
     getRendererForFormat(extension) {
         if (RENDERER_FORMATS.MODEL_VIEWER.includes(extension)) {
             return 'model-viewer';
@@ -134,14 +100,8 @@ class ModelViewerApp {
 
     handleFileSelect(event) {
         const file = event.target.files[0];
-        if (!file) {
-            console.log('❌ Файл не выбран');
-            return;
-        }
+        if (!file) return;
 
-        console.log('📄 Обработка файла:', file.name);
-
-        // Проверка файла
         if (!this.validateFile(file)) {
             return;
         }
@@ -149,8 +109,6 @@ class ModelViewerApp {
         this.currentFile = file;
         this.currentFileType = '.' + file.name.split('.').pop().toLowerCase();
         this.currentRenderer = this.getRendererForFormat(this.currentFileType);
-        
-        console.log(`🎯 Формат: ${this.currentFileType}, Рендерер: ${this.currentRenderer}`);
         
         if (!this.currentRenderer) {
             alert('❌ Неподдерживаемый формат файла');
@@ -161,7 +119,6 @@ class ModelViewerApp {
     }
 
     validateFile(file) {
-        // Проверка размера файла
         if (file.size > this.MAX_FILE_SIZE) {
             const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
             const maxSizeMB = (this.MAX_FILE_SIZE / (1024 * 1024)).toFixed(0);
@@ -178,28 +135,21 @@ class ModelViewerApp {
             return false;
         }
 
-        console.log('✅ Файл прошел валидацию');
         return true;
     }
 
     async showPreview(file, fileType) {
-        console.log('👀 Показываем превью...');
-        
         try {
             this.previewPlaceholder.hidden = true;
             this.open3dBtn.disabled = true;
             this.fileName.textContent = file.name;
 
-            // Скрываем все рендереры
             this.hideAllRenderers();
             
-            // Загружаем в соответствующий рендерер
             if (this.currentRenderer === 'model-viewer') {
-                console.log('🎯 Используем Model Viewer для превью');
                 await this.loadModelViewerPreview(file);
                 this.previewModel.hidden = false;
             } else if (this.currentRenderer === 'threejs') {
-                console.log('🎯 Используем Three.js для превью');
                 await this.loadThreeJSPreview(file);
                 this.previewThreejs.hidden = false;
             }
@@ -207,10 +157,8 @@ class ModelViewerApp {
             this.open3dBtn.disabled = false;
             this.currentState = APP_STATES.PREVIEW;
 
-            console.log('✅ Превью успешно загружено');
-
         } catch (error) {
-            console.error('❌ Ошибка показа превью:', error);
+            console.error('Ошибка показа превью:', error);
             alert('❌ Ошибка при обработке файла:\n' + error.message);
             this.resetPreview();
         }
@@ -220,20 +168,17 @@ class ModelViewerApp {
         return new Promise((resolve, reject) => {
             const fileURL = URL.createObjectURL(file);
             
-            console.log('🔄 Загружаем в Model Viewer...');
             this.previewModel.src = fileURL;
 
             const onLoad = () => {
                 this.previewModel.removeEventListener('load', onLoad);
                 this.previewModel.removeEventListener('error', onError);
-                console.log('✅ Model Viewer превью загружено');
                 resolve();
             };
 
             const onError = (e) => {
                 this.previewModel.removeEventListener('load', onLoad);
                 this.previewModel.removeEventListener('error', onError);
-                console.error('❌ Ошибка загрузки Model Viewer превью:', e);
                 reject(new Error('Не удалось загрузить модель в Model Viewer'));
             };
 
@@ -243,7 +188,6 @@ class ModelViewerApp {
             setTimeout(() => {
                 this.previewModel.removeEventListener('load', onLoad);
                 this.previewModel.removeEventListener('error', onError);
-                console.log('⏰ Model Viewer превью загружено (таймаут)');
                 resolve();
             }, 3000);
         });
@@ -256,112 +200,79 @@ class ModelViewerApp {
                 return;
             }
 
-            // Инициализируем Three.js если еще не инициализирован
-            if (!this.threeInitialized) {
-                this.initThreeJS();
-                this.threeInitialized = true;
-            }
+            this.initThreeJS();
 
             const fileURL = URL.createObjectURL(file);
             const extension = '.' + file.name.split('.').pop().toLowerCase();
             
-            console.log(`🔄 Загружаем ${extension} в Three.js...`);
-            
             let loader;
             
-            // Выбираем соответствующий лоадер
-            try {
-                switch (extension) {
-                    case '.stl':
-                        if (typeof THREE.STLLoader === 'undefined') throw new Error('STLLoader не загружен');
-                        loader = new THREE.STLLoader();
-                        break;
-                    case '.fbx':
-                        if (typeof THREE.FBXLoader === 'undefined') throw new Error('FBXLoader не загружен');
-                        loader = new THREE.FBXLoader();
-                        break;
-                    case '.3mf':
-                        if (typeof THREE.3MFLoader === 'undefined') throw new Error('3MFLoader не загружен');
-                        loader = new THREE.3MFLoader();
-                        break;
-                    default:
-                        reject(new Error(`Неизвестный формат: ${extension}`));
-                        return;
-                }
-
-                loader.load(fileURL, (object) => {
-                    console.log('✅ Three.js модель загружена');
-                    
-                    // Очищаем предыдущую модель
-                    this.clearThreeJSScene(this.previewScene);
-                    
-                    // Добавляем новую модель
-                    this.previewScene.add(object);
-                    this.previewModelObject = object;
-                    
-                    // Центрируем модель
-                    this.centerModel(object);
-                    
-                    // Настраиваем камеру
-                    this.fitCameraToObject(this.previewCamera, object, 2);
-                    
-                    // Запускаем анимацию
-                    this.animatePreview();
-                    
-                    resolve();
-                }, 
-                (progress) => {
-                    // Прогресс загрузки
-                    if (progress.lengthComputable) {
-                        const percent = (progress.loaded / progress.total) * 100;
-                        this.updateProgress(percent);
-                    }
-                },
-                (error) => {
-                    console.error('❌ Ошибка загрузки Three.js:', error);
-                    reject(new Error('Не удалось загрузить модель в Three.js'));
-                });
-            } catch (error) {
-                reject(error);
+            switch (extension) {
+                case '.stl':
+                    loader = new THREE.STLLoader();
+                    break;
+                case '.fbx':
+                    loader = new THREE.FBXLoader();
+                    break;
+                default:
+                    reject(new Error(`Неизвестный формат: ${extension}`));
+                    return;
             }
+
+            loader.load(fileURL, (object) => {
+                this.clearThreeJSScene(this.previewScene);
+                
+                this.previewScene.add(object);
+                this.previewModelObject = object;
+                
+                this.centerModel(object);
+                this.fitCameraToObject(this.previewCamera, object, 2);
+                
+                this.animatePreview();
+                
+                resolve();
+            }, 
+            (progress) => {
+                if (progress.lengthComputable) {
+                    const percent = (progress.loaded / progress.total) * 100;
+                    this.updateProgress(percent);
+                }
+            },
+            (error) => {
+                reject(new Error('Не удалось загрузить модель в Three.js'));
+            });
         });
     }
 
     initThreeJS() {
-        console.log('🔄 Инициализируем Three.js...');
+        if (this.previewRenderer) return; // Уже инициализирован
+
+        // Для превью
+        this.previewScene = new THREE.Scene();
+        this.previewCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
+        this.previewRenderer = new THREE.WebGLRenderer({ 
+            canvas: this.previewThreejs,
+            antialias: true,
+            alpha: true
+        });
+        this.previewRenderer.setSize(200, 200);
+        this.previewRenderer.setClearColor(0x000000, 0);
         
-        try {
-            // Для превью
-            this.previewScene = new THREE.Scene();
-            this.previewCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
-            this.previewRenderer = new THREE.WebGLRenderer({ 
-                canvas: this.previewThreejs,
-                antialias: true,
-                alpha: true
-            });
-            this.previewRenderer.setSize(200, 200);
-            this.previewRenderer.setClearColor(0x000000, 0);
-            
-            // Для основного просмотрщика
-            this.mainScene = new THREE.Scene();
-            this.mainCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
-            this.mainRenderer = new THREE.WebGLRenderer({ 
-                canvas: this.mainThreejs,
-                antialias: true
-            });
-            
-            // Настройка освещения
-            this.setupLighting(this.previewScene);
-            this.setupLighting(this.mainScene);
-            
-            // Позиция камеры
-            this.previewCamera.position.set(0, 0, 5);
-            this.mainCamera.position.set(0, 0, 5);
-            
-            console.log('✅ Three.js инициализирован');
-        } catch (error) {
-            console.error('❌ Ошибка инициализации Three.js:', error);
-        }
+        // Для основного просмотрщика
+        this.mainScene = new THREE.Scene();
+        this.mainCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
+        this.mainRenderer = new THREE.WebGLRenderer({ 
+            canvas: this.mainThreejs,
+            antialias: true
+        });
+        
+        // Настройка освещения
+        this.setupLighting(this.previewScene);
+        this.setupLighting(this.mainScene);
+        
+        // Позиция камеры
+        this.previewCamera.position.set(0, 0, 5);
+        this.mainCamera.position.set(0, 0, 5);
     }
 
     setupLighting(scene) {
@@ -409,7 +320,6 @@ class ModelViewerApp {
     clearThreeJSScene(scene) {
         if (!scene) return;
         
-        // Удаляем все объекты кроме света
         const objectsToRemove = [];
         scene.children.forEach(child => {
             if (!(child instanceof THREE.Light)) {
@@ -420,7 +330,6 @@ class ModelViewerApp {
         objectsToRemove.forEach(obj => scene.remove(obj));
     }
 
-    // Скрыть все рендереры
     hideAllRenderers() {
         if (this.previewModel) this.previewModel.hidden = true;
         if (this.previewThreejs) this.previewThreejs.hidden = true;
@@ -428,7 +337,6 @@ class ModelViewerApp {
         if (this.mainThreejs) this.mainThreejs.hidden = true;
     }
 
-    // Методы для управления индикатором
     showLoadingIndicator() {
         this.loadingIndicator.classList.add('active');
         this.startProgressAnimation();
@@ -475,29 +383,130 @@ class ModelViewerApp {
     }
 
     async openViewer() {
-        if (!this.currentFile) {
-            console.log('Нет выбранного файла');
-            return;
-        }
-
-        console.log('🎮 Открываем просмотрщик...');
+        if (!this.currentFile) return;
 
         this.showLoadingIndicator();
 
         try {
             this.viewerTitle.textContent = this.currentFile.name;
 
-            // Для простоты - сразу переходим к просмотру
+            if (this.currentRenderer === 'model-viewer') {
+                await this.openModelViewer(this.currentFile);
+            } else if (this.currentRenderer === 'threejs') {
+                await this.openThreeJSViewer(this.currentFile);
+            }
+
             this.hideLoadingIndicator();
             this.switchToViewer();
-
-            console.log('✅ Успешно перешли в режим просмотра');
 
         } catch (error) {
             this.hideLoadingIndicator();
             console.error('Ошибка открытия просмотрщика:', error);
             alert('❌ Ошибка при открытии модели:\n' + error.message);
         }
+    }
+
+    async openModelViewer(file) {
+        return new Promise((resolve, reject) => {
+            const fileURL = URL.createObjectURL(file);
+            
+            this.mainModel.src = fileURL;
+            this.mainModel.autoRotate = true;
+
+            this.hideAllRenderers();
+            this.mainModel.hidden = false;
+
+            const onLoad = () => {
+                this.mainModel.removeEventListener('load', onLoad);
+                this.mainModel.removeEventListener('error', onError);
+                this.updateProgress(100);
+                resolve();
+            };
+
+            const onError = (e) => {
+                this.mainModel.removeEventListener('load', onLoad);
+                this.mainModel.removeEventListener('error', onError);
+                reject(new Error('Не удалось загрузить модель в Model Viewer'));
+            };
+
+            this.mainModel.addEventListener('load', onLoad);
+            this.mainModel.addEventListener('error', onError);
+
+            setTimeout(() => {
+                this.mainModel.removeEventListener('load', onLoad);
+                this.mainModel.removeEventListener('error', onError);
+                this.updateProgress(100);
+                resolve();
+            }, 5000);
+        });
+    }
+
+    async openThreeJSViewer(file) {
+        return new Promise((resolve, reject) => {
+            const fileURL = URL.createObjectURL(file);
+            const extension = '.' + file.name.split('.').pop().toLowerCase();
+            
+            let loader;
+            
+            switch (extension) {
+                case '.stl':
+                    loader = new THREE.STLLoader();
+                    break;
+                case '.fbx':
+                    loader = new THREE.FBXLoader();
+                    break;
+                default:
+                    reject(new Error(`Неизвестный формат: ${extension}`));
+                    return;
+            }
+
+            loader.load(fileURL, (object) => {
+                this.clearThreeJSScene(this.mainScene);
+                
+                this.mainScene.add(object);
+                this.mainModelObject = object;
+                
+                this.centerModel(object);
+                this.fitCameraToObject(this.mainCamera, object, 1.5);
+                
+                if (!this.mainControls) {
+                    this.mainControls = new THREE.OrbitControls(this.mainCamera, this.mainThreejs);
+                    this.mainControls.enableDamping = true;
+                    this.mainControls.dampingFactor = 0.05;
+                }
+                
+                this.hideAllRenderers();
+                this.mainThreejs.hidden = false;
+                
+                this.animateMain();
+                
+                this.updateProgress(100);
+                resolve();
+            }, 
+            (progress) => {
+                const percent = (progress.loaded / progress.total) * 100;
+                this.updateProgress(percent);
+            },
+            (error) => {
+                reject(new Error('Не удалось загрузить модель в Three.js'));
+            });
+        });
+    }
+
+    animateMain() {
+        if (this.mainThreejs && !this.mainThreejs.hidden && this.autoRotate && this.mainModelObject) {
+            this.mainModelObject.rotation.y += 0.01;
+        }
+        
+        if (this.mainRenderer && this.mainScene && this.mainCamera) {
+            this.mainRenderer.render(this.mainScene, this.mainCamera);
+        }
+        
+        if (this.mainControls) {
+            this.mainControls.update();
+        }
+        
+        requestAnimationFrame(() => this.animateMain());
     }
 
     switchToViewer() {
@@ -510,6 +519,11 @@ class ModelViewerApp {
 
     toggleAutoRotate() {
         this.autoRotate = !this.autoRotate;
+        
+        if (this.currentRenderer === 'model-viewer') {
+            this.mainModel.autoRotate = this.autoRotate;
+        }
+        
         this.updateAutoRotateButton();
     }
 
@@ -525,8 +539,15 @@ class ModelViewerApp {
     }
 
     resetCamera() {
-        console.log('🎯 Сбрасываем камеру');
-        // Базовая реализация
+        if (this.currentRenderer === 'model-viewer') {
+            this.mainModel.cameraOrbit = '0deg 75deg 105%';
+            this.mainModel.resetTurntableRotation();
+        } else if (this.currentRenderer === 'threejs' && this.mainModelObject) {
+            this.fitCameraToObject(this.mainCamera, this.mainModelObject, 1.5);
+            if (this.mainControls) {
+                this.mainControls.reset();
+            }
+        }
     }
 
     showMainScreen() {
@@ -534,6 +555,10 @@ class ModelViewerApp {
         this.mainScreen.classList.add('active');
         
         this.autoRotate = false;
+        if (this.currentRenderer === 'model-viewer') {
+            this.mainModel.autoRotate = false;
+        }
+
         this.currentState = APP_STATES.MAIN;
     }
 
@@ -548,11 +573,13 @@ class ModelViewerApp {
         this.currentFile = null;
         this.currentFileType = null;
         this.currentRenderer = null;
+        
+        this.clearThreeJSScene(this.previewScene);
+        this.clearThreeJSScene(this.mainScene);
     }
 }
 
-// Инициализация приложения когда DOM готов
+// Инициализация приложения
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('📄 DOM готов, запускаем приложение...');
     new ModelViewerApp();
 });
