@@ -42,9 +42,6 @@ class ModelViewerApp {
         this.initThreeJS();
         
         console.log('🚀 3D Model Viewer запущен');
-        console.log('Three.js доступен:', typeof THREE !== 'undefined');
-        console.log('STLLoader доступен:', typeof THREE.STLLoader !== 'undefined');
-        console.log('FBXLoader доступен:', typeof THREE.FBXLoader !== 'undefined');
     }
 
     initializeElements() {
@@ -111,7 +108,7 @@ class ModelViewerApp {
     }
 
     initThreeJS() {
-        // Для превью
+        // Для превью - статичный вид
         this.previewScene = new THREE.Scene();
         this.previewCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
         this.previewRenderer = new THREE.WebGLRenderer({ 
@@ -122,7 +119,7 @@ class ModelViewerApp {
         this.previewRenderer.setSize(200, 200);
         this.previewRenderer.setClearColor(0x000000, 0);
         
-        // Для основного просмотрщика
+        // Для основного просмотрщика - интерактивный
         this.mainScene = new THREE.Scene();
         this.mainCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
         this.mainRenderer = new THREE.WebGLRenderer({ 
@@ -136,8 +133,11 @@ class ModelViewerApp {
         this.setupLighting(this.previewScene);
         this.setupLighting(this.mainScene);
         
-        // Позиция камеры
-        this.previewCamera.position.set(0, 0, 5);
+        // Позиция камеры для превью - статичный вид сбоку
+        this.previewCamera.position.set(5, 5, 5);
+        this.previewCamera.lookAt(0, 0, 0);
+        
+        // Позиция камеры для основного просмотрщика
         this.mainCamera.position.set(0, 0, 5);
 
         // Запуск анимации
@@ -306,9 +306,7 @@ class ModelViewerApp {
                     
                     let modelObject;
                     
-                    // РАЗЛИЧНАЯ ОБРАБОТКА ДЛЯ STL И FBX
                     if (extension === '.stl') {
-                        // STL возвращает геометрию - создаем меш
                         const geometry = object;
                         const material = new THREE.MeshStandardMaterial({ 
                             color: 0x888888,
@@ -317,13 +315,10 @@ class ModelViewerApp {
                         });
                         modelObject = new THREE.Mesh(geometry, material);
                     } else {
-                        // FBX возвращает готовый объект
                         modelObject = object;
-                        // Обрабатываем материалы для FBX
                         if (modelObject.traverse) {
                             modelObject.traverse((child) => {
                                 if (child.isMesh && child.material) {
-                                    // Улучшаем материалы FBX
                                     if (!child.material.isMeshStandardMaterial) {
                                         const oldMaterial = child.material;
                                         child.material = new THREE.MeshStandardMaterial({
@@ -341,14 +336,13 @@ class ModelViewerApp {
                     this.previewScene.add(modelObject);
                     this.previewModelObject = modelObject;
                     
-                    this.centerModel(modelObject);
-                    this.fitCameraToObject(this.previewCamera, modelObject, 2);
+                    // ДЛЯ ПРЕВЬЮ: статичное позиционирование
+                    this.setupPreviewCamera(modelObject);
                     
                     this.hidePreviewPlaceholder();
                     resolve();
                 }, 
                 (progress) => {
-                    console.log('Прогресс загрузки:', progress);
                     if (progress.lengthComputable) {
                         const percent = (progress.loaded / progress.total) * 100;
                         this.updateProgress(percent);
@@ -366,7 +360,8 @@ class ModelViewerApp {
         });
     }
 
-    centerModel(object) {
+    // НОВЫЙ МЕТОД: Настройка камеры для превью (статичный вид)
+    setupPreviewCamera(object) {
         const box = new THREE.Box3().setFromObject(object);
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
@@ -376,38 +371,47 @@ class ModelViewerApp {
         object.position.y = -center.y;
         object.position.z = -center.z;
         
-        return size;
+        // Вычисляем оптимальное расстояние для камеры
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const fov = this.previewCamera.fov * (Math.PI / 180);
+        const cameraDistance = Math.abs(maxDim / Math.sin(fov / 2)) * 1.2;
+        
+        // Статичная камера для превью - вид сбоку под углом
+        this.previewCamera.position.set(cameraDistance, cameraDistance * 0.5, cameraDistance);
+        this.previewCamera.lookAt(0, 0, 0);
+        this.previewCamera.updateProjectionMatrix();
     }
 
-    fitCameraToObject(camera, object, offset = 1) {
+    // НОВЫЙ МЕТОД: Настройка камеры для основного просмотрщика
+    setupMainCamera(object) {
         const box = new THREE.Box3().setFromObject(object);
-        const size = box.getSize(new THREE.Vector3());
         const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
         
+        // Центрируем объект
+        object.position.x = -center.x;
+        object.position.y = -center.y;
+        object.position.z = -center.z;
+        
+        // Вычисляем оптимальное расстояние для камеры
         const maxDim = Math.max(size.x, size.y, size.z);
-        const fov = camera.fov * (Math.PI / 180);
-        let cameraZ = Math.abs(maxDim / Math.sin(fov / 2)) * offset;
+        const fov = this.mainCamera.fov * (Math.PI / 180);
+        const cameraDistance = Math.abs(maxDim / Math.sin(fov / 2)) * 1.5;
         
-        cameraZ *= 1.5;
-        
-        camera.position.set(center.x, center.y, cameraZ);
-        camera.lookAt(center);
-        camera.updateProjectionMatrix();
+        this.mainCamera.position.set(0, 0, cameraDistance);
+        this.mainCamera.lookAt(0, 0, 0);
+        this.mainCamera.updateProjectionMatrix();
     }
 
     animate() {
         requestAnimationFrame(() => this.animate());
         
-        // Анимация превью
-        if (this.previewThreejs && !this.previewThreejs.hidden && this.autoRotate && this.previewModelObject) {
-            this.previewModelObject.rotation.y += 0.01;
-        }
-        
+        // Анимация превью - БЕЗ ВРАЩЕНИЯ (статично)
         if (this.previewRenderer && this.previewScene && this.previewCamera) {
             this.previewRenderer.render(this.previewScene, this.previewCamera);
         }
         
-        // Анимация основного просмотрщика
+        // Анимация основного просмотрщика - с вращением если включено
         if (this.mainThreejs && !this.mainThreejs.hidden) {
             if (this.autoRotate && this.mainModelObject) {
                 this.mainModelObject.rotation.y += 0.005;
@@ -538,7 +542,6 @@ class ModelViewerApp {
                     
                     let modelObject;
                     
-                    // ТАКАЯ ЖЕ ЛОГИКА КАК В ПРЕВЬЮ
                     if (extension === '.stl') {
                         const geometry = object;
                         const material = new THREE.MeshStandardMaterial({ 
@@ -569,8 +572,8 @@ class ModelViewerApp {
                     this.mainScene.add(modelObject);
                     this.mainModelObject = modelObject;
                     
-                    this.centerModel(modelObject);
-                    this.fitCameraToObject(this.mainCamera, modelObject, 1.5);
+                    // ДЛЯ ОСНОВНОГО ПРОСМОТРА: настраиваем камеру и контролы
+                    this.setupMainCamera(modelObject);
                     
                     // Инициализация OrbitControls
                     if (!this.mainControls) {
@@ -578,6 +581,8 @@ class ModelViewerApp {
                         this.mainControls.enableDamping = true;
                         this.mainControls.dampingFactor = 0.05;
                         this.mainControls.screenSpacePanning = false;
+                        this.mainControls.minDistance = 0.1;
+                        this.mainControls.maxDistance = 1000;
                     }
                     
                     this.updateMainThreeJSSize();
@@ -659,7 +664,7 @@ class ModelViewerApp {
             this.mainModel.cameraOrbit = '0deg 75deg 105%';
             this.mainModel.resetTurntableRotation();
         } else if (this.currentRenderer === 'threejs' && this.mainModelObject) {
-            this.fitCameraToObject(this.mainCamera, this.mainModelObject, 1.5);
+            this.setupMainCamera(this.mainModelObject);
             if (this.mainControls) {
                 this.mainControls.reset();
             }
