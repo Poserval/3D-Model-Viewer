@@ -70,8 +70,9 @@ body {
     display: none;
 }
 
+/* УВЕЛИЧИВАЕМ ИКОНКУ ХЕДЕРА В 2 РАЗА */
 .logo-image-small {
-    height: 32px;
+    height: 64px; /* Было 32px, стало 64px - увеличение в 2 раза */
     width: auto;
 }
 
