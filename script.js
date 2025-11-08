@@ -585,6 +585,7 @@ class ModelViewerApp {
                         this.mainControls.maxDistance = 1000;
                     }
                     
+                    // ОБНОВЛЯЕМ РАЗМЕР ПЕРЕД ПОКАЗОМ
                     this.updateMainThreeJSSize();
                     
                     this.hideAllRenderers();
@@ -615,9 +616,16 @@ class ModelViewerApp {
                 const width = container.clientWidth;
                 const height = container.clientHeight;
                 
+                console.log('Установка размера основного Three.js:', width, 'x', height);
+                
                 this.mainRenderer.setSize(width, height);
                 this.mainCamera.aspect = width / height;
                 this.mainCamera.updateProjectionMatrix();
+                
+                // Форсируем рендер после изменения размера
+                if (this.mainRenderer && this.mainScene && this.mainCamera) {
+                    this.mainRenderer.render(this.mainScene, this.mainCamera);
+                }
             }
         }
     }
@@ -631,9 +639,14 @@ class ModelViewerApp {
         this.viewerScreen.classList.add('active');
         this.currentState = APP_STATES.VIEWER;
         
+        // ОБНОВЛЯЕМ РАЗМЕР СРАЗУ ПОСЛЕ ПЕРЕКЛЮЧЕНИЯ
         setTimeout(() => {
             this.updateMainThreeJSSize();
-        }, 100);
+            // Форсируем рендер после переключения
+            if (this.mainRenderer && this.mainScene && this.mainCamera) {
+                this.mainRenderer.render(this.mainScene, this.mainCamera);
+            }
+        }, 50);
         
         this.updateAutoRotateButton();
     }
