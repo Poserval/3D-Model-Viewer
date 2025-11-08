@@ -26,17 +26,17 @@
                     <span>Выберите 3D модель</span>
                 </div>
                 <model-viewer id="preview-model" class="preview-model" hidden></model-viewer>
-            </div>
-
-            <!-- Индикатор загрузки -->
-            <div id="loading-indicator" class="loading-indicator" hidden>
-                <div class="loading-spinner"></div>
-                <div class="loading-text">Загрузка модели...</div>
-                <div class="loading-progress">
-                    <div class="progress-bar">
-                        <div class="progress-fill"></div>
+                
+                <!-- ИНДИКАТОР ЗАГРУЗКИ ПЕРЕМЕЩЕН ВНУТРЬ PREVIEW-AREA -->
+                <div id="loading-indicator" class="loading-indicator" hidden>
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text">Загрузка модели...</div>
+                    <div class="loading-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill"></div>
+                        </div>
+                        <div class="progress-text">0%</div>
                     </div>
-                    <div class="progress-text">0%</div>
                 </div>
             </div>
             
@@ -70,8 +70,8 @@
             <button id="reset-camera-btn" class="control-btn">
                 🎯
             </button>
-            <!-- НОВАЯ КНОПКА ПЕРЕКЛЮЧЕНИЯ ТЕМЫ -->
-            <button id="theme-toggle-btn" class="control-btn" data-theme="dark">
+            <!-- КНОПКА ПЕРЕКЛЮЧЕНИЯ ТЕМЫ -->
+            <button id="theme-toggle-btn" class="control-btn" data-theme="light">
                 🌙
             </button>
         </div>
