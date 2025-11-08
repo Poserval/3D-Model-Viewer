@@ -37,19 +37,17 @@ class ModelViewerApp {
         this.progressText = document.querySelector('.progress-text');
 
         this.bindEvents();
-        this.checkLibraries();
+        this.checkModelViewer();
         
         console.log('🚀 3D Model Viewer запущен');
     }
 
-    checkLibraries() {
+    checkModelViewer() {
+        // ПРОВЕРЯЕМ ТОЛЬКО MODEL VIEWER - Three.js больше не проверяем
         const modelViewerAvailable = typeof customElements !== 'undefined' && 
                                    customElements.get('model-viewer') !== undefined;
         
         console.log('📚 Model Viewer доступен:', modelViewerAvailable);
-        
-        const threeAvailable = typeof THREE !== 'undefined';
-        console.log('📚 Three.js доступен:', threeAvailable);
         
         if (!modelViewerAvailable) {
             console.warn('⚠️ Model Viewer не загрузился');
@@ -196,12 +194,12 @@ class ModelViewerApp {
 
     // Методы для управления индикатором
     showLoadingIndicator() {
-        this.loadingIndicator.classList.add('active');
+        this.loadingIndicator.hidden = false;
         this.startProgressAnimation();
     }
 
     hideLoadingIndicator() {
-        this.loadingIndicator.classList.remove('active');
+        this.loadingIndicator.hidden = true;
         this.resetProgress();
     }
 
