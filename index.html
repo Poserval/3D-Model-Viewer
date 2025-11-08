@@ -21,7 +21,7 @@
             
             <div id="preview-area" class="preview-area">
                 <div id="preview-placeholder" class="preview-placeholder">
-                    <span>Выберите 3D модель</span>
+                    <span>ВЫБЕРИТЕ 3D МОДЕЛЬ</span>
                 </div>
                 
                 <!-- Model Viewer для GLB/GLTF/OBJ -->
@@ -53,7 +53,7 @@
     <!-- Экран просмотра -->
     <div id="viewer-screen" class="screen">
         <header class="header">
-            <button id="back-btn" class="back-btn">←</button>
+            <button id="back-btn" class="back-btn">← Назад</button>
             <div class="header-logo">
                 <img src="icons/logo-header.png" alt="3D Viewer" class="logo-image-small">
             </div>
@@ -73,19 +73,29 @@
         </div>
         <div class="viewer-controls">
             <button id="auto-rotate-btn" class="control-btn" data-active="true">
-                ⏸️
+                ⏸️ Автоповорот
             </button>
             <button id="reset-camera-btn" class="control-btn">
-                🎯
+                🎯 Сброс камеры
             </button>
         </div>
     </div>
 
     <!-- Подключаем скрипты -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <!-- Современные загрузчики Three.js (исправленная версия) -->
+    <script type="module">
+        import { STLLoader } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/STLLoader.js';
+        import { FBXLoader } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/FBXLoader.js';
+        import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/controls/OrbitControls.js';
+        
+        // Сделаем глобально доступными для script.js
+        window.STLLoader = STLLoader;
+        window.FBXLoader = FBXLoader;
+        window.OrbitControls = OrbitControls;
+        console.log('Three.js загрузчики успешно инициализированы');
+    </script>
     
     <!-- Model Viewer -->
     <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
