@@ -102,7 +102,7 @@ body {
     background: transparent;
 }
 
-/* ===== LOADING INDICATOR - ИСПРАВЛЕННЫЙ ===== */
+/* ===== LOADING INDICATOR ===== */
 .loading-indicator {
     position: absolute;
     top: 0;
@@ -206,7 +206,16 @@ body {
     word-break: break-all;
 }
 
-/* Экран просмотра */
+/* ===== VIEWER SCREEN ===== */
+.viewer-screen {
+    background: #000000; /* Черный фон по умолчанию */
+    transition: background-color 0.3s ease;
+}
+
+.viewer-screen.light-theme {
+    background: #FFFFFF; /* Белый фон для светлой темы */
+}
+
 .header {
     position: absolute;
     top: 0;
