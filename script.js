@@ -118,9 +118,6 @@ class ModelViewerApp {
             this.open3dBtn.disabled = true;
             this.fileName.textContent = file.name;
 
-            // Показываем индикатор загрузки в области превью
-            this.previewArea.classList.add('loading');
-
             await this.loadStandardPreview(file);
 
             this.open3dBtn.disabled = false;
@@ -130,8 +127,6 @@ class ModelViewerApp {
             console.error('Ошибка показа превью:', error);
             alert('❌ Ошибка при обработке файла:\n' + error.message);
             this.resetPreview();
-        } finally {
-            this.previewArea.classList.remove('loading');
         }
     }
 
@@ -177,7 +172,7 @@ class ModelViewerApp {
 
         console.log('🎮 Открываем просмотрщик для:', this.currentFile.name);
 
-        // ПОКАЗЫВАЕМ ИНДИКАТОР ЗАГРУЗКИ (центрированный)
+        // ПОКАЗЫВАЕМ ИНДИКАТОР ЗАГРУЗКИ В ОКНЕ ПРЕВЬЮ
         this.showLoadingIndicator();
 
         try {
@@ -185,13 +180,9 @@ class ModelViewerApp {
 
             await this.openStandardViewer(this.currentFile);
 
-            // СКРЫВАЕМ ИНДИКАТОР ПЕРЕД ПЕРЕХОДОМ
+            // СКРЫВАЕМ ИНДИКАТОР И ПЕРЕХОДИМ НА ЭКРАН ПРОСМОТРА
             this.hideLoadingIndicator();
-
-            // Переключаем экраны
-            this.mainScreen.classList.remove('active');
-            this.viewerScreen.classList.add('active');
-            this.currentState = APP_STATES.VIEWER;
+            this.switchToViewer();
 
             console.log('✅ Успешно перешли в режим просмотра');
 
@@ -205,12 +196,12 @@ class ModelViewerApp {
 
     // Методы для управления индикатором
     showLoadingIndicator() {
-        this.loadingIndicator.hidden = false;
+        this.loadingIndicator.classList.add('active');
         this.startProgressAnimation();
     }
 
     hideLoadingIndicator() {
-        this.loadingIndicator.hidden = true;
+        this.loadingIndicator.classList.remove('active');
         this.resetProgress();
     }
 
@@ -246,6 +237,12 @@ class ModelViewerApp {
         this.progressText.textContent = '0%';
     }
 
+    switchToViewer() {
+        this.mainScreen.classList.remove('active');
+        this.viewerScreen.classList.add('active');
+        this.currentState = APP_STATES.VIEWER;
+    }
+
     async openStandardViewer(file) {
         return new Promise((resolve, reject) => {
             const fileURL = URL.createObjectURL(file);
@@ -266,6 +263,9 @@ class ModelViewerApp {
                 this.mainModel.removeEventListener('load', onLoad);
                 this.mainModel.removeEventListener('error', onError);
                 
+                // Завершаем прогресс при успешной загрузке
+                this.updateProgress(100);
+                
                 console.log('✅ Основная модель загружена');
                 resolve();
             };
@@ -284,6 +284,9 @@ class ModelViewerApp {
             setTimeout(() => {
                 this.mainModel.removeEventListener('load', onLoad);
                 this.mainModel.removeEventListener('error', onError);
+                
+                // Завершаем прогресс при таймауте
+                this.updateProgress(100);
                 
                 console.log('⏰ Основная модель загружена (таймаут)');
                 resolve();
