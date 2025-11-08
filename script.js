@@ -11,6 +11,7 @@ class ModelViewerApp {
         this.currentFile = null;
         this.currentFileType = null;
         this.MAX_FILE_SIZE = 20 * 1024 * 1024;
+        this.currentTheme = 'dark'; // По умолчанию темная тема
         this.init();
     }
 
@@ -36,6 +37,9 @@ class ModelViewerApp {
         this.progressFill = document.querySelector('.progress-fill');
         this.progressText = document.querySelector('.progress-text');
 
+        // НОВЫЙ ЭЛЕМЕНТ - кнопка переключения темы
+        this.themeToggleBtn = document.getElementById('theme-toggle-btn');
+
         this.bindEvents();
         this.checkModelViewer();
         
@@ -43,7 +47,6 @@ class ModelViewerApp {
     }
 
     checkModelViewer() {
-        // ПРОВЕРЯЕМ ТОЛЬКО MODEL VIEWER - Three.js больше не проверяем
         const modelViewerAvailable = typeof customElements !== 'undefined' && 
                                    customElements.get('model-viewer') !== undefined;
         
@@ -83,6 +86,30 @@ class ModelViewerApp {
         this.resetCameraBtn.addEventListener('click', () => {
             this.resetCamera();
         });
+
+        // НОВЫЙ ОБРАБОТЧИК - переключение темы
+        this.themeToggleBtn.addEventListener('click', () => {
+            this.toggleTheme();
+        });
+    }
+
+    // НОВЫЙ МЕТОД - переключение между светлой и темной темой
+    toggleTheme() {
+        if (this.currentTheme === 'dark') {
+            // Переключаем на светлую тему
+            this.currentTheme = 'light';
+            this.viewerScreen.classList.add('light-theme');
+            this.themeToggleBtn.innerHTML = '☀️';
+            this.themeToggleBtn.setAttribute('data-theme', 'light');
+            console.log('🎨 Переключили на светлую тему');
+        } else {
+            // Переключаем на темную тему
+            this.currentTheme = 'dark';
+            this.viewerScreen.classList.remove('light-theme');
+            this.themeToggleBtn.innerHTML = '🌙';
+            this.themeToggleBtn.setAttribute('data-theme', 'dark');
+            console.log('🎨 Переключили на темную тему');
+        }
     }
 
     handleFileSelect(event) {
