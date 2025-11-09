@@ -319,10 +319,13 @@ class ModelViewerApp {
         
         console.log('📐 Размер модели для превью:', size);
         
-        // Центрируем
+        // Центрируем объект
         object.position.x = -center.x;
         object.position.y = -center.y;
         object.position.z = -center.z;
+        
+        // АВТОМАТИЧЕСКОЕ ВЫРАВНИВАНИЕ МОДЕЛИ
+        this.autoAlignModel(object, size);
         
         // Настраиваем камеру
         const maxDim = Math.max(size.x, size.y, size.z);
@@ -333,7 +336,8 @@ class ModelViewerApp {
         
         console.log('📷 Дистанция камеры превью:', cameraDistance);
         
-        this.previewCamera.position.set(cameraDistance * 0.7, cameraDistance * 0.5, cameraDistance * 0.7);
+        // Камера сбоку под углом для лучшего обзора
+        this.previewCamera.position.set(cameraDistance * 0.7, cameraDistance * 0.3, cameraDistance * 0.7);
         this.previewCamera.lookAt(0, 0, 0);
         this.previewCamera.updateProjectionMatrix();
     }
@@ -345,10 +349,13 @@ class ModelViewerApp {
         
         console.log('📐 Размер модели для основного просмотра:', size);
         
-        // Центрируем
+        // Центрируем объект
         object.position.x = -center.x;
         object.position.y = -center.y;
         object.position.z = -center.z;
+        
+        // АВТОМАТИЧЕСКОЕ ВЫРАВНИВАНИЕ МОДЕЛИ
+        this.autoAlignModel(object, size);
         
         // Настраиваем камеру
         const maxDim = Math.max(size.x, size.y, size.z);
@@ -360,6 +367,7 @@ class ModelViewerApp {
         
         console.log('📷 Дистанция камеры основного просмотра:', cameraDistance);
         
+        // Камера спереди для основного просмотра
         this.mainCamera.position.set(0, 0, cameraDistance);
         this.mainCamera.lookAt(0, 0, 0);
         this.mainCamera.updateProjectionMatrix();
@@ -370,22 +378,53 @@ class ModelViewerApp {
         }
     }
 
+    autoAlignModel(object, size) {
+        const maxDim = Math.max(size.x, size.y, size.z);
+        
+        // Определяем ориентацию и выравниваем модель
+        if (size.y === maxDim) {
+            // Вертикальная ориентация - оставляем как есть
+            console.log('🎯 Модель ориентирована вертикально');
+            object.rotation.x = 0;
+            object.rotation.y = 0;
+            object.rotation.z = 0;
+        } else if (size.z === maxDim) {
+            // Лежит на "спине" - поднимаем в вертикальное положение
+            console.log('🎯 Модель лежит - поворачиваем в вертикальное положение');
+            object.rotation.x = -Math.PI / 2;
+            object.rotation.y = 0;
+            object.rotation.z = 0;
+        } else if (size.x === maxDim) {
+            // Лежит на боку - поворачиваем в вертикальное положение
+            console.log('🎯 Модель на боку - поворачиваем в вертикальное положение');
+            object.rotation.x = 0;
+            object.rotation.y = 0;
+            object.rotation.z = -Math.PI / 2;
+        }
+    }
+
     animate() {
         requestAnimationFrame(() => this.animate());
         
-        // Рендер превью
+        // Рендер превью - БЕЗ ВРАЩЕНИЯ (статично)
         if (this.previewRenderer && this.previewScene && this.previewCamera) {
             this.previewRenderer.render(this.previewScene, this.previewCamera);
         }
         
-        // Рендер основного просмотрщика
-        if (this.mainRenderer && this.mainScene && this.mainCamera) {
-            this.mainRenderer.render(this.mainScene, this.mainCamera);
-        }
-        
-        // Обновление контролов
-        if (this.mainControls) {
-            this.mainControls.update();
+        // Рендер основного просмотрщика - С ВРАЩЕНИЕМ ЕСЛИ ВКЛЮЧЕНО
+        if (this.mainThreejs && !this.mainThreejs.hidden) {
+            // ВРАЩЕНИЕ ДЛЯ THREE.JS МОДЕЛЕЙ
+            if (this.autoRotate && this.mainModelObject && this.currentRenderer === 'threejs') {
+                this.mainModelObject.rotation.y += 0.01;
+            }
+            
+            if (this.mainRenderer && this.mainScene && this.mainCamera) {
+                this.mainRenderer.render(this.mainScene, this.mainCamera);
+            }
+            
+            if (this.mainControls) {
+                this.mainControls.update();
+            }
         }
     }
 
@@ -439,7 +478,7 @@ class ModelViewerApp {
     async openModelViewer() {
         return new Promise((resolve) => {
             this.mainModel.src = this.currentFileURL;
-            this.mainModel.autoRotate = true;
+            this.mainModel.autoRotate = true; // Автоповорот для Model Viewer
             this.mainModel.hidden = false;
             this.hideAllRenderers();
             
@@ -496,7 +535,10 @@ class ModelViewerApp {
                 this.mainControls.dampingFactor = 0.05;
                 this.mainControls.screenSpacePanning = false;
                 
-                // ВАЖНО: Принудительно устанавливаем стили для canvas
+                // ВКЛЮЧАЕМ АВТОПОВОРОТ ПО УМОЛЧАНИЮ ДЛЯ THREE.JS
+                this.autoRotate = true;
+                
+                // Принудительно устанавливаем стили для canvas
                 this.hideAllRenderers();
                 this.mainThreejs.hidden = false;
                 this.mainThreejs.style.display = 'block';
@@ -508,6 +550,7 @@ class ModelViewerApp {
                 this.mainModel.hidden = true;
                 
                 console.log('✅ CSS стили принудительно применены');
+                console.log('🔄 Автоповорот включен для Three.js');
                 
                 this.updateMainThreeJSSize();
                 
@@ -562,9 +605,12 @@ class ModelViewerApp {
 
     toggleAutoRotate() {
         this.autoRotate = !this.autoRotate;
+        
         if (this.currentRenderer === 'model-viewer') {
             this.mainModel.autoRotate = this.autoRotate;
         }
+        // Для Three.js вращение обрабатывается в методе animate()
+        
         this.updateAutoRotateButton();
     }
 
@@ -589,6 +635,12 @@ class ModelViewerApp {
         this.viewerScreen.classList.remove('active');
         this.mainScreen.classList.add('active');
         this.currentState = APP_STATES.MAIN;
+        
+        // Выключаем автоповорот при возврате на главный экран
+        this.autoRotate = false;
+        if (this.currentRenderer === 'model-viewer') {
+            this.mainModel.autoRotate = false;
+        }
     }
 
     resetPreview() {
