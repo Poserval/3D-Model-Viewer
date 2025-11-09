@@ -126,7 +126,7 @@ class ModelViewerApp {
         });
         this.mainRenderer.setClearColor(0x222222, 1);
         
-        // Освещение
+        // ЯРКОЕ ОСВЕЩЕНИЕ ДЛЯ STL
         this.setupLighting(this.previewScene);
         this.setupLighting(this.mainScene);
         
@@ -148,16 +148,21 @@ class ModelViewerApp {
             }
         }
         
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        // ЯРКОЕ ОСВЕЩЕНИЕ ДЛЯ STL
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.0); // Максимальная яркость
         scene.add(ambientLight);
         
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        directionalLight.position.set(10, 10, 10);
-        scene.add(directionalLight);
+        const directionalLight1 = new THREE.DirectionalLight(0xffffff, 1.0);
+        directionalLight1.position.set(10, 10, 10);
+        scene.add(directionalLight1);
         
-        const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.4);
-        directionalLight2.position.set(-10, -10, -10);
+        const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight2.position.set(-10, 10, -10);
         scene.add(directionalLight2);
+        
+        const directionalLight3 = new THREE.DirectionalLight(0xffffff, 0.6);
+        directionalLight3.position.set(0, -5, 0);
+        scene.add(directionalLight3);
     }
 
     getRendererForFormat(extension) {
@@ -270,10 +275,11 @@ class ModelViewerApp {
                 let modelObject;
                 if (this.currentFileType === '.stl') {
                     const geometry = object;
+                    // СВЕТЛЫЙ МАТЕРИАЛ ДЛЯ STL
                     const material = new THREE.MeshStandardMaterial({ 
-                        color: 0x888888,
-                        roughness: 0.7,
-                        metalness: 0.2
+                        color: 0xCCCCCC, // Светло-серый
+                        roughness: 0.3,  // Меньше шероховатости
+                        metalness: 0.1   // Меньше металличности
                     });
                     modelObject = new THREE.Mesh(geometry, material);
                 } else {
@@ -324,19 +330,18 @@ class ModelViewerApp {
         object.position.y = -center.y;
         object.position.z = -center.z;
         
-        // АВТОМАТИЧЕСКОЕ ВЫРАВНИВАНИЕ МОДЕЛИ
+        // Автоматическое выравнивание модели
         this.autoAlignModel(object, size);
         
-        // Настраиваем камеру
+        // Настраиваем камеру превью
         const maxDim = Math.max(size.x, size.y, size.z);
         const fov = this.previewCamera.fov * (Math.PI / 180);
-        let cameraDistance = Math.abs(maxDim / Math.sin(fov / 2)) * 0.1;
+        let cameraDistance = Math.abs(maxDim / Math.sin(fov / 2)) * 1.2;
         
         cameraDistance = Math.max(cameraDistance, 1);
         
         console.log('📷 Дистанция камеры превью:', cameraDistance);
         
-        // Камера сбоку под углом для лучшего обзора
         this.previewCamera.position.set(cameraDistance * 0.7, cameraDistance * 0.3, cameraDistance * 0.7);
         this.previewCamera.lookAt(0, 0, 0);
         this.previewCamera.updateProjectionMatrix();
@@ -354,27 +359,35 @@ class ModelViewerApp {
         object.position.y = -center.y;
         object.position.z = -center.z;
         
-        // АВТОМАТИЧЕСКОЕ ВЫРАВНИВАНИЕ МОДЕЛИ
+        // Автоматическое выравнивание модели
         this.autoAlignModel(object, size);
         
-        // Настраиваем камеру
+        // 🎯 ОПТИМИЗИРОВАННАЯ ДИСТАНЦИЯ ДЛЯ STL
         const maxDim = Math.max(size.x, size.y, size.z);
-        const fov = this.mainCamera.fov * (Math.PI / 180);
-        let cameraDistance = Math.abs(maxDim / Math.sin(fov / 2)) * 2.0;
+        let cameraDistance;
         
-        cameraDistance = Math.max(cameraDistance, 1);
-        cameraDistance = Math.min(cameraDistance, 100);
+        if (this.currentFileType === '.stl') {
+            // ДЛЯ STL - БЛИЖЕ И ПРОЩЕ
+            cameraDistance = maxDim * 1.2; // Размер модели + 20%
+        } else {
+            // Для других форматов - стандартная формула
+            const fov = this.mainCamera.fov * (Math.PI / 180);
+            cameraDistance = Math.abs(maxDim / Math.sin(fov / 2)) * 1.5;
+        }
+        
+        cameraDistance = Math.max(cameraDistance, 0.5); // Минимальная дистанция
+        cameraDistance = Math.min(cameraDistance, 10);  // Максимальная дистанция
         
         console.log('📷 Дистанция камеры основного просмотра:', cameraDistance);
         
-        // Камера спереди для основного просмотра
         this.mainCamera.position.set(0, 0, cameraDistance);
         this.mainCamera.lookAt(0, 0, 0);
         this.mainCamera.updateProjectionMatrix();
         
         if (this.mainControls) {
-            this.mainControls.minDistance = cameraDistance * 0.1;
-            this.mainControls.maxDistance = cameraDistance * 10;
+            this.mainControls.minDistance = cameraDistance * 0.5;  // Ближе можно подойти
+            this.mainControls.maxDistance = cameraDistance * 3;    // Не так далеко
+            this.mainControls.reset(); // Сбрасываем контролы
         }
     }
 
@@ -478,7 +491,7 @@ class ModelViewerApp {
     async openModelViewer() {
         return new Promise((resolve) => {
             this.mainModel.src = this.currentFileURL;
-            this.mainModel.autoRotate = true; // Автоповорот для Model Viewer
+            this.mainModel.autoRotate = true;
             this.mainModel.hidden = false;
             this.hideAllRenderers();
             
@@ -503,10 +516,11 @@ class ModelViewerApp {
                 let modelObject;
                 if (this.currentFileType === '.stl') {
                     const geometry = object;
+                    // СВЕТЛЫЙ МАТЕРИАЛ ДЛЯ STL
                     const material = new THREE.MeshStandardMaterial({ 
-                        color: 0x888888,
-                        roughness: 0.7,
-                        metalness: 0.2
+                        color: 0xCCCCCC, // Светло-серый
+                        roughness: 0.3,  // Меньше шероховатости
+                        metalness: 0.1   // Меньше металличности
                     });
                     modelObject = new THREE.Mesh(geometry, material);
                 } else {
@@ -609,7 +623,6 @@ class ModelViewerApp {
         if (this.currentRenderer === 'model-viewer') {
             this.mainModel.autoRotate = this.autoRotate;
         }
-        // Для Three.js вращение обрабатывается в методе animate()
         
         this.updateAutoRotateButton();
     }
