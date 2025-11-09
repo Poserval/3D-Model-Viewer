@@ -1,4 +1,4 @@
-// script.js - ИСПРАВЛЕННАЯ ВЕРСИЯ С ПРАВИЛЬНЫМ УПРАВЛЕНИЕМ РЕНДЕРЕРАМИ
+// script.js - С ДВИЖУЩИМСЯ ИСТОЧНИКОМ СВЕТА
 
 // Состояния приложения
 const APP_STATES = {
@@ -35,6 +35,9 @@ class ModelViewerApp {
         this.mainRenderer = null;
         this.mainModelObject = null;
         this.mainControls = null;
+        this.movingLight = null; // ДВИЖУЩИЙСЯ СВЕТ
+        this.lightHelper = null; // ВИЗУАЛИЗАЦИЯ СВЕТА
+        this.lightOrbit = true; // ВКЛ/ВЫКЛ движение света
         
         this.init();
     }
@@ -116,7 +119,7 @@ class ModelViewerApp {
             alpha: true
         });
         this.previewRenderer.setSize(200, 200);
-        this.previewRenderer.setClearColor(0x000000, 0); // Прозрачный фон
+        this.previewRenderer.setClearColor(0x000000, 0);
         
         // Простое освещение для превью
         const previewAmbient = new THREE.AmbientLight(0xffffff, 0.8);
@@ -128,6 +131,8 @@ class ModelViewerApp {
         this.mainRenderer = null;
         this.mainModelObject = null;
         this.mainControls = null;
+        this.movingLight = null;
+        this.lightHelper = null;
 
         console.log('Three.js инициализирован');
         this.animate();
@@ -159,13 +164,16 @@ class ModelViewerApp {
         this.mainRenderer.toneMapping = THREE.ACESFilmicToneMapping;
         this.mainRenderer.toneMappingExposure = 1.2;
         
-        // МОЩНОЕ ОСВЕЩЕНИЕ ДЛЯ ОСНОВНОГО ПРОСМОТРА
+        // ОСНОВНОЕ ОСВЕЩЕНИЕ ДЛЯ ОСНОВНОГО ПРОСМОТРА
         this.setupMainLighting();
+        
+        // ДОБАВЛЯЕМ ДВИЖУЩИЙСЯ СВЕТ
+        this.setupMovingLight();
         
         // Камера
         this.mainCamera.position.set(0, 0, 5);
         
-        console.log('✅ Основной Three.js просмотрщик инициализирован с БЕЛЫМ фоном');
+        console.log('✅ Основной Three.js просмотрщик инициализирован с ДВИЖУЩИМСЯ СВЕТОМ');
     }
 
     setupMainLighting() {
@@ -180,26 +188,51 @@ class ModelViewerApp {
             }
         }
         
-        // 1. МОЩНЫЙ РАССЕЯННЫЙ СВЕТ
-        const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+        // 1. РАССЕЯННЫЙ СВЕТ - ОСНОВНАЯ ПОДСВЕТКА
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
         this.mainScene.add(ambientLight);
         
-        // 2. ЯРКИЙ НАПРАВЛЕННЫЙ СВЕТ СПЕРЕДИ
-        const directionalLight1 = new THREE.DirectionalLight(0xffffff, 1.0);
-        directionalLight1.position.set(10, 10, 10);
-        this.mainScene.add(directionalLight1);
+        // 2. НЕПОДВИЖНЫЙ НАПРАВЛЕННЫЙ СВЕТ
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        directionalLight.position.set(5, 5, 5);
+        this.mainScene.add(directionalLight);
+    }
+
+    setupMovingLight() {
+        if (!this.mainScene) return;
         
-        // 3. ДОПОЛНИТЕЛЬНЫЙ СВЕТ СЗАДИ
-        const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.6);
-        directionalLight2.position.set(-10, 5, -10);
-        this.mainScene.add(directionalLight2);
+        // СОЗДАЕМ ДВИЖУЩИЙСЯ ТОЧЕЧНЫЙ СВЕТ
+        this.movingLight = new THREE.PointLight(0xffffff, 1.5, 20);
+        this.movingLight.position.set(10, 0, 0);
         
-        // 4. БОКОВОЙ СВЕТ
-        const directionalLight3 = new THREE.DirectionalLight(0xffffff, 0.4);
-        directionalLight3.position.set(0, -10, 0);
-        this.mainScene.add(directionalLight3);
+        // ДОБАВЛЯЕМ ВИЗУАЛИЗАЦИЮ СВЕТА (маленькая сфера)
+        const lightGeometry = new THREE.SphereGeometry(0.2, 8, 8);
+        const lightMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xffff00, // ЖЕЛТЫЙ ЦВЕТ ДЛЯ ВИДИМОСТИ
+            transparent: true,
+            opacity: 0.8
+        });
+        this.lightHelper = new THREE.Mesh(lightGeometry, lightMaterial);
+        this.movingLight.add(this.lightHelper);
         
-        console.log('💡 Мощное освещение установлено для основного просмотрщика');
+        this.mainScene.add(this.movingLight);
+        
+        console.log('💡 Движущийся источник света создан');
+    }
+
+    updateMovingLight(time) {
+        if (!this.movingLight || !this.lightOrbit) return;
+        
+        // ДВИЖЕНИЕ СВЕТА ПО КРУГОВОЙ ОРБИТЕ
+        const radius = 8;
+        const speed = 0.5;
+        
+        this.movingLight.position.x = Math.cos(time * speed) * radius;
+        this.movingLight.position.y = Math.sin(time * speed) * 0.5 + 2; // Легкое вертикальное движение
+        this.movingLight.position.z = Math.sin(time * speed) * radius;
+        
+        // СВЕТ СЛЕДИТ ЗА ЦЕНТРОМ МОДЕЛИ
+        this.movingLight.lookAt(0, 0, 0);
     }
 
     getRendererForFormat(extension) {
@@ -327,7 +360,7 @@ class ModelViewerApp {
                     const geometry = object;
                     // ДЛЯ ПРЕВЬЮ - ПРОСТОЙ ЧЕРНЫЙ МАТЕРИАЛ
                     const material = new THREE.MeshBasicMaterial({ 
-                        color: 0x000000,    // ЧЕРНЫЙ ДЛЯ ПРЕВЬЮ
+                        color: 0x000000,
                         transparent: true,
                         opacity: 0.9
                     });
@@ -337,7 +370,6 @@ class ModelViewerApp {
                     if (modelObject.traverse) {
                         modelObject.traverse((child) => {
                             if (child.isMesh) {
-                                // ДЛЯ FBX В ПРЕВЬЮ ТОЖЕ ЧЕРНЫЙ МАТЕРИАЛ
                                 child.material = new THREE.MeshBasicMaterial({
                                     color: 0x000000,
                                     transparent: true,
@@ -356,7 +388,7 @@ class ModelViewerApp {
                 this.previewThreejs.hidden = false;
                 this.hidePreviewPlaceholder();
                 
-                console.log('✅ Three.js превью отображен (черный на прозрачном фоне)');
+                console.log('✅ Three.js превью отображен');
                 resolve();
             }, 
             (progress) => {
@@ -442,6 +474,8 @@ class ModelViewerApp {
     animate() {
         requestAnimationFrame(() => this.animate());
         
+        const time = Date.now() * 0.001; // Текущее время в секундах
+        
         // Рендер превью
         if (this.previewRenderer && this.previewScene && this.previewCamera) {
             this.previewRenderer.render(this.previewScene, this.previewCamera);
@@ -449,9 +483,14 @@ class ModelViewerApp {
         
         // Рендер основного просмотрщика
         if (this.mainRenderer && this.mainScene && this.mainCamera) {
+            // ОБНОВЛЯЕМ ДВИЖУЩИЙСЯ СВЕТ
+            this.updateMovingLight(time);
+            
+            // Автоповорот модели
             if (this.autoRotate && this.mainModelObject && this.currentRenderer === 'threejs') {
                 this.mainModelObject.rotation.y += 0.01;
             }
+            
             this.mainRenderer.render(this.mainScene, this.mainCamera);
             
             if (this.mainControls) {
@@ -560,11 +599,11 @@ class ModelViewerApp {
                 let modelObject;
                 if (this.currentFileType === '.stl') {
                     const geometry = object;
-                    // ДЛЯ ОСНОВНОГО ПРОСМОТРА - ЯРКИЙ МАТЕРИАЛ С ОСВЕЩЕНИЕМ НА БЕЛОМ ФОНЕ
+                    // ДЛЯ ОСНОВНОГО ПРОСМОТРА - МАТЕРИАЛ, КОТОРЫЙ РЕАГИРУЕТ НА СВЕТ
                     const material = new THREE.MeshPhongMaterial({ 
                         color: 0x4a90e2,    // ЯРКИЙ СИНИЙ
-                        shininess: 80,
-                        specular: 0x888888,
+                        shininess: 100,     // ВЫСОКАЯ ОТРАЖАТЕЛЬНАЯ СПОСОБНОСТЬ
+                        specular: 0xffffff, // БЕЛЫЕ ОТБЛЕСКИ
                         emissive: 0x000000
                     });
                     modelObject = new THREE.Mesh(geometry, material);
@@ -574,9 +613,9 @@ class ModelViewerApp {
                         modelObject.traverse((child) => {
                             if (child.isMesh) {
                                 child.material = new THREE.MeshStandardMaterial({
-                                    color: 0x4a90e2, // ТОТ ЖЕ СИНИЙ ДЛЯ FBX
-                                    roughness: 0.7,
-                                    metalness: 0.2
+                                    color: 0x4a90e2,
+                                    roughness: 0.3,  // МЕНЬШЕ ШЕРОХОВАТОСТИ
+                                    metalness: 0.1
                                 });
                             }
                         });
@@ -594,11 +633,12 @@ class ModelViewerApp {
                 this.mainControls.dampingFactor = 0.05;
                 
                 this.autoRotate = true;
+                this.lightOrbit = true; // ВКЛЮЧАЕМ ДВИЖЕНИЕ СВЕТА
                 
                 this.mainThreejs.hidden = false;
                 this.updateMainThreeJSSize();
                 
-                console.log('✅ Three.js основной просмотрщик настроен с БЕЛЫМ фоном и ЯРКИМИ МОДЕЛЯМИ');
+                console.log('✅ Three.js основной просмотрщик настроен с ДВИЖУЩИМСЯ СВЕТОМ');
                 
                 this.updateProgress(100);
                 resolve();
