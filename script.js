@@ -126,7 +126,7 @@ class ModelViewerApp {
         });
         this.mainRenderer.setClearColor(0x222222, 1);
         
-        // ЯРКОЕ ОСВЕЩЕНИЕ С ПРОЖЕКТОРАМИ
+        // ЯРКОЕ ОСВЕЩЕНИЕ ДЛЯ STL
         this.setupLighting(this.previewScene);
         this.setupLighting(this.mainScene);
         
@@ -139,75 +139,57 @@ class ModelViewerApp {
     }
 
     setupLighting(scene) {
-        // Очищаем старое освещение
-        while(scene.children.length > 0) { 
-            if (scene.children[0].isLight) {
-                scene.remove(scene.children[0]);
-            } else {
-                break;
-            }
+    // Очищаем старое освещение
+    while(scene.children.length > 0) { 
+        if (scene.children[0].isLight) {
+            scene.remove(scene.children[0]);
+        } else {
+            break;
         }
+    }
+    
+    // 1. ОСНОВНОЙ РАССЕЯННЫЙ СВЕТ (фоновая подсветка)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+    
+    // 2. МОЩНЫЕ ПРОЖЕКТОРЫ ВОКРУГ МОДЕЛИ
+    
+    // 🔦 ПРОЖЕКТОР СПЕРЕДИ (главный источник)
+    const frontLight = new THREE.PointLight(0xffffff, 1.5, 20);
+    frontLight.position.set(0, 0, 10);
+    scene.add(frontLight);
+    
+    // 🔦 ПРОЖЕКТОР СВЕРХУ
+    const topLight = new THREE.PointLight(0xffffff, 1.2, 20);
+    topLight.position.set(0, 10, 0);
+    scene.add(topLight);
+    
+    // 🔦 ПРОЖЕКТОР СБОКУ СПРАВА
+    const rightLight = new THREE.PointLight(0xffffff, 1.0, 20);
+    rightLight.position.set(10, 5, 5);
+    scene.add(rightLight);
+    
+    // 🔦 ПРОЖЕКТОР СБОКУ СЛЕВА
+    const leftLight = new THREE.PointLight(0xffffff, 1.0, 20);
+    leftLight.position.set(-10, 5, 5);
+    scene.add(leftLight);
+    
+    // 🔦 ПРОЖЕКТОР СЗАДИ (контровой свет)
+    const backLight = new THREE.PointLight(0xffffff, 0.8, 20);
+    backLight.position.set(0, 5, -10);
+    scene.add(backLight);
+    
+    // 3. ДОПОЛНИТЕЛЬНЫЕ НАПРАВЛЕННЫЕ СВЕТА
+    const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.4);
+    directionalLight1.position.set(5, 5, 5);
+    scene.add(directionalLight1);
+    
+    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.3);
+    directionalLight2.position.set(-5, 3, -5);
+    scene.add(directionalLight2);
+    
+    console.log('💡 Прожекторы установлены: 5 точечных + 2 направленных + ambient');
         
-        // 1. ОСНОВНОЙ РАССЕЯННЫЙ СВЕТ (фоновая подсветка)
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(ambientLight);
-        
-        // 2. МОЩНЫЕ ПРОЖЕКТОРЫ ВОКРУГ МОДЕЛИ
-        
-        // 🔦 ПРОЖЕКТОР СПЕРЕДИ (главный источник)
-        const frontSpotLight = new THREE.SpotLight(0xffffff, 1.5);
-        frontSpotLight.position.set(0, 0, 15);
-        frontSpotLight.angle = Math.PI / 6; // Узкий луч
-        frontSpotLight.penumbra = 0.2; // Мягкие края
-        frontSpotLight.decay = 1; // Затухание
-        frontSpotLight.distance = 50;
-        frontSpotLight.target.position.set(0, 0, 0); // Светит прямо в центр!
-        scene.add(frontSpotLight);
-        scene.add(frontSpotLight.target);
-        
-        // 🔦 ПРОЖЕКТОР СВЕРХУ
-        const topSpotLight = new THREE.SpotLight(0xffffff, 1.0);
-        topSpotLight.position.set(0, 15, 0);
-        topSpotLight.angle = Math.PI / 4;
-        topSpotLight.penumbra = 0.3;
-        topSpotLight.target.position.set(0, 0, 0);
-        scene.add(topSpotLight);
-        scene.add(topSpotLight.target);
-        
-        // 🔦 ПРОЖЕКТОР СБОКУ СПРАВА
-        const rightSpotLight = new THREE.SpotLight(0xffffff, 0.8);
-        rightSpotLight.position.set(15, 5, 5);
-        rightSpotLight.angle = Math.PI / 5;
-        rightSpotLight.target.position.set(0, 0, 0);
-        scene.add(rightSpotLight);
-        scene.add(rightSpotLight.target);
-        
-        // 🔦 ПРОЖЕКТОР СБОКУ СЛЕВА
-        const leftSpotLight = new THREE.SpotLight(0xffffff, 0.8);
-        leftSpotLight.position.set(-15, 5, 5);
-        leftSpotLight.angle = Math.PI / 5;
-        leftSpotLight.target.position.set(0, 0, 0);
-        scene.add(leftSpotLight);
-        scene.add(leftSpotLight.target);
-        
-        // 🔦 ПРОЖЕКТОР СЗАДИ (контровой свет)
-        const backSpotLight = new THREE.SpotLight(0xffffff, 0.6);
-        backSpotLight.position.set(0, 5, -15);
-        backSpotLight.angle = Math.PI / 6;
-        backSpotLight.target.position.set(0, 0, 0);
-        scene.add(backSpotLight);
-        scene.add(backSpotLight.target);
-        
-        // 3. ДОПОЛНИТЕЛЬНЫЕ НАПРАВЛЕННЫЕ СВЕТА
-        const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.4);
-        directionalLight1.position.set(10, 10, 10);
-        scene.add(directionalLight1);
-        
-        const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.3);
-        directionalLight2.position.set(-10, 5, -10);
-        scene.add(directionalLight2);
-        
-        console.log('💡 Прожекторы установлены: 5 точечных + 2 направленных + ambient');
     }
 
     getRendererForFormat(extension) {
@@ -320,11 +302,11 @@ class ModelViewerApp {
                 let modelObject;
                 if (this.currentFileType === '.stl') {
                     const geometry = object;
-                    // ЯРКИЙ МАТЕРИАЛ ДЛЯ STL
+                    // СВЕТЛЫЙ МАТЕРИАЛ ДЛЯ STL
                     const material = new THREE.MeshStandardMaterial({ 
-                        color: 0xDDDDDD, // Очень светло-серый
-                        roughness: 0.2,  // Гладкая поверхность
-                        metalness: 0.05  // Почти не металлическая
+                        color: 0xCCCCCC, // Светло-серый
+                        roughness: 0.3,  // Меньше шероховатости
+                        metalness: 0.1   // Меньше металличности
                     });
                     modelObject = new THREE.Mesh(geometry, material);
                 } else {
@@ -561,11 +543,11 @@ class ModelViewerApp {
                 let modelObject;
                 if (this.currentFileType === '.stl') {
                     const geometry = object;
-                    // ЯРКИЙ МАТЕРИАЛ ДЛЯ STL
+                    // СВЕТЛЫЙ МАТЕРИАЛ ДЛЯ STL
                     const material = new THREE.MeshStandardMaterial({ 
-                        color: 0xDDDDDD, // Очень светло-серый
-                        roughness: 0.2,  // Гладкая поверхность
-                        metalness: 0.05  // Почти не металлическая
+                        color: 0xCCCCCC, // Светло-серый
+                        roughness: 0.3,  // Меньше шероховатости
+                        metalness: 0.1   // Меньше металличности
                     });
                     modelObject = new THREE.Mesh(geometry, material);
                 } else {
@@ -734,4 +716,3 @@ class ModelViewerApp {
 document.addEventListener('DOMContentLoaded', () => {
     new ModelViewerApp();
 });
-'
