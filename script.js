@@ -1,4 +1,4 @@
-// script.js - ИСПРАВЛЕННАЯ ВЕРСИЯ ДЛЯ STL МОДЕЛЕЙ
+// script.js - ИСПРАВЛЕННАЯ ВЕРСИЯ ДЛЯ ПЕРЕКЛЮЧЕНИЯ РЕНДЕРЕРОВ
 
 // Состояния приложения
 const APP_STATES = {
@@ -128,7 +128,7 @@ class ModelViewerApp {
         });
         this.mainRenderer.setClearColor(0x222222, 1);
         
-        // УЛУЧШЕННОЕ ОСВЕЩЕНИЕ ДЛЯ STL
+        // Освещение
         this.setupLighting(this.previewScene);
         this.setupLighting(this.mainScene);
         
@@ -150,11 +150,10 @@ class ModelViewerApp {
             }
         }
         
-        // 1. МОЩНЫЙ РАССЕЯННЫЙ СВЕТ
-        const ambientLight = new THREE.AmbientLight(0xffffff, 1.0); // УВЕЛИЧЕННАЯ ИНТЕНСИВНОСТЬ
+        // Освещение
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
         scene.add(ambientLight);
         
-        // 2. ЯРКИЕ ПРОЖЕКТОРЫ
         const frontLight = new THREE.PointLight(0xffffff, 1.5, 50);
         frontLight.position.set(0, 0, 15);
         scene.add(frontLight);
@@ -170,17 +169,6 @@ class ModelViewerApp {
         const leftLight = new THREE.PointLight(0xffffff, 1.0, 50);
         leftLight.position.set(-15, 8, 8);
         scene.add(leftLight);
-        
-        // 3. ДОПОЛНИТЕЛЬНЫЕ НАПРАВЛЕННЫЕ СВЕТА
-        const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.6);
-        directionalLight1.position.set(10, 10, 10);
-        scene.add(directionalLight1);
-        
-        const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.4);
-        directionalLight2.position.set(-10, 5, -10);
-        scene.add(directionalLight2);
-        
-        console.log('💡 Улучшенное освещение установлено');
     }
 
     getRendererForFormat(extension) {
@@ -196,9 +184,8 @@ class ModelViewerApp {
         const file = event.target.files[0];
         if (!file) return;
 
-        if (this.currentFileURL) {
-            URL.revokeObjectURL(this.currentFileURL);
-        }
+        // ОЧИЩАЕМ ПРЕДЫДУЩИЕ ДАННЫЕ ПЕРЕД НОВОЙ ЗАГРУЗКОЙ
+        this.resetPreview();
 
         if (!this.validateFile(file)) {
             return;
@@ -241,6 +228,7 @@ class ModelViewerApp {
             this.open3dBtn.disabled = true;
             this.fileName.textContent = this.currentFile.name;
 
+            // СКРЫВАЕМ ВСЕ РЕНДЕРЕРЫ ПЕРЕД ПОКАЗОМ НОВОГО
             this.hideAllRenderers();
             
             if (this.currentRenderer === 'model-viewer') {
@@ -269,11 +257,17 @@ class ModelViewerApp {
 
     async loadModelViewerPreview() {
         return new Promise((resolve) => {
+            console.log('Загрузка Model Viewer превью...');
+            
+            // ОЧИЩАЕМ Three.js СЦЕНУ ДЛЯ ПРЕВЬЮ
+            this.clearThreeJSScene(this.previewScene);
+            
             this.previewModel.src = this.currentFileURL;
             this.previewModel.hidden = false;
             this.hidePreviewPlaceholder();
             
             setTimeout(() => {
+                console.log('Model Viewer превью загружено');
                 resolve();
             }, 1000);
         });
@@ -283,23 +277,20 @@ class ModelViewerApp {
         return new Promise((resolve, reject) => {
             const loader = this.currentFileType === '.stl' ? new THREE.STLLoader() : new THREE.FBXLoader();
 
-            console.log('Загрузка превью Three.js...');
+            console.log('Загрузка Three.js превью...');
 
             loader.load(this.currentFileURL, (object) => {
-                console.log('Превью загружено');
+                console.log('Three.js превью загружено');
                 
                 this.clearThreeJSScene(this.previewScene);
                 
                 let modelObject;
                 if (this.currentFileType === '.stl') {
                     const geometry = object;
-                    // УЛУЧШЕННЫЙ МАТЕРИАЛ ДЛЯ STL
                     const material = new THREE.MeshStandardMaterial({ 
-                        color: 0x4a90e2, // ЯРКИЙ СИНИЙ ЦВЕТ
-                        roughness: 0.2,  // Гладкая поверхность
-                        metalness: 0.1,  // Легкий металлический блеск
-                        emissive: 0x111133, // Легкая подсветка
-                        emissiveIntensity: 0.1
+                        color: 0x4a90e2,
+                        roughness: 0.2,
+                        metalness: 0.1
                     });
                     modelObject = new THREE.Mesh(geometry, material);
                 } else {
@@ -387,10 +378,8 @@ class ModelViewerApp {
         let cameraDistance;
         
         if (this.currentFileType === '.stl') {
-            // Для STL - ближе и проще
             cameraDistance = maxDim * 1.5;
         } else {
-            // Для других форматов - стандартная формула
             const fov = this.mainCamera.fov * (Math.PI / 180);
             cameraDistance = Math.abs(maxDim / Math.sin(fov / 2)) * 1.5;
         }
@@ -414,21 +403,17 @@ class ModelViewerApp {
     autoAlignModel(object, size) {
         const maxDim = Math.max(size.x, size.y, size.z);
         
-        // Определяем ориентацию и выравниваем модель
         if (size.y === maxDim) {
-            // Вертикальная ориентация - оставляем как есть
             console.log('🎯 Модель ориентирована вертикально');
             object.rotation.x = 0;
             object.rotation.y = 0;
             object.rotation.z = 0;
         } else if (size.z === maxDim) {
-            // Лежит на "спине" - поднимаем в вертикальное положение
             console.log('🎯 Модель лежит - поворачиваем в вертикальное положение');
             object.rotation.x = -Math.PI / 2;
             object.rotation.y = 0;
             object.rotation.z = 0;
         } else if (size.x === maxDim) {
-            // Лежит на боку - поворачиваем в вертикальное положение
             console.log('🎯 Модель на боку - поворачиваем в вертикальное положение');
             object.rotation.x = 0;
             object.rotation.y = 0;
@@ -439,14 +424,13 @@ class ModelViewerApp {
     animate() {
         requestAnimationFrame(() => this.animate());
         
-        // Рендер превью - БЕЗ ВРАЩЕНИЯ (статично)
+        // Рендер превью - БЕЗ ВРАЩЕНИЯ
         if (this.previewRenderer && this.previewScene && this.previewCamera) {
             this.previewRenderer.render(this.previewScene, this.previewCamera);
         }
         
-        // Рендер основного просмотрщика - С ВРАЩЕНИЕМ ЕСЛИ ВКЛЮЧЕНО
+        // Рендер основного просмотрщика
         if (this.mainThreejs && !this.mainThreejs.hidden) {
-            // ВРАЩЕНИЕ ДЛЯ THREE.JS МОДЕЛЕЙ
             if (this.autoRotate && this.mainModelObject && this.currentRenderer === 'threejs') {
                 this.mainModelObject.rotation.y += 0.01;
             }
@@ -492,6 +476,9 @@ class ModelViewerApp {
         try {
             this.viewerTitle.textContent = this.currentFile.name;
 
+            // СКРЫВАЕМ ВСЕ РЕНДЕРЕРЫ ПЕРЕД ОТКРЫТИЕМ ПРОСМОТРА
+            this.hideAllRenderers();
+
             if (this.currentRenderer === 'model-viewer') {
                 await this.openModelViewer();
             } else if (this.currentRenderer === 'threejs') {
@@ -510,12 +497,21 @@ class ModelViewerApp {
 
     async openModelViewer() {
         return new Promise((resolve) => {
+            console.log('Открытие Model Viewer...');
+            
+            // ОЧИЩАЕМ Three.js СЦЕНУ ДЛЯ ОСНОВНОГО ПРОСМОТРА
+            this.clearThreeJSScene(this.mainScene);
+            if (this.mainControls) {
+                this.mainControls.dispose();
+                this.mainControls = null;
+            }
+            
             this.mainModel.src = this.currentFileURL;
             this.mainModel.autoRotate = true;
             this.mainModel.hidden = false;
-            this.hideAllRenderers();
             
             setTimeout(() => {
+                console.log('Model Viewer открыт');
                 this.updateProgress(100);
                 resolve();
             }, 500);
@@ -526,23 +522,20 @@ class ModelViewerApp {
         return new Promise((resolve, reject) => {
             const loader = this.currentFileType === '.stl' ? new THREE.STLLoader() : new THREE.FBXLoader();
 
-            console.log('Загрузка в основной просмотрщик...');
+            console.log('Открытие Three.js просмотрщика...');
 
             loader.load(this.currentFileURL, (object) => {
-                console.log('Основная модель загружена');
+                console.log('Three.js модель загружена в просмотрщик');
                 
                 this.clearThreeJSScene(this.mainScene);
                 
                 let modelObject;
                 if (this.currentFileType === '.stl') {
                     const geometry = object;
-                    // УЛУЧШЕННЫЙ МАТЕРИАЛ ДЛЯ STL В ОСНОВНОМ ПРОСМОТРЕ
                     const material = new THREE.MeshStandardMaterial({ 
-                        color: 0x4a90e2, // ЯРКИЙ СИНИЙ ЦВЕТ
+                        color: 0x4a90e2,
                         roughness: 0.2,
-                        metalness: 0.1,
-                        emissive: 0x111133,
-                        emissiveIntensity: 0.1
+                        metalness: 0.1
                     });
                     modelObject = new THREE.Mesh(geometry, material);
                 } else {
@@ -571,23 +564,9 @@ class ModelViewerApp {
                 this.mainControls.dampingFactor = 0.05;
                 this.mainControls.screenSpacePanning = false;
                 
-                // ВКЛЮЧАЕМ АВТОПОВОРОТ ПО УМОЛЧАНИЮ ДЛЯ THREE.JS
                 this.autoRotate = true;
                 
-                // Принудительно устанавливаем стили для canvas
-                this.hideAllRenderers();
                 this.mainThreejs.hidden = false;
-                this.mainThreejs.style.display = 'block';
-                this.mainThreejs.style.visibility = 'visible';
-                this.mainThreejs.style.opacity = '1';
-                
-                // Гарантируем что model-viewer скрыт
-                this.mainModel.style.display = 'none';
-                this.mainModel.hidden = true;
-                
-                console.log('✅ CSS стили принудительно применены');
-                console.log('🔄 Автоповорот включен для Three.js');
-                
                 this.updateMainThreeJSSize();
                 
                 this.updateProgress(100);
@@ -616,7 +595,6 @@ class ModelViewerApp {
                 this.mainCamera.aspect = width / height;
                 this.mainCamera.updateProjectionMatrix();
                 
-                // Форсируем рендер
                 this.mainRenderer.render(this.mainScene, this.mainCamera);
             }
         }
@@ -671,7 +649,6 @@ class ModelViewerApp {
         this.mainScreen.classList.add('active');
         this.currentState = APP_STATES.MAIN;
         
-        // Выключаем автоповорот при возврате на главный экран
         this.autoRotate = false;
         if (this.currentRenderer === 'model-viewer') {
             this.mainModel.autoRotate = false;
@@ -695,6 +672,11 @@ class ModelViewerApp {
         
         this.clearThreeJSScene(this.previewScene);
         this.clearThreeJSScene(this.mainScene);
+        
+        if (this.mainControls) {
+            this.mainControls.dispose();
+            this.mainControls = null;
+        }
     }
 
     showLoadingIndicator() {
