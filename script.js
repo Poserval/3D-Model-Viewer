@@ -504,14 +504,11 @@ class ModelViewerApp {
                 this.mainControls.dampingFactor = 0.05;
                 this.mainControls.screenSpacePanning = false;
                 
-                this.updateMainThreeJSSize();
+                // СНАЧАЛА скрываем все и показываем threejs
                 this.hideAllRenderers();
                 this.mainThreejs.hidden = false;
                 
-                // ПРИНУДИТЕЛЬНЫЙ РЕНДЕР СРАЗУ
-                this.mainRenderer.render(this.mainScene, this.mainCamera);
-                
-                console.log('✅ Модель должна быть видна!');
+                console.log('✅ Модель загружена, готово к показу');
                 this.updateProgress(100);
                 resolve();
             }, 
@@ -554,6 +551,7 @@ class ModelViewerApp {
         this.viewerScreen.classList.add('active');
         this.currentState = APP_STATES.VIEWER;
         
+        // ОБНОВЛЯЕМ РАЗМЕР ПОСЛЕ переключения экрана
         setTimeout(() => {
             this.updateMainThreeJSSize();
         }, 50);
