@@ -73,10 +73,30 @@ body {
     display: none !important;
 }
 
+/* СТИЛИ ДЛЯ РЕНДЕРЕРОВ - ИСПРАВЛЕННЫЕ */
 .preview-model, .preview-threejs {
     width: 100%;
     height: 100%;
     border-radius: 18px;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.main-model, .main-threejs {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+/* Гарантируем что скрытые элементы действительно скрыты */
+model-viewer[hidden],
+canvas[hidden] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
 }
 
 .btn {
@@ -256,11 +276,7 @@ body {
     left: 0;
     right: 0;
     bottom: 80px;
-}
-
-.main-model, .main-threejs {
-    width: 100%;
-    height: 100%;
+    background: #000;
 }
 
 .viewer-controls {
@@ -328,51 +344,4 @@ body {
         padding: 10px 20px;
         font-size: 13px;
     }
-    /* ИСПРАВЛЕНИЕ ДЛЯ THREE.JS CANVAS */
-.main-threejs {
-    display: block !important;
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100% !important;
-    height: 100% !important;
-    z-index: 1;
-}
-
-.preview-threejs {
-    display: block !important;
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100% !important;
-    height: 100% !important;
-    z-index: 1;
-}
-
-/* Гарантируем что model-viewer скрыт когда неактивен */
-model-viewer[hidden] {
-    display: none !important;
-}
-
-.main-model[hidden] {
-    display: none !important;
-}
-
-.preview-model[hidden] {
-    display: none !important;
-}
-
-/* Убедимся что контейнеры правильно позиционированы */
-.viewer-container {
-    position: fixed;
-    top: 60px;
-    left: 0;
-    right: 0;
-    bottom: 80px;
-    z-index: 1;
-}
-
-.preview-area {
-    position: relative;
-    z-index: 1;
 }
