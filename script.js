@@ -1,4 +1,4 @@
-// script.js - ИСПРАВЛЕННАЯ ВЕРСИЯ С ПРАВИЛЬНЫМ ПЕРЕКЛЮЧЕНИЕМ РЕНДЕРЕРОВ
+// script.js - ПОЛНЫЙ КОД С ИСПРАВЛЕННЫМ ПРЕВЬЮ
 
 // Состояния приложения
 const APP_STATES = {
@@ -116,7 +116,11 @@ class ModelViewerApp {
             alpha: true
         });
         this.previewRenderer.setSize(200, 200);
-        this.previewRenderer.setClearColor(0x000000, 0);
+        this.previewRenderer.setClearColor(0x000000, 0); // Прозрачный фон
+        
+        // Простое освещение для превью
+        const previewAmbient = new THREE.AmbientLight(0xffffff, 1.0);
+        this.previewScene.add(previewAmbient);
         
         // Для основного просмотрщика
         this.mainScene = new THREE.Scene();
@@ -128,9 +132,8 @@ class ModelViewerApp {
         });
         this.mainRenderer.setClearColor(0x222222, 1);
         
-        // Освещение
-        this.setupLighting(this.previewScene);
-        this.setupLighting(this.mainScene);
+        // Освещение для основного просмотрщика
+        this.setupMainLighting();
         
         // Камеры
         this.previewCamera.position.set(0, 0, 5);
@@ -140,25 +143,25 @@ class ModelViewerApp {
         this.animate();
     }
 
-    setupLighting(scene) {
+    setupMainLighting() {
         // Очищаем старое освещение
-        while(scene.children.length > 0) { 
-            if (scene.children[0].isLight) {
-                scene.remove(scene.children[0]);
+        while(this.mainScene.children.length > 0) { 
+            if (this.mainScene.children[0].isLight) {
+                this.mainScene.remove(this.mainScene.children[0]);
             } else {
                 break;
             }
         }
         
-        // ПРОСТОЙ И РАБОЧИЙ ФОНОВЫЙ СВЕТ
+        // Основное освещение для основного просмотрщика
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-        scene.add(ambientLight);
+        this.mainScene.add(ambientLight);
         
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.4);
         directionalLight.position.set(5, 5, 5);
-        scene.add(directionalLight);
+        this.mainScene.add(directionalLight);
         
-        console.log('💡 Фоновое освещение установлено');
+        console.log('💡 Освещение основного просмотрщика установлено');
     }
 
     getRendererForFormat(extension) {
@@ -174,7 +177,7 @@ class ModelViewerApp {
         const file = event.target.files[0];
         if (!file) return;
 
-        // ВАЖНО: Очищаем предыдущие данные ПЕРЕД новой загрузкой
+        // Очищаем предыдущие данные
         this.resetPreview();
 
         if (!this.validateFile(file)) {
@@ -218,7 +221,7 @@ class ModelViewerApp {
             this.open3dBtn.disabled = true;
             this.fileName.textContent = this.currentFile.name;
 
-            // ВАЖНО: Скрываем все рендереры перед показом нового
+            // Скрываем все рендереры
             this.hideAllRenderers();
             
             if (this.currentRenderer === 'model-viewer') {
@@ -249,7 +252,7 @@ class ModelViewerApp {
         return new Promise((resolve) => {
             console.log('📱 Загрузка Model Viewer превью...');
             
-            // ВАЖНО: Очищаем Three.js сцену при использовании Model Viewer
+            // Очищаем Three.js сцену
             this.clearThreeJSScene(this.previewScene);
             
             this.previewModel.src = this.currentFileURL;
@@ -279,21 +282,23 @@ class ModelViewerApp {
                 let modelObject;
                 if (this.currentFileType === '.stl') {
                     const geometry = object;
-                    const material = new THREE.MeshStandardMaterial({ 
-                        color: 0xCCCCCC,
-                        roughness: 0.3,
-                        metalness: 0.1
+                    // ПРОСТОЙ МАТЕРИАЛ ДЛЯ ПРЕВЬЮ - ВСЕГДА ВИДИМЫЙ
+                    const material = new THREE.MeshBasicMaterial({ 
+                        color: 0x000000,  // ЧЕРНЫЙ ДЛЯ ХОРОШЕЙ ВИДИМОСТИ
+                        transparent: true,
+                        opacity: 0.9
                     });
                     modelObject = new THREE.Mesh(geometry, material);
                 } else {
                     modelObject = object;
                     if (modelObject.traverse) {
                         modelObject.traverse((child) => {
-                            if (child.isMesh && child.material && !child.material.isMeshStandardMaterial) {
-                                child.material = new THREE.MeshStandardMaterial({
-                                    color: 0x888888,
-                                    roughness: 0.7,
-                                    metalness: 0.2
+                            if (child.isMesh) {
+                                // ДЛЯ FBX ТОЖЕ ПРОСТОЙ МАТЕРИАЛ
+                                child.material = new THREE.MeshBasicMaterial({
+                                    color: 0x000000,
+                                    transparent: true,
+                                    opacity: 0.9
                                 });
                             }
                         });
@@ -304,6 +309,7 @@ class ModelViewerApp {
                 this.previewModelObject = modelObject;
                 
                 this.setupPreviewCamera(modelObject);
+                
                 this.previewThreejs.hidden = false;
                 this.hidePreviewPlaceholder();
                 
@@ -316,7 +322,7 @@ class ModelViewerApp {
                 }
             },
             (error) => {
-                console.error('❌ Ошибка загрузки превью:', error);
+                console.error('❌ Ошибка загрузки Three.js превью:', error);
                 reject(new Error('Не удалось загрузить модель'));
             });
         });
@@ -363,7 +369,7 @@ class ModelViewerApp {
         
         this.autoAlignModel(object, size);
         
-        // 🎯 ДОБАВЛЯЕМ ПРОЖЕКТОРЫ ПРЯМО К МОДЕЛИ!
+        // ДОБАВЛЯЕМ ПРОЖЕКТОРЫ К МОДЕЛИ
         this.addModelLights(object, size);
         
         const maxDim = Math.max(size.x, size.y, size.z);
@@ -478,12 +484,6 @@ class ModelViewerApp {
         this.previewThreejs.hidden = true;
         this.mainModel.hidden = true;
         this.mainThreejs.hidden = true;
-        
-        // ВАЖНО: Принудительно скрываем через CSS
-        this.previewModel.style.display = 'none';
-        this.previewThreejs.style.display = 'none';
-        this.mainModel.style.display = 'none';
-        this.mainThreejs.style.display = 'none';
     }
 
     updateProgress(percent) {
@@ -504,7 +504,7 @@ class ModelViewerApp {
         try {
             this.viewerTitle.textContent = this.currentFile.name;
 
-            // ВАЖНО: Скрываем все рендереры перед открытием
+            // Скрываем все рендереры
             this.hideAllRenderers();
 
             if (this.currentRenderer === 'model-viewer') {
@@ -527,7 +527,7 @@ class ModelViewerApp {
         return new Promise((resolve) => {
             console.log('📱 Открытие Model Viewer...');
             
-            // ВАЖНО: Очищаем Three.js сцену и контролы
+            // Очищаем Three.js сцену и контролы
             this.clearThreeJSScene(this.mainScene);
             if (this.mainControls) {
                 this.mainControls.dispose();
@@ -537,7 +537,6 @@ class ModelViewerApp {
             this.mainModel.src = this.currentFileURL;
             this.mainModel.autoRotate = true;
             this.mainModel.hidden = false;
-            this.mainModel.style.display = 'block';
             
             console.log('✅ Model Viewer настроен для отображения');
             
@@ -563,6 +562,7 @@ class ModelViewerApp {
                 let modelObject;
                 if (this.currentFileType === '.stl') {
                     const geometry = object;
+                    // МАТЕРИАЛ С ОСВЕЩЕНИЕМ ДЛЯ ОСНОВНОГО ПРОСМОТРА
                     const material = new THREE.MeshStandardMaterial({ 
                         color: 0xCCCCCC,
                         roughness: 0.3,
@@ -573,7 +573,7 @@ class ModelViewerApp {
                     modelObject = object;
                     if (modelObject.traverse) {
                         modelObject.traverse((child) => {
-                            if (child.isMesh && child.material && !child.material.isMeshStandardMaterial) {
+                            if (child.isMesh) {
                                 child.material = new THREE.MeshStandardMaterial({
                                     color: 0x888888,
                                     roughness: 0.7,
@@ -597,8 +597,6 @@ class ModelViewerApp {
                 this.autoRotate = true;
                 
                 this.mainThreejs.hidden = false;
-                this.mainThreejs.style.display = 'block';
-                
                 this.updateMainThreeJSSize();
                 
                 console.log('✅ Three.js настроен для отображения');
@@ -707,7 +705,6 @@ class ModelViewerApp {
         this.clearThreeJSScene(this.previewScene);
         this.clearThreeJSScene(this.mainScene);
         
-        // ВАЖНО: Очищаем контролы
         if (this.mainControls) {
             this.mainControls.dispose();
             this.mainControls = null;
