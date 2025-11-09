@@ -1,4 +1,4 @@
-// script.js - ПОЛНЫЙ КОД С ПРАВИЛЬНЫМ ОСВЕЩЕНИЕМ
+// script.js - ПОЛНЫЙ КОД С БЕЛЫМ ФОНОМ
 
 // Состояния приложения
 const APP_STATES = {
@@ -116,7 +116,7 @@ class ModelViewerApp {
             alpha: true
         });
         this.previewRenderer.setSize(200, 200);
-        this.previewRenderer.setClearColor(0x000000, 0); // Прозрачный фон
+        this.previewRenderer.setClearColor(0xffffff, 1); // БЕЛЫЙ ФОН ДЛЯ ПРЕВЬЮ
         
         // Простое освещение для превью
         const previewAmbient = new THREE.AmbientLight(0xffffff, 1.0);
@@ -130,7 +130,7 @@ class ModelViewerApp {
             antialias: true,
             alpha: true
         });
-        this.mainRenderer.setClearColor(0x222222, 1);
+        this.mainRenderer.setClearColor(0xffffff, 1); // БЕЛЫЙ ФОН ДЛЯ ОСНОВНОГО ПРОСМОТРА
         
         // Настройка тонального отображения для лучшей видимости
         this.mainRenderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -143,7 +143,7 @@ class ModelViewerApp {
         this.previewCamera.position.set(0, 0, 5);
         this.mainCamera.position.set(0, 0, 5);
 
-        console.log('Three.js инициализирован');
+        console.log('Three.js инициализирован с БЕЛЫМ фоном');
         this.animate();
     }
 
@@ -158,25 +158,25 @@ class ModelViewerApp {
         }
         
         // 1. МОЩНЫЙ РАССЕЯННЫЙ СВЕТ
-        const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
         this.mainScene.add(ambientLight);
         
         // 2. ЯРКИЙ НАПРАВЛЕННЫЙ СВЕТ СПЕРЕДИ
-        const directionalLight1 = new THREE.DirectionalLight(0xffffff, 1.2);
+        const directionalLight1 = new THREE.DirectionalLight(0xffffff, 1.0);
         directionalLight1.position.set(10, 10, 10);
         this.mainScene.add(directionalLight1);
         
         // 3. ДОПОЛНИТЕЛЬНЫЙ СВЕТ СЗАДИ
-        const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.8);
+        const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.6);
         directionalLight2.position.set(-10, 5, -10);
         this.mainScene.add(directionalLight2);
         
         // 4. БОКОВОЙ СВЕТ
-        const directionalLight3 = new THREE.DirectionalLight(0xffffff, 0.6);
+        const directionalLight3 = new THREE.DirectionalLight(0xffffff, 0.4);
         directionalLight3.position.set(0, -10, 0);
         this.mainScene.add(directionalLight3);
         
-        console.log('💡 Мощное освещение установлено для основного просмотрщика');
+        console.log('💡 Освещение установлено для белого фона');
     }
 
     getRendererForFormat(extension) {
@@ -302,7 +302,7 @@ class ModelViewerApp {
                 let modelObject;
                 if (this.currentFileType === '.stl') {
                     const geometry = object;
-                    // ДЛЯ ПРЕВЬЮ - ПРОСТОЙ ЯРКИЙ МАТЕРИАЛ
+                    // ДЛЯ ПРЕВЬЮ - ПРОСТОЙ ЯРКИЙ МАТЕРИАЛ НА БЕЛОМ ФОНЕ
                     const material = new THREE.MeshBasicMaterial({ 
                         color: 0x4a90e2,    // ЯРКИЙ СИНИЙ
                         transparent: true,
@@ -316,7 +316,7 @@ class ModelViewerApp {
                             if (child.isMesh) {
                                 // ДЛЯ FBX В ПРЕВЬЮ ТОЖЕ ПРОСТОЙ МАТЕРИАЛ
                                 child.material = new THREE.MeshBasicMaterial({
-                                    color: 0x888888,
+                                    color: 0x666666, // ТЕМНО-СЕРЫЙ ДЛЯ КОНТРАСТА НА БЕЛОМ
                                     transparent: true,
                                     opacity: 0.9
                                 });
@@ -333,7 +333,7 @@ class ModelViewerApp {
                 this.previewThreejs.hidden = false;
                 this.hidePreviewPlaceholder();
                 
-                console.log('✅ Three.js превью отображен');
+                console.log('✅ Three.js превью отображен на белом фоне');
                 resolve();
             }, 
             (progress) => {
@@ -533,11 +533,11 @@ class ModelViewerApp {
                 let modelObject;
                 if (this.currentFileType === '.stl') {
                     const geometry = object;
-                    // ДЛЯ ОСНОВНОГО ПРОСМОТРА - МАТЕРИАЛ С ОСВЕЩЕНИЕМ
+                    // ДЛЯ ОСНОВНОГО ПРОСМОТРА - МАТЕРИАЛ С ОСВЕЩЕНИЕМ НА БЕЛОМ ФОНЕ
                     const material = new THREE.MeshPhongMaterial({ 
                         color: 0x4a90e2,
-                        shininess: 100,
-                        specular: 0xffffff,
+                        shininess: 80,
+                        specular: 0x888888, // БОЛЕЕ МЯГКИЕ ОТБЛЕСКИ ДЛЯ БЕЛОГО ФОНА
                         emissive: 0x000000
                     });
                     modelObject = new THREE.Mesh(geometry, material);
@@ -547,7 +547,7 @@ class ModelViewerApp {
                         modelObject.traverse((child) => {
                             if (child.isMesh) {
                                 child.material = new THREE.MeshStandardMaterial({
-                                    color: 0x888888,
+                                    color: 0x666666, // ТЕМНО-СЕРЫЙ ДЛЯ КОНТРАСТА
                                     roughness: 0.7,
                                     metalness: 0.2
                                 });
@@ -571,7 +571,7 @@ class ModelViewerApp {
                 this.mainThreejs.hidden = false;
                 this.updateMainThreeJSSize();
                 
-                console.log('✅ Three.js настроен для отображения');
+                console.log('✅ Three.js настроен для отображения на белом фоне');
                 
                 this.updateProgress(100);
                 resolve();
