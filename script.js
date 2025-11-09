@@ -116,15 +116,16 @@ class ModelViewerApp {
         this.previewRenderer.setSize(200, 200);
         this.previewRenderer.setClearColor(0x000000, 0);
         
-        // Для основного просмотрщика
+        // Для основного просмотрщика - ЯРКИЙ ЦВЕТ ДЛЯ ОТЛАДКИ
         this.mainScene = new THREE.Scene();
         this.mainCamera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
         this.mainRenderer = new THREE.WebGLRenderer({ 
             canvas: this.mainThreejs,
             antialias: true,
-            alpha: true
+            alpha: false // ВЫКЛЮЧАЕМ ПРОЗРАЧНОСТЬ
         });
-        this.mainRenderer.setClearColor(0x222222, 1);
+        this.mainRenderer.setClearColor(0xFF0000, 1); // КРАСНЫЙ ФОН ДЛЯ ОТЛАДКИ
+        this.mainRenderer.setSize(100, 100); // Временный размер
         
         // Освещение
         this.setupLighting(this.previewScene);
@@ -148,16 +149,12 @@ class ModelViewerApp {
             }
         }
         
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.0); // ЯРКИЙ СВЕТ
         scene.add(ambientLight);
         
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
         directionalLight.position.set(10, 10, 10);
         scene.add(directionalLight);
-        
-        const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.4);
-        directionalLight2.position.set(-10, -10, -10);
-        scene.add(directionalLight2);
     }
 
     getRendererForFormat(extension) {
@@ -173,7 +170,6 @@ class ModelViewerApp {
         const file = event.target.files[0];
         if (!file) return;
 
-        // Освобождаем предыдущий URL
         if (this.currentFileURL) {
             URL.revokeObjectURL(this.currentFileURL);
         }
@@ -272,7 +268,7 @@ class ModelViewerApp {
                 if (this.currentFileType === '.stl') {
                     const geometry = object;
                     const material = new THREE.MeshStandardMaterial({ 
-                        color: 0x888888,
+                        color: 0x00FF00, // ЗЕЛЕНЫЙ ЦВЕТ ДЛЯ ОТЛАДКИ
                         roughness: 0.7,
                         metalness: 0.2
                     });
@@ -281,9 +277,9 @@ class ModelViewerApp {
                     modelObject = object;
                     if (modelObject.traverse) {
                         modelObject.traverse((child) => {
-                            if (child.isMesh && child.material && !child.material.isMeshStandardMaterial) {
+                            if (child.isMesh && child.material) {
                                 child.material = new THREE.MeshStandardMaterial({
-                                    color: 0x888888,
+                                    color: 0x00FF00, // ЗЕЛЕНЫЙ ЦВЕТ
                                     roughness: 0.7,
                                     metalness: 0.2
                                 });
@@ -330,7 +326,6 @@ class ModelViewerApp {
         const fov = this.previewCamera.fov * (Math.PI / 180);
         let cameraDistance = Math.abs(maxDim / Math.sin(fov / 2)) * 1.5;
         
-        // Минимальное расстояние
         cameraDistance = Math.max(cameraDistance, 1);
         
         console.log('📷 Дистанция камеры превью:', cameraDistance);
@@ -357,7 +352,6 @@ class ModelViewerApp {
         const fov = this.mainCamera.fov * (Math.PI / 180);
         let cameraDistance = Math.abs(maxDim / Math.sin(fov / 2)) * 2.0;
         
-        // Минимальное и максимальное расстояние
         cameraDistance = Math.max(cameraDistance, 1);
         cameraDistance = Math.min(cameraDistance, 100);
         
@@ -367,7 +361,6 @@ class ModelViewerApp {
         this.mainCamera.lookAt(0, 0, 0);
         this.mainCamera.updateProjectionMatrix();
         
-        // Установим границы для OrbitControls
         if (this.mainControls) {
             this.mainControls.minDistance = cameraDistance * 0.1;
             this.mainControls.maxDistance = cameraDistance * 10;
@@ -400,6 +393,7 @@ class ModelViewerApp {
     }
 
     hideAllRenderers() {
+        console.log('🔴 Скрываем все рендереры');
         this.previewModel.hidden = true;
         this.previewThreejs.hidden = true;
         this.mainModel.hidden = true;
@@ -469,7 +463,7 @@ class ModelViewerApp {
                 if (this.currentFileType === '.stl') {
                     const geometry = object;
                     const material = new THREE.MeshStandardMaterial({ 
-                        color: 0x888888,
+                        color: 0x00FF00, // ЗЕЛЕНЫЙ ЦВЕТ ДЛЯ ОТЛАДКИ
                         roughness: 0.7,
                         metalness: 0.2
                     });
@@ -478,9 +472,9 @@ class ModelViewerApp {
                     modelObject = object;
                     if (modelObject.traverse) {
                         modelObject.traverse((child) => {
-                            if (child.isMesh && child.material && !child.material.isMeshStandardMaterial) {
+                            if (child.isMesh && child.material) {
                                 child.material = new THREE.MeshStandardMaterial({
-                                    color: 0x888888,
+                                    color: 0x00FF00, // ЗЕЛЕНЫЙ ЦВЕТ
                                     roughness: 0.7,
                                     metalness: 0.2
                                 });
@@ -492,9 +486,16 @@ class ModelViewerApp {
                 this.mainScene.add(modelObject);
                 this.mainModelObject = modelObject;
                 
-                // ДОБАВЛЯЕМ ОСИ ДЛЯ ОТЛАДКИ
-                const axesHelper = new THREE.AxesHelper(2);
+                // БОЛЬШИЕ ОСИ ДЛЯ ОТЛАДКИ
+                const axesHelper = new THREE.AxesHelper(5);
                 this.mainScene.add(axesHelper);
+                
+                // БОЛЬШОЙ КУБ ДЛЯ ОТЛАДКИ
+                const cubeGeometry = new THREE.BoxGeometry(2, 2, 2);
+                const cubeMaterial = new THREE.MeshBasicMaterial({ color: 0x0000FF }); // СИНИЙ КУБ
+                const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+                cube.position.set(3, 0, 0);
+                this.mainScene.add(cube);
                 
                 this.setupMainCamera(modelObject);
                 
@@ -504,11 +505,16 @@ class ModelViewerApp {
                 this.mainControls.dampingFactor = 0.05;
                 this.mainControls.screenSpacePanning = false;
                 
-                // СНАЧАЛА скрываем все и показываем threejs
+                // ВАЖНО: сначала скрываем все, потом показываем threejs
                 this.hideAllRenderers();
                 this.mainThreejs.hidden = false;
                 
                 console.log('✅ Модель загружена, готово к показу');
+                console.log('🎯 Проверяем видимость элементов:');
+                console.log('- mainThreejs.hidden:', this.mainThreejs.hidden);
+                console.log('- mainThreejs.style.display:', this.mainThreejs.style.display);
+                console.log('- mainThreejs.parentElement:', this.mainThreejs.parentElement);
+                
                 this.updateProgress(100);
                 resolve();
             }, 
@@ -535,8 +541,9 @@ class ModelViewerApp {
                 this.mainCamera.aspect = width / height;
                 this.mainCamera.updateProjectionMatrix();
                 
-                // Форсируем рендер после изменения размера
+                // Форсируем рендер
                 this.mainRenderer.render(this.mainScene, this.mainCamera);
+                console.log('🎨 Рендер выполнен');
             }
         }
     }
@@ -551,7 +558,7 @@ class ModelViewerApp {
         this.viewerScreen.classList.add('active');
         this.currentState = APP_STATES.VIEWER;
         
-        // ОБНОВЛЯЕМ РАЗМЕР ПОСЛЕ переключения экрана
+        // ОБНОВЛЯЕМ РАЗМЕР ПОСЛЕ переключения
         setTimeout(() => {
             this.updateMainThreeJSSize();
         }, 50);
