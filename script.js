@@ -1,4 +1,4 @@
-// script.js - ПОЛНЫЙ КОД С БЕЛЫМ ФОНОМ
+// script.js - ИСПРАВЛЕННАЯ ВЕРСИЯ С ПРАВИЛЬНЫМ УПРАВЛЕНИЕМ РЕНДЕРЕРАМИ
 
 // Состояния приложения
 const APP_STATES = {
@@ -107,7 +107,7 @@ class ModelViewerApp {
     initThreeJS() {
         console.log('Инициализация Three.js...');
         
-        // Для превью - ПРОСТОЙ РЕНДЕРЕР БЕЗ ОСВЕЩЕНИЯ
+        // Для превью - ПРОСТОЙ РЕНДЕРЕР
         this.previewScene = new THREE.Scene();
         this.previewCamera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
         this.previewRenderer = new THREE.WebGLRenderer({ 
@@ -116,38 +116,61 @@ class ModelViewerApp {
             alpha: true
         });
         this.previewRenderer.setSize(200, 200);
-        this.previewRenderer.setClearColor(0xffffff, 1); // БЕЛЫЙ ФОН ДЛЯ ПРЕВЬЮ
+        this.previewRenderer.setClearColor(0x000000, 0); // Прозрачный фон
         
         // Простое освещение для превью
-        const previewAmbient = new THREE.AmbientLight(0xffffff, 1.0);
+        const previewAmbient = new THREE.AmbientLight(0xffffff, 0.8);
         this.previewScene.add(previewAmbient);
         
-        // Для основного просмотрщика - ПОЛНОЕ ОСВЕЩЕНИЕ
+        // Для основного просмотрщика - ПОЛНОСТЬЮ ПЕРЕИНИЦИАЛИЗИРУЕМ ПРИ КАЖДОЙ ЗАГРУЗКЕ
+        this.mainScene = null;
+        this.mainCamera = null;
+        this.mainRenderer = null;
+        this.mainModelObject = null;
+        this.mainControls = null;
+
+        console.log('Three.js инициализирован');
+        this.animate();
+    }
+
+    initMainThreeJS() {
+        console.log('🎯 Инициализация основного Three.js просмотрщика...');
+        
+        // Очищаем старые данные
+        if (this.mainControls) {
+            this.mainControls.dispose();
+        }
+        
+        // Создаем новую сцену для основного просмотрщика
         this.mainScene = new THREE.Scene();
         this.mainCamera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        
+        // Переинициализируем рендерер
         this.mainRenderer = new THREE.WebGLRenderer({ 
             canvas: this.mainThreejs,
             antialias: true,
             alpha: true
         });
-        this.mainRenderer.setClearColor(0xffffff, 1); // БЕЛЫЙ ФОН ДЛЯ ОСНОВНОГО ПРОСМОТРА
         
-        // Настройка тонального отображения для лучшей видимости
+        // ⚪ БЕЛЫЙ ФОН ДЛЯ ОСНОВНОГО ПРОСМОТРА
+        this.mainRenderer.setClearColor(0xffffff, 1);
+        
+        // Настройка тонального отображения
         this.mainRenderer.toneMapping = THREE.ACESFilmicToneMapping;
         this.mainRenderer.toneMappingExposure = 1.2;
         
-        // Мощное освещение для основного просмотрщика
+        // МОЩНОЕ ОСВЕЩЕНИЕ ДЛЯ ОСНОВНОГО ПРОСМОТРА
         this.setupMainLighting();
         
-        // Камеры
-        this.previewCamera.position.set(0, 0, 5);
+        // Камера
         this.mainCamera.position.set(0, 0, 5);
-
-        console.log('Three.js инициализирован с БЕЛЫМ фоном');
-        this.animate();
+        
+        console.log('✅ Основной Three.js просмотрщик инициализирован с БЕЛЫМ фоном');
     }
 
     setupMainLighting() {
+        if (!this.mainScene) return;
+        
         // Очищаем старое освещение
         while(this.mainScene.children.length > 0) { 
             if (this.mainScene.children[0].isLight) {
@@ -176,7 +199,7 @@ class ModelViewerApp {
         directionalLight3.position.set(0, -10, 0);
         this.mainScene.add(directionalLight3);
         
-        console.log('💡 Освещение установлено для белого фона');
+        console.log('💡 Мощное освещение установлено для основного просмотрщика');
     }
 
     getRendererForFormat(extension) {
@@ -302,9 +325,9 @@ class ModelViewerApp {
                 let modelObject;
                 if (this.currentFileType === '.stl') {
                     const geometry = object;
-                    // ДЛЯ ПРЕВЬЮ - ПРОСТОЙ ЯРКИЙ МАТЕРИАЛ НА БЕЛОМ ФОНЕ
+                    // ДЛЯ ПРЕВЬЮ - ПРОСТОЙ ЧЕРНЫЙ МАТЕРИАЛ
                     const material = new THREE.MeshBasicMaterial({ 
-                        color: 0x4a90e2,    // ЯРКИЙ СИНИЙ
+                        color: 0x000000,    // ЧЕРНЫЙ ДЛЯ ПРЕВЬЮ
                         transparent: true,
                         opacity: 0.9
                     });
@@ -314,9 +337,9 @@ class ModelViewerApp {
                     if (modelObject.traverse) {
                         modelObject.traverse((child) => {
                             if (child.isMesh) {
-                                // ДЛЯ FBX В ПРЕВЬЮ ТОЖЕ ПРОСТОЙ МАТЕРИАЛ
+                                // ДЛЯ FBX В ПРЕВЬЮ ТОЖЕ ЧЕРНЫЙ МАТЕРИАЛ
                                 child.material = new THREE.MeshBasicMaterial({
-                                    color: 0x666666, // ТЕМНО-СЕРЫЙ ДЛЯ КОНТРАСТА НА БЕЛОМ
+                                    color: 0x000000,
                                     transparent: true,
                                     opacity: 0.9
                                 });
@@ -333,7 +356,7 @@ class ModelViewerApp {
                 this.previewThreejs.hidden = false;
                 this.hidePreviewPlaceholder();
                 
-                console.log('✅ Three.js превью отображен на белом фоне');
+                console.log('✅ Three.js превью отображен (черный на прозрачном фоне)');
                 resolve();
             }, 
             (progress) => {
@@ -438,8 +461,10 @@ class ModelViewerApp {
     }
 
     clearThreeJSScene(scene) {
-        while(scene.children.length > 0) { 
-            scene.remove(scene.children[0]); 
+        if (scene) {
+            while(scene.children.length > 0) { 
+                scene.remove(scene.children[0]); 
+            }
         }
     }
 
@@ -499,7 +524,6 @@ class ModelViewerApp {
             console.log('📱 Открытие Model Viewer...');
             
             // ОЧИЩАЕМ Three.js
-            this.clearThreeJSScene(this.mainScene);
             if (this.mainControls) {
                 this.mainControls.dispose();
                 this.mainControls = null;
@@ -525,19 +549,22 @@ class ModelViewerApp {
 
             console.log('🎮 Открытие Three.js просмотрщика...');
 
+            // ПЕРЕИНИЦИАЛИЗИРУЕМ ОСНОВНОЙ Three.js ПЕРЕД ЗАГРУЗКОЙ
+            this.initMainThreeJS();
+
             loader.load(this.currentFileURL, (object) => {
-                console.log('✅ Three.js модель загружена');
+                console.log('✅ Three.js модель загружена в основной просмотрщик');
                 
                 this.clearThreeJSScene(this.mainScene);
                 
                 let modelObject;
                 if (this.currentFileType === '.stl') {
                     const geometry = object;
-                    // ДЛЯ ОСНОВНОГО ПРОСМОТРА - МАТЕРИАЛ С ОСВЕЩЕНИЕМ НА БЕЛОМ ФОНЕ
+                    // ДЛЯ ОСНОВНОГО ПРОСМОТРА - ЯРКИЙ МАТЕРИАЛ С ОСВЕЩЕНИЕМ НА БЕЛОМ ФОНЕ
                     const material = new THREE.MeshPhongMaterial({ 
-                        color: 0x4a90e2,
+                        color: 0x4a90e2,    // ЯРКИЙ СИНИЙ
                         shininess: 80,
-                        specular: 0x888888, // БОЛЕЕ МЯГКИЕ ОТБЛЕСКИ ДЛЯ БЕЛОГО ФОНА
+                        specular: 0x888888,
                         emissive: 0x000000
                     });
                     modelObject = new THREE.Mesh(geometry, material);
@@ -547,7 +574,7 @@ class ModelViewerApp {
                         modelObject.traverse((child) => {
                             if (child.isMesh) {
                                 child.material = new THREE.MeshStandardMaterial({
-                                    color: 0x666666, // ТЕМНО-СЕРЫЙ ДЛЯ КОНТРАСТА
+                                    color: 0x4a90e2, // ТОТ ЖЕ СИНИЙ ДЛЯ FBX
                                     roughness: 0.7,
                                     metalness: 0.2
                                 });
@@ -571,7 +598,7 @@ class ModelViewerApp {
                 this.mainThreejs.hidden = false;
                 this.updateMainThreeJSSize();
                 
-                console.log('✅ Three.js настроен для отображения на белом фоне');
+                console.log('✅ Three.js основной просмотрщик настроен с БЕЛЫМ фоном и ЯРКИМИ МОДЕЛЯМИ');
                 
                 this.updateProgress(100);
                 resolve();
@@ -593,7 +620,7 @@ class ModelViewerApp {
                 const width = container.clientWidth;
                 const height = container.clientHeight;
                 
-                console.log('📏 Размер контейнера:', width, 'x', height);
+                console.log('📏 Размер основного контейнера:', width, 'x', height);
                 
                 this.mainRenderer.setSize(width, height);
                 this.mainCamera.aspect = width / height;
