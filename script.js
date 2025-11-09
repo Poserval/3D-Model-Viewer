@@ -1,3 +1,5 @@
+// script.js - ИСПРАВЛЕННАЯ ВЕРСИЯ ДЛЯ STL МОДЕЛЕЙ
+
 // Состояния приложения
 const APP_STATES = {
     MAIN: 'main',
@@ -126,7 +128,7 @@ class ModelViewerApp {
         });
         this.mainRenderer.setClearColor(0x222222, 1);
         
-        // ЯРКОЕ ОСВЕЩЕНИЕ ДЛЯ STL
+        // УЛУЧШЕННОЕ ОСВЕЩЕНИЕ ДЛЯ STL
         this.setupLighting(this.previewScene);
         this.setupLighting(this.mainScene);
         
@@ -139,57 +141,46 @@ class ModelViewerApp {
     }
 
     setupLighting(scene) {
-    // Очищаем старое освещение
-    while(scene.children.length > 0) { 
-        if (scene.children[0].isLight) {
-            scene.remove(scene.children[0]);
-        } else {
-            break;
+        // Очищаем старое освещение
+        while(scene.children.length > 0) { 
+            if (scene.children[0].isLight) {
+                scene.remove(scene.children[0]);
+            } else {
+                break;
+            }
         }
-    }
-    
-    // 1. ОСНОВНОЙ РАССЕЯННЫЙ СВЕТ (фоновая подсветка)
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-    scene.add(ambientLight);
-    
-    // 2. МОЩНЫЕ ПРОЖЕКТОРЫ ВОКРУГ МОДЕЛИ
-    
-    // 🔦 ПРОЖЕКТОР СПЕРЕДИ (главный источник)
-    const frontLight = new THREE.PointLight(0xffffff, 1.5, 20);
-    frontLight.position.set(0, 0, 10);
-    scene.add(frontLight);
-    
-    // 🔦 ПРОЖЕКТОР СВЕРХУ
-    const topLight = new THREE.PointLight(0xffffff, 1.2, 20);
-    topLight.position.set(0, 10, 0);
-    scene.add(topLight);
-    
-    // 🔦 ПРОЖЕКТОР СБОКУ СПРАВА
-    const rightLight = new THREE.PointLight(0xffffff, 1.0, 20);
-    rightLight.position.set(10, 5, 5);
-    scene.add(rightLight);
-    
-    // 🔦 ПРОЖЕКТОР СБОКУ СЛЕВА
-    const leftLight = new THREE.PointLight(0xffffff, 1.0, 20);
-    leftLight.position.set(-10, 5, 5);
-    scene.add(leftLight);
-    
-    // 🔦 ПРОЖЕКТОР СЗАДИ (контровой свет)
-    const backLight = new THREE.PointLight(0xffffff, 0.8, 20);
-    backLight.position.set(0, 5, -10);
-    scene.add(backLight);
-    
-    // 3. ДОПОЛНИТЕЛЬНЫЕ НАПРАВЛЕННЫЕ СВЕТА
-    const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.4);
-    directionalLight1.position.set(5, 5, 5);
-    scene.add(directionalLight1);
-    
-    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.3);
-    directionalLight2.position.set(-5, 3, -5);
-    scene.add(directionalLight2);
-    
-    console.log('💡 Прожекторы установлены: 5 точечных + 2 направленных + ambient');
         
+        // 1. МОЩНЫЙ РАССЕЯННЫЙ СВЕТ
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.0); // УВЕЛИЧЕННАЯ ИНТЕНСИВНОСТЬ
+        scene.add(ambientLight);
+        
+        // 2. ЯРКИЕ ПРОЖЕКТОРЫ
+        const frontLight = new THREE.PointLight(0xffffff, 1.5, 50);
+        frontLight.position.set(0, 0, 15);
+        scene.add(frontLight);
+        
+        const topLight = new THREE.PointLight(0xffffff, 1.2, 50);
+        topLight.position.set(0, 15, 0);
+        scene.add(topLight);
+        
+        const rightLight = new THREE.PointLight(0xffffff, 1.0, 50);
+        rightLight.position.set(15, 8, 8);
+        scene.add(rightLight);
+        
+        const leftLight = new THREE.PointLight(0xffffff, 1.0, 50);
+        leftLight.position.set(-15, 8, 8);
+        scene.add(leftLight);
+        
+        // 3. ДОПОЛНИТЕЛЬНЫЕ НАПРАВЛЕННЫЕ СВЕТА
+        const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.6);
+        directionalLight1.position.set(10, 10, 10);
+        scene.add(directionalLight1);
+        
+        const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.4);
+        directionalLight2.position.set(-10, 5, -10);
+        scene.add(directionalLight2);
+        
+        console.log('💡 Улучшенное освещение установлено');
     }
 
     getRendererForFormat(extension) {
@@ -302,11 +293,13 @@ class ModelViewerApp {
                 let modelObject;
                 if (this.currentFileType === '.stl') {
                     const geometry = object;
-                    // СВЕТЛЫЙ МАТЕРИАЛ ДЛЯ STL
+                    // УЛУЧШЕННЫЙ МАТЕРИАЛ ДЛЯ STL
                     const material = new THREE.MeshStandardMaterial({ 
-                        color: 0xCCCCCC, // Светло-серый
-                        roughness: 0.3,  // Меньше шероховатости
-                        metalness: 0.1   // Меньше металличности
+                        color: 0x4a90e2, // ЯРКИЙ СИНИЙ ЦВЕТ
+                        roughness: 0.2,  // Гладкая поверхность
+                        metalness: 0.1,  // Легкий металлический блеск
+                        emissive: 0x111133, // Легкая подсветка
+                        emissiveIntensity: 0.1
                     });
                     modelObject = new THREE.Mesh(geometry, material);
                 } else {
@@ -389,21 +382,21 @@ class ModelViewerApp {
         // Автоматическое выравнивание модели
         this.autoAlignModel(object, size);
         
-        // 🎯 ОПТИМИЗИРОВАННАЯ ДИСТАНЦИЯ ДЛЯ STL
+        // Оптимизированная дистанция камеры
         const maxDim = Math.max(size.x, size.y, size.z);
         let cameraDistance;
         
         if (this.currentFileType === '.stl') {
-            // ДЛЯ STL - БЛИЖЕ И ПРОЩЕ
-            cameraDistance = maxDim * 1.2; // Размер модели + 20%
+            // Для STL - ближе и проще
+            cameraDistance = maxDim * 1.5;
         } else {
             // Для других форматов - стандартная формула
             const fov = this.mainCamera.fov * (Math.PI / 180);
             cameraDistance = Math.abs(maxDim / Math.sin(fov / 2)) * 1.5;
         }
         
-        cameraDistance = Math.max(cameraDistance, 0.5); // Минимальная дистанция
-        cameraDistance = Math.min(cameraDistance, 10);  // Максимальная дистанция
+        cameraDistance = Math.max(cameraDistance, 0.5);
+        cameraDistance = Math.min(cameraDistance, 10);
         
         console.log('📷 Дистанция камеры основного просмотра:', cameraDistance);
         
@@ -412,9 +405,9 @@ class ModelViewerApp {
         this.mainCamera.updateProjectionMatrix();
         
         if (this.mainControls) {
-            this.mainControls.minDistance = cameraDistance * 0.5;  // Ближе можно подойти
-            this.mainControls.maxDistance = cameraDistance * 3;    // Не так далеко
-            this.mainControls.reset(); // Сбрасываем контролы
+            this.mainControls.minDistance = cameraDistance * 0.5;
+            this.mainControls.maxDistance = cameraDistance * 3;
+            this.mainControls.reset();
         }
     }
 
@@ -543,11 +536,13 @@ class ModelViewerApp {
                 let modelObject;
                 if (this.currentFileType === '.stl') {
                     const geometry = object;
-                    // СВЕТЛЫЙ МАТЕРИАЛ ДЛЯ STL
+                    // УЛУЧШЕННЫЙ МАТЕРИАЛ ДЛЯ STL В ОСНОВНОМ ПРОСМОТРЕ
                     const material = new THREE.MeshStandardMaterial({ 
-                        color: 0xCCCCCC, // Светло-серый
-                        roughness: 0.3,  // Меньше шероховатости
-                        metalness: 0.1   // Меньше металличности
+                        color: 0x4a90e2, // ЯРКИЙ СИНИЙ ЦВЕТ
+                        roughness: 0.2,
+                        metalness: 0.1,
+                        emissive: 0x111133,
+                        emissiveIntensity: 0.1
                     });
                     modelObject = new THREE.Mesh(geometry, material);
                 } else {
