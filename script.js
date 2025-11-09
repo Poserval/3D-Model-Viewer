@@ -1,4 +1,4 @@
-// script.js - ПОЛНЫЙ ИСПРАВЛЕННЫЙ КОД ДЛЯ STL
+// script.js - ПОЛНЫЙ КОД С ПРАВИЛЬНЫМ ОСВЕЩЕНИЕМ
 
 // Состояния приложения
 const APP_STATES = {
@@ -107,7 +107,7 @@ class ModelViewerApp {
     initThreeJS() {
         console.log('Инициализация Three.js...');
         
-        // Для превью
+        // Для превью - ПРОСТОЙ РЕНДЕРЕР БЕЗ ОСВЕЩЕНИЯ
         this.previewScene = new THREE.Scene();
         this.previewCamera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
         this.previewRenderer = new THREE.WebGLRenderer({ 
@@ -116,9 +116,13 @@ class ModelViewerApp {
             alpha: true
         });
         this.previewRenderer.setSize(200, 200);
-        this.previewRenderer.setClearColor(0xf0f0f0, 1); // СВЕТЛЫЙ ФОН
+        this.previewRenderer.setClearColor(0x000000, 0); // Прозрачный фон
         
-        // Для основного просмотрщика
+        // Простое освещение для превью
+        const previewAmbient = new THREE.AmbientLight(0xffffff, 1.0);
+        this.previewScene.add(previewAmbient);
+        
+        // Для основного просмотрщика - ПОЛНОЕ ОСВЕЩЕНИЕ
         this.mainScene = new THREE.Scene();
         this.mainCamera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
         this.mainRenderer = new THREE.WebGLRenderer({ 
@@ -128,55 +132,51 @@ class ModelViewerApp {
         });
         this.mainRenderer.setClearColor(0x222222, 1);
         
-        // НАСТРОЙКА ТОНАЛЬНОГО ОТОБРАЖЕНИЯ
+        // Настройка тонального отображения для лучшей видимости
         this.mainRenderer.toneMapping = THREE.ACESFilmicToneMapping;
         this.mainRenderer.toneMappingExposure = 1.2;
-        this.previewRenderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.previewRenderer.toneMappingExposure = 1.2;
         
-        // Освещение
-        this.setupLighting(this.previewScene);
-        this.setupLighting(this.mainScene);
+        // Мощное освещение для основного просмотрщика
+        this.setupMainLighting();
         
         // Камеры
         this.previewCamera.position.set(0, 0, 5);
         this.mainCamera.position.set(0, 0, 5);
 
-        console.log('Three.js инициализирован с улучшенным освещением');
+        console.log('Three.js инициализирован');
         this.animate();
     }
 
-    setupLighting(scene) {
+    setupMainLighting() {
         // Очищаем старое освещение
-        while(scene.children.length > 0) { 
-            if (scene.children[0].isLight) {
-                scene.remove(scene.children[0]);
+        while(this.mainScene.children.length > 0) { 
+            if (this.mainScene.children[0].isLight) {
+                this.mainScene.remove(this.mainScene.children[0]);
             } else {
                 break;
             }
         }
         
-        // 1. МОЩНЫЙ РАССЕЯННЫЙ СВЕТ - ОСНОВНОЙ ИСТОЧНИК
+        // 1. МОЩНЫЙ РАССЕЯННЫЙ СВЕТ
         const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
-        scene.add(ambientLight);
+        this.mainScene.add(ambientLight);
         
         // 2. ЯРКИЙ НАПРАВЛЕННЫЙ СВЕТ СПЕРЕДИ
         const directionalLight1 = new THREE.DirectionalLight(0xffffff, 1.2);
         directionalLight1.position.set(10, 10, 10);
-        directionalLight1.castShadow = true;
-        scene.add(directionalLight1);
+        this.mainScene.add(directionalLight1);
         
         // 3. ДОПОЛНИТЕЛЬНЫЙ СВЕТ СЗАДИ
         const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.8);
         directionalLight2.position.set(-10, 5, -10);
-        scene.add(directionalLight2);
+        this.mainScene.add(directionalLight2);
         
         // 4. БОКОВОЙ СВЕТ
         const directionalLight3 = new THREE.DirectionalLight(0xffffff, 0.6);
         directionalLight3.position.set(0, -10, 0);
-        scene.add(directionalLight3);
+        this.mainScene.add(directionalLight3);
         
-        console.log('💡 УСИЛЕННОЕ ОСВЕЩЕНИЕ ДЛЯ STL');
+        console.log('💡 Мощное освещение установлено для основного просмотрщика');
     }
 
     getRendererForFormat(extension) {
@@ -302,12 +302,11 @@ class ModelViewerApp {
                 let modelObject;
                 if (this.currentFileType === '.stl') {
                     const geometry = object;
-                    // ПРОСТОЙ И ЯРКИЙ МАТЕРИАЛ ДЛЯ STL
-                    const material = new THREE.MeshPhongMaterial({ 
-                        color: 0x4a90e2,        // ЯРКИЙ СИНИЙ
-                        shininess: 100,         // БЛЕСК
-                        specular: 0xffffff,     // БЕЛЫЕ ОТБЛЕСКИ
-                        emissive: 0x000000
+                    // ДЛЯ ПРЕВЬЮ - ПРОСТОЙ ЯРКИЙ МАТЕРИАЛ
+                    const material = new THREE.MeshBasicMaterial({ 
+                        color: 0x4a90e2,    // ЯРКИЙ СИНИЙ
+                        transparent: true,
+                        opacity: 0.9
                     });
                     modelObject = new THREE.Mesh(geometry, material);
                 } else {
@@ -315,10 +314,11 @@ class ModelViewerApp {
                     if (modelObject.traverse) {
                         modelObject.traverse((child) => {
                             if (child.isMesh) {
-                                child.material = new THREE.MeshStandardMaterial({
+                                // ДЛЯ FBX В ПРЕВЬЮ ТОЖЕ ПРОСТОЙ МАТЕРИАЛ
+                                child.material = new THREE.MeshBasicMaterial({
                                     color: 0x888888,
-                                    roughness: 0.7,
-                                    metalness: 0.2
+                                    transparent: true,
+                                    opacity: 0.9
                                 });
                             }
                         });
@@ -533,7 +533,7 @@ class ModelViewerApp {
                 let modelObject;
                 if (this.currentFileType === '.stl') {
                     const geometry = object;
-                    // ТОТ ЖЕ ЯРКИЙ МАТЕРИАЛ ДЛЯ ОСНОВНОГО ПРОСМОТРА
+                    // ДЛЯ ОСНОВНОГО ПРОСМОТРА - МАТЕРИАЛ С ОСВЕЩЕНИЕМ
                     const material = new THREE.MeshPhongMaterial({ 
                         color: 0x4a90e2,
                         shininess: 100,
