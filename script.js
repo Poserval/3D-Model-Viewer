@@ -330,7 +330,7 @@ class ModelViewerApp {
         // Настраиваем камеру
         const maxDim = Math.max(size.x, size.y, size.z);
         const fov = this.previewCamera.fov * (Math.PI / 180);
-        let cameraDistance = Math.abs(maxDim / Math.sin(fov / 2)) * 0.8;
+        let cameraDistance = Math.abs(maxDim / Math.sin(fov / 2)) * 0.1;
         
         cameraDistance = Math.max(cameraDistance, 1);
         
