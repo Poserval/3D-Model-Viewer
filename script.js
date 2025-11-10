@@ -1,4 +1,4 @@
-// script.js - ИСПРАВЛЕННАЯ ВЕРСИЯ БЕЗ АНИМАЦИИ В ПРЕВЬЮ
+// script.js - ИСПРАВЛЕННАЯ ВЕРСИЯ С ПОЛНЫМ СБРОСОМ
 
 // Состояния приложения
 const APP_STATES = {
@@ -677,38 +677,62 @@ class ModelViewerApp {
         }
     }
 
+    // 🔧 ПЕРЕПИСАННЫЙ МЕТОД - ПОЛНЫЙ СБРОС ПРИ ВОЗВРАТЕ НА ГЛАВНЫЙ ЭКРАН
     showMainScreen() {
+        console.log('🔄 Возврат на главный экран - полный сброс');
+        
+        // Переключаем экраны
         this.viewerScreen.classList.remove('active');
         this.mainScreen.classList.add('active');
         this.currentState = APP_STATES.MAIN;
         
+        // 🔧 ВЫЗЫВАЕМ ПОЛНЫЙ СБРОС ВМЕСТО ЧАСТИЧНОГО
+        this.resetPreview();
+        
+        // Дополнительные сбросы для гарантии
         this.autoRotate = false;
-        if (this.currentRenderer === 'model-viewer') {
+        if (this.mainModel) {
             this.mainModel.autoRotate = false;
         }
         
-        // Сбрасываем флаг освещения при возврате на главный экран
+        // Сбрасываем флаг освещения
         this.lightsInitialized = false;
+        
+        console.log('✅ Главный экран полностью сброшен');
     }
 
+    // 🔧 УСИЛЕННЫЙ МЕТОД СБРОСА ПРЕВЬЮ
     resetPreview() {
+        console.log('🔄 Полный сброс превью');
+        
+        // Показываем плейсхолдер
         this.showPreviewPlaceholder();
+        
+        // Скрываем все рендереры
         this.hideAllRenderers();
+        
+        // Отключаем кнопку "Открыть в 3D"
         this.open3dBtn.disabled = true;
+        
+        // 🔧 ОЧИЩАЕМ НАЗВАНИЕ ФАЙЛА - ВАЖНО!
         this.fileName.textContent = '';
         
+        // Освобождаем URL если он есть
         if (this.currentFileURL) {
             URL.revokeObjectURL(this.currentFileURL);
             this.currentFileURL = null;
         }
         
+        // Сбрасываем все переменные состояния
         this.currentFile = null;
         this.currentFileType = null;
         this.currentRenderer = null;
         
+        // Очищаем сцены
         this.clearThreeJSScene(this.previewScene);
         this.clearThreeJSScene(this.mainScene);
         
+        // Очищаем контролы
         if (this.mainControls) {
             this.mainControls.dispose();
             this.mainControls = null;
@@ -716,6 +740,8 @@ class ModelViewerApp {
         
         // Сбрасываем флаг освещения
         this.lightsInitialized = false;
+        
+        console.log('✅ Превью полностью сброшено');
     }
 
     showLoadingIndicator() {
