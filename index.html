@@ -16,7 +16,7 @@
     <div id="main-screen" class="screen active">
         <div class="container">
             <div class="app-logo">
-                <img src="icons/logo-header.png" alt="3D Viewer" class="logo-image">
+                <img src="icons/logo-header.png" alt="3D Model Viewer Logo" class="logo-image">
             </div>
             
             <div id="preview-area" class="preview-area">
@@ -27,7 +27,7 @@
                 <!-- Model Viewer для GLB/GLTF/OBJ -->
                 <model-viewer id="preview-model" class="preview-model" hidden></model-viewer>
                 
-                <!-- Three.js Canvas для STL/FBX -->
+                <!-- Three.js Canvas для STL -->
                 <canvas id="preview-threejs" class="preview-threejs" hidden></canvas>
                 
                 <!-- Индикатор загрузки -->
@@ -43,7 +43,7 @@
                 </div>
             </div>
             
-            <input type="file" id="file-input" accept=".glb,.gltf,.obj,.stl,.fbx" hidden>
+            <input type="file" id="file-input" accept=".glb,.gltf,.obj,.stl" hidden>
             <button id="select-file-btn" class="btn primary">Выбрать файл</button>
             <button id="open-3d-btn" class="btn secondary" disabled>Открыть в 3D</button>
             <div id="file-name" class="file-name"></div>
@@ -55,7 +55,7 @@
         <header class="header">
             <button id="back-btn" class="back-btn">← Назад</button>
             <div class="header-logo">
-                <img src="icons/logo-header.png" alt="3D Viewer" class="logo-image-small">
+                <img src="icons/logo-header.png" alt="3D Model Viewer" class="logo-image-small">
             </div>
             <h2 id="viewer-title" class="viewer-title"></h2>
         </header>
@@ -68,7 +68,7 @@
                 hidden>
             </model-viewer>
             
-            <!-- Three.js Canvas для STL/FBX -->
+            <!-- Three.js Canvas для STL -->
             <canvas id="main-threejs" class="main-threejs" hidden></canvas>
         </div>
         <div class="viewer-controls">
@@ -81,13 +81,9 @@
         </div>
     </div>
 
-    <!-- ДОБАВЬТЕ ЭТУ СТРОКУ ДЛЯ FBX ПОДДЕРЖКИ -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/inflate.min.js"></script>
-
     <!-- Three.js и загрузчики -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     
     <!-- Model Viewer -->
