@@ -1,4 +1,4 @@
-// script.js - ПОЛНЫЙ КОД С ИСПРАВЛЕННЫМ ПРЕВЬЮ
+// script.js - ИСПРАВЛЕННАЯ ВЕРСИЯ БЕЗ ПОВТОРНОГО СОЗДАНИЯ СВЕТА
 
 // Состояния приложения
 const APP_STATES = {
@@ -35,6 +35,9 @@ class ModelViewerApp {
         this.mainRenderer = null;
         this.mainModelObject = null;
         this.mainControls = null;
+        
+        // 🔧 ФЛАГ ДЛЯ СЛЕДЕНИЯ ЗА ОСВЕЩЕНИЕМ
+        this.lightsInitialized = false;
         
         this.init();
     }
@@ -116,7 +119,7 @@ class ModelViewerApp {
             alpha: true
         });
         this.previewRenderer.setSize(200, 200);
-        this.previewRenderer.setClearColor(0x000000, 0); // Прозрачный фон
+        this.previewRenderer.setClearColor(0x000000, 0);
         
         // Простое освещение для превью
         const previewAmbient = new THREE.AmbientLight(0xffffff, 1.0);
@@ -132,9 +135,6 @@ class ModelViewerApp {
         });
         this.mainRenderer.setClearColor(0x222222, 1);
         
-        // Освещение для основного просмотрщика
-        this.setupMainLighting();
-        
         // Камеры
         this.previewCamera.position.set(0, 0, 5);
         this.mainCamera.position.set(0, 0, 5);
@@ -143,25 +143,33 @@ class ModelViewerApp {
         this.animate();
     }
 
+    // 🔧 ПЕРЕПИСАННЫЙ МЕТОД - ОСВЕЩЕНИЕ СОЗДАЕТСЯ ОДИН РАЗ
     setupMainLighting() {
-        // Очищаем старое освещение
-        while(this.mainScene.children.length > 0) { 
-            if (this.mainScene.children[0].isLight) {
-                this.mainScene.remove(this.mainScene.children[0]);
-            } else {
-                break;
-            }
+        // Если освещение уже создано - выходим
+        if (this.lightsInitialized) {
+            console.log('💡 Освещение уже создано, пропускаем');
+            return;
         }
+
+        console.log('💡 Создаем основное освещение...');
         
-        // Основное освещение для основного просмотрщика
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        // 1. Окружающий свет
+        const ambientLight = new THREE.AmbientLight(0x404080, 0.4);
         this.mainScene.add(ambientLight);
         
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.4);
-        directionalLight.position.set(5, 5, 5);
+        // 2. Направленный свет
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        directionalLight.position.set(10, 10, 5);
         this.mainScene.add(directionalLight);
         
-        console.log('💡 Освещение основного просмотрщика установлено');
+        // 3. Движущийся точечный свет
+        this.orbitingLight = new THREE.PointLight(0xffffff, 1.2, 100);
+        this.orbitingLight.position.set(8, 4, 0);
+        this.mainScene.add(this.orbitingLight);
+        
+        // Помечаем, что освещение создано
+        this.lightsInitialized = true;
+        console.log('💡 Основное освещение создано один раз');
     }
 
     getRendererForFormat(extension) {
@@ -177,7 +185,6 @@ class ModelViewerApp {
         const file = event.target.files[0];
         if (!file) return;
 
-        // Очищаем предыдущие данные
         this.resetPreview();
 
         if (!this.validateFile(file)) {
@@ -221,7 +228,6 @@ class ModelViewerApp {
             this.open3dBtn.disabled = true;
             this.fileName.textContent = this.currentFile.name;
 
-            // Скрываем все рендереры
             this.hideAllRenderers();
             
             if (this.currentRenderer === 'model-viewer') {
@@ -252,7 +258,6 @@ class ModelViewerApp {
         return new Promise((resolve) => {
             console.log('📱 Загрузка Model Viewer превью...');
             
-            // Очищаем Three.js сцену
             this.clearThreeJSScene(this.previewScene);
             
             this.previewModel.src = this.currentFileURL;
@@ -282,9 +287,8 @@ class ModelViewerApp {
                 let modelObject;
                 if (this.currentFileType === '.stl') {
                     const geometry = object;
-                    // ПРОСТОЙ МАТЕРИАЛ ДЛЯ ПРЕВЬЮ - ВСЕГДА ВИДИМЫЙ
                     const material = new THREE.MeshBasicMaterial({ 
-                        color: 0x000000,  // ЧЕРНЫЙ ДЛЯ ХОРОШЕЙ ВИДИМОСТИ
+                        color: 0x000000,
                         transparent: true,
                         opacity: 0.9
                     });
@@ -294,7 +298,6 @@ class ModelViewerApp {
                     if (modelObject.traverse) {
                         modelObject.traverse((child) => {
                             if (child.isMesh) {
-                                // ДЛЯ FBX ТОЖЕ ПРОСТОЙ МАТЕРИАЛ
                                 child.material = new THREE.MeshBasicMaterial({
                                     color: 0x000000,
                                     transparent: true,
@@ -335,7 +338,6 @@ class ModelViewerApp {
         
         console.log('📐 Размер модели для превью:', size);
         
-        // Центрируем объект
         object.position.x = -center.x;
         object.position.y = -center.y;
         object.position.z = -center.z;
@@ -355,6 +357,7 @@ class ModelViewerApp {
         this.previewCamera.updateProjectionMatrix();
     }
 
+    // 🔧 ПЕРЕПИСАННЫЙ МЕТОД - БЕЗ ДОБАВЛЕНИЯ СВЕТА ПРИ КАЖДОМ СБРОСЕ
     setupMainCamera(object) {
         const box = new THREE.Box3().setFromObject(object);
         const center = box.getCenter(new THREE.Vector3());
@@ -369,8 +372,8 @@ class ModelViewerApp {
         
         this.autoAlignModel(object, size);
         
-        // ДОБАВЛЯЕМ ПРОЖЕКТОРЫ К МОДЕЛИ
-        this.addModelLights(object, size);
+        // 🔧 ОСВЕЩЕНИЕ СОЗДАЕТСЯ ТОЛЬКО ОДИН РАЗ В setupMainLighting()
+        // НИКАКИХ ПРОЖЕКТОРОВ ЗДЕСЬ НЕ ДОБАВЛЯЕМ!
         
         const maxDim = Math.max(size.x, size.y, size.z);
         let cameraDistance;
@@ -396,38 +399,6 @@ class ModelViewerApp {
             this.mainControls.maxDistance = cameraDistance * 3;
             this.mainControls.reset();
         }
-    }
-
-    addModelLights(object, size) {
-        const maxDim = Math.max(size.x, size.y, size.z);
-        const lightDistance = maxDim * 2;
-        
-        // 🔦 ПРОЖЕКТОР СПЕРЕДИ
-        const frontLight = new THREE.PointLight(0xffffff, 2.0, lightDistance * 2);
-        frontLight.position.set(0, 0, lightDistance);
-        object.add(frontLight);
-        
-        // 🔦 ПРОЖЕКТОР СВЕРХУ
-        const topLight = new THREE.PointLight(0xffffff, 1.5, lightDistance * 2);
-        topLight.position.set(0, lightDistance, 0);
-        object.add(topLight);
-        
-        // 🔦 ПРОЖЕКТОР СПРАВА
-        const rightLight = new THREE.PointLight(0xffffff, 1.5, lightDistance * 2);
-        rightLight.position.set(lightDistance, 0, 0);
-        object.add(rightLight);
-        
-        // 🔦 ПРОЖЕКТОР СЛЕВА
-        const leftLight = new THREE.PointLight(0xffffff, 1.5, lightDistance * 2);
-        leftLight.position.set(-lightDistance, 0, 0);
-        object.add(leftLight);
-        
-        // 🔦 ПРОЖЕКТОР СЗАДИ
-        const backLight = new THREE.PointLight(0xffffff, 1.0, lightDistance * 2);
-        backLight.position.set(0, 0, -lightDistance);
-        object.add(backLight);
-        
-        console.log('💡 Прожекторы прикреплены к модели!');
     }
 
     autoAlignModel(object, size) {
@@ -457,6 +428,14 @@ class ModelViewerApp {
         
         // Рендер основного просмотрщика
         if (this.mainRenderer && this.mainScene && this.mainCamera) {
+            // 🔧 АНИМАЦИЯ ДВИЖУЩЕГОСЯ СВЕТА
+            if (this.orbitingLight && this.autoRotate) {
+                const time = Date.now() * 0.001;
+                this.orbitingLight.position.x = Math.cos(time * 0.5) * 8;
+                this.orbitingLight.position.z = Math.sin(time * 0.5) * 8;
+                this.orbitingLight.position.y = 4 + Math.sin(time * 0.3) * 2;
+            }
+            
             if (this.autoRotate && this.mainModelObject && this.currentRenderer === 'threejs') {
                 this.mainModelObject.rotation.y += 0.01;
             }
@@ -504,7 +483,6 @@ class ModelViewerApp {
         try {
             this.viewerTitle.textContent = this.currentFile.name;
 
-            // Скрываем все рендереры
             this.hideAllRenderers();
 
             if (this.currentRenderer === 'model-viewer') {
@@ -527,7 +505,6 @@ class ModelViewerApp {
         return new Promise((resolve) => {
             console.log('📱 Открытие Model Viewer...');
             
-            // Очищаем Three.js сцену и контролы
             this.clearThreeJSScene(this.mainScene);
             if (this.mainControls) {
                 this.mainControls.dispose();
@@ -562,7 +539,6 @@ class ModelViewerApp {
                 let modelObject;
                 if (this.currentFileType === '.stl') {
                     const geometry = object;
-                    // МАТЕРИАЛ С ОСВЕЩЕНИЕМ ДЛЯ ОСНОВНОГО ПРОСМОТРА
                     const material = new THREE.MeshStandardMaterial({ 
                         color: 0xCCCCCC,
                         roughness: 0.3,
@@ -586,6 +562,9 @@ class ModelViewerApp {
                 
                 this.mainScene.add(modelObject);
                 this.mainModelObject = modelObject;
+                
+                // 🔧 СОЗДАЕМ ОСВЕЩЕНИЕ ТОЛЬКО ПРИ ПЕРВОЙ ЗАГРУЗКЕ
+                this.setupMainLighting();
                 
                 this.setupMainCamera(modelObject);
                 
@@ -665,14 +644,17 @@ class ModelViewerApp {
         this.autoRotateBtn.innerHTML = isActive ? '⏸️ Автоповорот' : '▶️ Автоповорот';
     }
 
+    // 🔧 ПЕРЕПИСАННЫЙ МЕТОД - ТОЛЬКО СБРОС КАМЕРЫ, БЕЗ ПЕРЕСОЗДАНИЯ СВЕТА
     resetCamera() {
         if (this.currentRenderer === 'model-viewer') {
             this.mainModel.cameraOrbit = '0deg 75deg 105%';
         } else if (this.currentRenderer === 'threejs' && this.mainModelObject) {
+            // ТОЛЬКО сброс позиции камеры, освещение не трогаем!
             this.setupMainCamera(this.mainModelObject);
             if (this.mainControls) {
                 this.mainControls.reset();
             }
+            console.log('🎯 Камера сброшена, освещение не изменилось');
         }
     }
 
@@ -685,6 +667,9 @@ class ModelViewerApp {
         if (this.currentRenderer === 'model-viewer') {
             this.mainModel.autoRotate = false;
         }
+        
+        // 🔧 СБРАСЫВАЕМ ФЛАГ ОСВЕЩЕНИЯ ПРИ ВОЗВРАТЕ НА ГЛАВНЫЙ ЭКРАН
+        this.lightsInitialized = false;
     }
 
     resetPreview() {
@@ -709,6 +694,9 @@ class ModelViewerApp {
             this.mainControls.dispose();
             this.mainControls = null;
         }
+        
+        // 🔧 СБРАСЫВАЕМ ФЛАГ ОСВЕЩЕНИЯ
+        this.lightsInitialized = false;
     }
 
     showLoadingIndicator() {
