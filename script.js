@@ -1,4 +1,4 @@
-// script.js - ПОЛНАЯ ИСПРАВЛЕННАЯ ВЕРСИЯ
+// script.js - ИСПРАВЛЕННАЯ ВЕРСИЯ БЕЗ АНИМАЦИИ В ПРЕВЬЮ
 
 // Состояния приложения
 const APP_STATES = {
@@ -346,7 +346,7 @@ class ModelViewerApp {
         });
     }
 
-    // 🔧 ПЕРЕПИСАННЫЙ МЕТОД ДЛЯ ПРЕВЬЮ - ЛУЧШЕЕ МАСШТАБИРОВАНИЕ
+    // 🔧 ПЕРЕПИСАННЫЙ МЕТОД ДЛЯ ПРЕВЬЮ - БЛИЖЕ И БЕЗ АНИМАЦИИ
     setupPreviewCamera(object) {
         const box = new THREE.Box3().setFromObject(object);
         const center = box.getCenter(new THREE.Vector3());
@@ -361,37 +361,32 @@ class ModelViewerApp {
         
         this.autoAlignModel(object, size);
         
-        // 🔧 УЛУЧШЕННОЕ ВЫЧИСЛЕНИЕ ДИСТАНЦИИ КАМЕРЫ
+        // 🔧 УЛУЧШЕННОЕ ВЫЧИСЛЕНИЕ ДИСТАНЦИИ КАМЕРЫ - БЛИЖЕ К МОДЕЛИ
         const maxDim = Math.max(size.x, size.y, size.z);
         
-        // Для превью используем фиксированный коэффициент масштабирования
+        // Для превью используем более близкую камеру
         let cameraDistance;
         if (maxDim > 10) {
-            // Большие модели - сильнее отдаляем камеру
-            cameraDistance = maxDim * 0.8;
+            // Большие модели - отдаляем камеру меньше
+            cameraDistance = maxDim * 0.6;
         } else if (maxDim < 1) {
-            // Маленькие модели - приближаем
-            cameraDistance = maxDim * 3;
+            // Маленькие модели - приближаем еще больше
+            cameraDistance = maxDim * 2;
         } else {
-            // Средние модели - стандартный масштаб
-            cameraDistance = maxDim * 1.5;
+            // Средние модели - стандартный масштаб, но ближе
+            cameraDistance = maxDim * 1.0;
         }
         
-        // Ограничиваем минимальную и максимальную дистанцию
-        cameraDistance = Math.max(cameraDistance, 2);
-        cameraDistance = Math.min(cameraDistance, 15);
+        // 🔧 ЕЩЕ БЛИЖЕ - уменьшаем минимальную дистанцию
+        cameraDistance = Math.max(cameraDistance, 1.5);
+        cameraDistance = Math.min(cameraDistance, 8);
         
         console.log('📷 Дистанция камеры превью:', cameraDistance);
         
-        // 🔧 КАМЕРА С ЛУЧШИМ УГЛОМ ОБЗОРА
-        this.previewCamera.position.set(cameraDistance * 0.5, cameraDistance * 0.3, cameraDistance * 0.8);
+        // 🔧 КАМЕРА БЛИЖЕ И С ХОРОШИМ УГЛОМ
+        this.previewCamera.position.set(0, 0, cameraDistance);
         this.previewCamera.lookAt(0, 0, 0);
         this.previewCamera.updateProjectionMatrix();
-        
-        // 🔧 АВТОМАТИЧЕСКИЙ ПОВОРОТ ДЛЯ ПРЕВЬЮ
-        if (this.previewModelObject) {
-            this.previewModelObject.rotation.y += 0.01;
-        }
     }
 
     setupMainCamera(object) {
@@ -448,10 +443,7 @@ class ModelViewerApp {
         
         // Всегда рендерим превью если он активен
         if (this.previewRenderer && this.previewScene && this.previewCamera) {
-            // 🔧 АВТОПОВОРОТ ДЛЯ ПРЕВЬЮ
-            if (this.previewModelObject) {
-                this.previewModelObject.rotation.y += 0.01;
-            }
+            // 🔧 УБРАНА АНИМАЦИЯ ПОВОРОТА ДЛЯ ПРЕВЬЮ
             this.previewRenderer.render(this.previewScene, this.previewCamera);
         }
         
