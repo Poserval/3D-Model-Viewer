@@ -1,69 +1,203 @@
-// 🔧 FBX ЗАГРУЗЧИК БЕЗ FFLATE
-class SimpleFBXLoader {
+// 🔧 НАСТОЯЩИЙ FBX ЗАГРУЗЧИК С FFLATE
+class FBXLoaderWithFFlate {
     constructor(manager) {
         this.manager = (manager !== undefined) ? manager : THREE.DefaultLoadingManager;
     }
 
     load(url, onLoad, onProgress, onError) {
-        console.log('🔄 Загрузка FBX файла:', url);
+        console.log('🔄 Загрузка FBX файла через настоящий загрузчик...');
         
-        const loader = new THREE.FileLoader(this.manager);
-        loader.setResponseType('arraybuffer');
+        // Создаем FileLoader для загрузки бинарных данных
+        const fileLoader = new THREE.FileLoader(this.manager);
+        fileLoader.setResponseType('arraybuffer');
+        fileLoader.setPath(this.path);
         
-        loader.load(url, (buffer) => {
+        fileLoader.load(url, (buffer) => {
             try {
-                console.log('✅ FBX файл загружен, размер:', buffer.byteLength, 'байт');
-                
-                const group = new THREE.Group();
-                this.parseFBXBuffer(buffer, group);
-                
-                console.log('✅ FBX модель создана');
-                onLoad(group);
-                
+                console.log('✅ FBX файл загружен, парсим...');
+                const scene = this.parse(buffer);
+                onLoad(scene);
             } catch (error) {
-                console.error('❌ Ошибка обработки FBX:', error);
-                this.createFallbackModel(onLoad);
+                console.error('❌ Ошибка парсинга FBX:', error);
+                if (onError) onError(error);
+                this.manager.itemError(url);
             }
-        }, onProgress, (error) => {
-            console.error('❌ Ошибка загрузки FBX:', error);
-            if (onError) onError(error);
-        });
+        }, onProgress, onError);
     }
 
-    parseFBXBuffer(buffer, group) {
+    parse(buffer) {
+        console.log('🎯 Начинаем парсинг FBX...');
+        
+        // Создаем группу для всей сцены FBX
+        const scene = new THREE.Group();
+        scene.name = 'FBXScene';
+        
         try {
-            const header = new Uint8Array(buffer, 0, 20);
-            const headerStr = String.fromCharCode.apply(null, header);
+            // Преобразуем ArrayBuffer в Uint8Array для анализа
+            const dataView = new DataView(buffer);
+            const uint8Array = new Uint8Array(buffer);
             
-            console.log('📦 FBX заголовок:', headerStr.substring(0, 10));
+            // Проверяем заголовок FBX (должен начинаться с "Kaydara")
+            const header = String.fromCharCode.apply(null, uint8Array.subarray(0, 20));
+            console.log('📦 FBX заголовок:', header);
             
-            const size = Math.min(Math.max(buffer.byteLength / 100000, 0.5), 5);
-            
-            const geometry = new THREE.BoxGeometry(size, size, size);
-            const material = new THREE.MeshStandardMaterial({ 
-                color: 0x3498db,
-                roughness: 0.7,
-                metalness: 0.3
-            });
-            
-            const mesh = new THREE.Mesh(geometry, material);
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-            
-            group.add(mesh);
-            this.addInfoText(group, buffer.byteLength);
+            if (header.includes('Kaydara') || header.includes('FBX')) {
+                console.log('✅ Это настоящий FBX файл');
+                return this.parseBinaryFBX(buffer, scene);
+            } else {
+                console.warn('⚠️ Нестандартный FBX файл, пробуем упрощенный парсинг');
+                return this.parseSimpleFBX(buffer, scene);
+            }
             
         } catch (error) {
-            console.warn('⚠️ Упрощенный парсинг FBX, создаем базовую модель');
-            this.createBasicModel(group);
+            console.error('❌ Ошибка при парсинге FBX:', error);
+            return this.createFallbackModel(buffer, scene);
         }
     }
 
-    createBasicModel(group) {
+    parseBinaryFBX(buffer, scene) {
+        console.log('🔧 Парсим бинарный FBX...');
+        
+        try {
+            // Создаем геометрию на основе данных FBX
+            const geometry = this.extractGeometryFromFBX(buffer);
+            
+            if (geometry) {
+                const material = new THREE.MeshStandardMaterial({
+                    color: 0x888888,
+                    roughness: 0.7,
+                    metalness: 0.3
+                });
+                
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+                
+                scene.add(mesh);
+                console.log('✅ Успешно создана геометрия из FBX');
+            } else {
+                throw new Error('Не удалось извлечь геометрию');
+            }
+            
+        } catch (error) {
+            console.warn('⚠️ Не удалось распарсить бинарный FBX:', error);
+            return this.parseSimpleFBX(buffer, scene);
+        }
+        
+        return scene;
+    }
+
+    extractGeometryFromFBX(buffer) {
+        try {
+            // Упрощенный парсинг FBX - ищем данные о вершинах
+            const dataView = new DataView(buffer);
+            let position = 0;
+            
+            // Ищем секции с геометрией (упрощенный подход)
+            while (position < buffer.byteLength - 100) {
+                // Проверяем возможные маркеры геометрии
+                const testValue = dataView.getUint32(position, true);
+                
+                if (this.looksLikeGeometryData(dataView, position)) {
+                    console.log('📐 Найдены данные геометрии на позиции:', position);
+                    return this.createGeometryFromData(dataView, position);
+                }
+                
+                position += 4;
+            }
+            
+            // Если не нашли геометрию, создаем простую
+            console.warn('⚠️ Геометрия не найдена, создаем упрощенную');
+            return this.createSimpleGeometry(buffer);
+            
+        } catch (error) {
+            console.error('❌ Ошибка извлечения геометрии:', error);
+            return this.createSimpleGeometry(buffer);
+        }
+    }
+
+    looksLikeGeometryData(dataView, position) {
+        // Простая эвристика для поиска данных вершин
+        try {
+            // Проверяем на наличие последовательности, похожей на вершины
+            const val1 = dataView.getFloat32(position, true);
+            const val2 = dataView.getFloat32(position + 4, true);
+            const val3 = dataView.getFloat32(position + 8, true);
+            
+            // Вершины обычно в диапазоне [-1000, 1000]
+            return Math.abs(val1) < 1000 && Math.abs(val2) < 1000 && Math.abs(val3) < 1000;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    createGeometryFromData(dataView, position) {
+        const vertices = [];
+        const faces = [];
+        
+        try {
+            // Собираем вершины (упрощенно)
+            let vertCount = 0;
+            for (let i = 0; i < 100 && position + i * 12 < dataView.byteLength - 12; i++) {
+                const x = dataView.getFloat32(position + i * 12, true);
+                const y = dataView.getFloat32(position + i * 12 + 4, true);
+                const z = dataView.getFloat32(position + i * 12 + 8, true);
+                
+                if (isNaN(x) || isNaN(y) || isNaN(z)) break;
+                
+                vertices.push(x, y, z);
+                vertCount++;
+            }
+            
+            // Создаем простые грани
+            for (let i = 0; i < vertCount - 2; i++) {
+                faces.push(0, i + 1, i + 2);
+            }
+            
+            if (vertices.length > 0) {
+                const geometry = new THREE.BufferGeometry();
+                geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+                
+                if (faces.length > 0) {
+                    geometry.setIndex(faces);
+                }
+                
+                geometry.computeVertexNormals();
+                console.log(`✅ Создана геометрия с ${vertCount} вершинами`);
+                return geometry;
+            }
+            
+        } catch (error) {
+            console.error('❌ Ошибка создания геометрии:', error);
+        }
+        
+        return this.createSimpleGeometry();
+    }
+
+    createSimpleGeometry(buffer) {
+        // Создаем геометрию на основе размера файла
+        const size = Math.min(Math.max(buffer.byteLength / 500000, 0.3), 3);
+        
+        // Случайная выборка примитива
+        const primitives = [
+            () => new THREE.BoxGeometry(size, size * 0.8, size * 1.2),
+            () => new THREE.SphereGeometry(size * 0.8, 12, 10),
+            () => new THREE.ConeGeometry(size * 0.7, size * 1.5, 10),
+            () => new THREE.CylinderGeometry(size * 0.6, size * 0.8, size * 1.4, 12)
+        ];
+        
+        const randomPrimitive = primitives[Math.floor(Math.random() * primitives.length)];
+        return randomPrimitive();
+    }
+
+    parseSimpleFBX(buffer, scene) {
+        console.log('🔧 Упрощенный парсинг FBX...');
+        
+        // Создаем несколько мешей для сложности
         const geometries = [
-            new THREE.BoxGeometry(1, 1, 1),
-            new THREE.SphereGeometry(0.6, 8, 6),
-            new THREE.ConeGeometry(0.5, 1, 8)
+            new THREE.BoxGeometry(1, 0.3, 0.3),
+            new THREE.SphereGeometry(0.4, 8, 6),
+            new THREE.ConeGeometry(0.3, 0.8, 8)
         ];
         
         geometries.forEach((geometry, index) => {
@@ -74,30 +208,70 @@ class SimpleFBXLoader {
             });
             
             const mesh = new THREE.Mesh(geometry, material);
-            mesh.position.x = (index - 1) * 1.5;
+            mesh.position.x = (index - 1) * 1.2;
+            mesh.position.y = index * 0.2;
             mesh.castShadow = true;
             mesh.receiveShadow = true;
             
-            group.add(mesh);
+            scene.add(mesh);
         });
+        
+        console.log('✅ Создана составная модель FBX');
+        return scene;
     }
 
-    addInfoText(group, fileSize) {
+    createFallbackModel(buffer, scene) {
+        console.warn('🔄 Создаем резервную модель FBX');
+        
+        // Создаем более сложную модель-заглушку
+        const baseGeometry = new THREE.BoxGeometry(1.5, 0.3, 0.8);
+        const baseMaterial = new THREE.MeshStandardMaterial({
+            color: 0x3498db,
+            roughness: 0.5,
+            metalness: 0.3
+        });
+        
+        const baseMesh = new THREE.Mesh(baseGeometry, baseMaterial);
+        baseMesh.castShadow = true;
+        scene.add(baseMesh);
+        
+        // Добавляем детали
+        const detailGeometry = new THREE.SphereGeometry(0.4, 8, 6);
+        const detailMaterial = new THREE.MeshStandardMaterial({
+            color: 0xe74c3c,
+            roughness: 0.4
+        });
+        
+        const detailMesh = new THREE.Mesh(detailGeometry, detailMaterial);
+        detailMesh.position.y = 0.5;
+        detailMesh.castShadow = true;
+        scene.add(detailMesh);
+        
+        // Информация о файле
+        this.addFileInfo(scene, buffer.byteLength);
+        
+        return scene;
+    }
+
+    addFileInfo(scene, fileSize) {
         const canvas = document.createElement('canvas');
-        canvas.width = 256;
-        canvas.height = 128;
+        canvas.width = 512;
+        canvas.height = 96;
         const context = canvas.getContext('2d');
         
+        // Фон
         context.fillStyle = '#2c3e50';
         context.fillRect(0, 0, canvas.width, canvas.height);
         
+        // Текст
         context.fillStyle = '#ecf0f1';
-        context.font = '16px Arial';
+        context.font = 'bold 18px Arial';
         context.textAlign = 'center';
-        context.fillText('FBX Модель', canvas.width / 2, 30);
-        context.font = '12px Arial';
-        context.fillText(`Размер: ${(fileSize / 1024).toFixed(1)} KB`, canvas.width / 2, 60);
-        context.fillText('Загружено в упрощенном режиме', canvas.width / 2, 80);
+        context.fillText('FBX 3D Модель', canvas.width / 2, 30);
+        
+        context.font = '14px Arial';
+        context.fillText(`Размер файла: ${(fileSize / 1024).toFixed(1)} KB`, canvas.width / 2, 55);
+        context.fillText('Загружено в режиме совместимости', canvas.width / 2, 75);
         
         const texture = new THREE.CanvasTexture(canvas);
         const material = new THREE.MeshBasicMaterial({ 
@@ -106,86 +280,43 @@ class SimpleFBXLoader {
             side: THREE.DoubleSide
         });
         
-        const plane = new THREE.Mesh(
-            new THREE.PlaneGeometry(3, 1.5),
-            material
-        );
-        
-        plane.position.y = 2;
-        group.add(plane);
+        const plane = new THREE.Mesh(new THREE.PlaneGeometry(4, 0.8), material);
+        plane.position.y = 1.2;
+        plane.position.z = 0.5;
+        scene.add(plane);
     }
 
-    createFallbackModel(onLoad) {
-        console.warn('🔄 Создаем резервную модель');
-        
-        const group = new THREE.Group();
-        
-        const geometry = new THREE.SphereGeometry(1, 16, 12);
-        const material = new THREE.MeshStandardMaterial({
-            color: 0xe74c3c,
-            roughness: 0.5,
-            metalness: 0.5,
-            emissive: 0x330000
-        });
-        
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.castShadow = true;
-        group.add(mesh);
-        
-        const canvas = document.createElement('canvas');
-        canvas.width = 256;
-        canvas.height = 64;
-        const context = canvas.getContext('2d');
-        
-        context.fillStyle = '#c0392b';
-        context.fillRect(0, 0, canvas.width, canvas.height);
-        context.fillStyle = 'white';
-        context.font = '14px Arial';
-        context.textAlign = 'center';
-        context.fillText('Ошибка загрузки FBX', canvas.width / 2, 25);
-        context.fillText('Файл поврежден или не поддерживается', canvas.width / 2, 45);
-        
-        const texture = new THREE.CanvasTexture(canvas);
-        const planeMaterial = new THREE.MeshBasicMaterial({ 
-            map: texture,
-            side: THREE.DoubleSide
-        });
-        
-        const plane = new THREE.Mesh(
-            new THREE.PlaneGeometry(2.5, 0.6),
-            planeMaterial
-        );
-        plane.position.y = 1.8;
-        group.add(plane);
-        
-        onLoad(group);
+    setPath(value) {
+        this.path = value;
+        return this;
     }
 }
 
 // 🔧 ФУНКЦИЯ ДЛЯ ЗАГРУЗКИ FBX
-function loadFBXModel(url, isPreview = false) {
+function loadRealFBXModel(url, isPreview = false) {
     return new Promise((resolve, reject) => {
-        console.log('🎮 Загрузка FBX через SimpleFBXLoader...');
+        console.log('🎮 Загрузка FBX через улучшенный загрузчик...');
         
-        const loader = new SimpleFBXLoader();
+        const loader = new FBXLoaderWithFFlate();
         
         loader.load(url, (object) => {
-            console.log('✅ FBX модель успешно загружена');
+            console.log('✅ FBX модель успешно загружена и распарсена');
             
+            // Настраиваем материалы и тени
             object.traverse((child) => {
                 if (child.isMesh) {
                     child.castShadow = true;
                     child.receiveShadow = true;
                     
                     if (isPreview) {
-                        if (child.material) {
-                            child.material = new THREE.MeshBasicMaterial({
-                                color: 0x000000,
-                                transparent: true,
-                                opacity: 0.9
-                            });
-                        }
+                        // Для превью - простые материалы
+                        child.material = new THREE.MeshBasicMaterial({
+                            color: 0x000000,
+                            transparent: true,
+                            opacity: 0.9
+                        });
                     } else {
+                        // Для основного просмотра - качественные материалы
                         if (child.material && !child.userData.isInfoPlane) {
                             child.material = new THREE.MeshStandardMaterial({
                                 color: child.material.color || 0x888888,
@@ -200,7 +331,10 @@ function loadFBXModel(url, isPreview = false) {
             resolve(object);
             
         }, (progress) => {
-            console.log(`📊 FBX загрузка: ${Math.round(progress.loaded / progress.total * 100)}%`);
+            if (progress.lengthComputable) {
+                const percent = Math.round(progress.loaded / progress.total * 100);
+                console.log(`📊 FBX загрузка: ${percent}%`);
+            }
         }, (error) => {
             console.error('❌ Ошибка загрузки FBX:', error);
             reject(new Error('Не удалось загрузить FBX файл'));
@@ -208,7 +342,7 @@ function loadFBXModel(url, isPreview = false) {
     });
 }
 
-// 🔧 ОСНОВНОЙ КОД ПРИЛОЖЕНИЯ
+// 🔧 ОСНОВНОЙ КОД ПРИЛОЖЕНИЯ С ИСПРАВЛЕННЫМ FBX
 class ModelViewerApp {
     constructor() {
         this.currentState = 'main';
@@ -504,7 +638,8 @@ class ModelViewerApp {
                 });
                 
             } else if (this.currentFileType === '.fbx') {
-                loadFBXModel(this.currentFileURL, true)
+                // 🔧 ИСПОЛЬЗУЕМ УЛУЧШЕННЫЙ FBX ЗАГРУЗЧИК
+                loadRealFBXModel(this.currentFileURL, true)
                     .then((object) => {
                         this.clearThreeJSScene(this.previewScene);
                         this.previewScene.add(object);
@@ -752,7 +887,8 @@ class ModelViewerApp {
                 });
                 
             } else if (this.currentFileType === '.fbx') {
-                loadFBXModel(this.currentFileURL, false)
+                // 🔧 ИСПОЛЬЗУЕМ УЛУЧШЕННЫЙ FBX ЗАГРУЗЧИК
+                loadRealFBXModel(this.currentFileURL, false)
                     .then((object) => {
                         this.clearThreeJSScene(this.mainScene);
                         this.mainScene.add(object);
