@@ -1,4 +1,4 @@
-// script.js - ИСПРАВЛЕННАЯ ВЕРСИЯ
+// script.js - ПОЛНАЯ ИСПРАВЛЕННАЯ ВЕРСИЯ
 
 // Состояния приложения
 const APP_STATES = {
@@ -122,10 +122,6 @@ class ModelViewerApp {
         this.previewRenderer.setSize(200, 200);
         this.previewRenderer.setClearColor(0x000000, 0);
         
-        // Простое освещение для превью
-        const previewAmbient = new THREE.AmbientLight(0xffffff, 1.0);
-        this.previewScene.add(previewAmbient);
-        
         // Для основного просмотрщика
         this.mainScene = new THREE.Scene();
         this.mainCamera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
@@ -142,6 +138,34 @@ class ModelViewerApp {
 
         console.log('Three.js инициализирован');
         this.animate();
+    }
+
+    // 🔧 ОСВЕЩЕНИЕ ДЛЯ ПРЕВЬЮ
+    setupPreviewLighting() {
+        // Очищаем старое освещение
+        const lightsToRemove = [];
+        this.previewScene.traverse((child) => {
+            if (child.isLight) {
+                lightsToRemove.push(child);
+            }
+        });
+        lightsToRemove.forEach(light => this.previewScene.remove(light));
+
+        // 1. Окружающий свет
+        const ambientLight = new THREE.AmbientLight(0x404080, 0.6);
+        this.previewScene.add(ambientLight);
+        
+        // 2. Направленный свет
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(5, 10, 3);
+        this.previewScene.add(directionalLight);
+        
+        // 3. Точечный свет спереди
+        const pointLight = new THREE.PointLight(0xffffff, 0.5, 50);
+        pointLight.position.set(0, 0, 8);
+        this.previewScene.add(pointLight);
+        
+        console.log('💡 Освещение превью настроено');
     }
 
     setupMainLighting() {
@@ -287,16 +311,21 @@ class ModelViewerApp {
                 
                 this.clearThreeJSScene(this.previewScene);
                 
-                const material = new THREE.MeshBasicMaterial({ 
-                    color: 0x000000,
-                    transparent: true,
-                    opacity: 0.9
+                // 🔧 ИСПРАВЛЕННЫЙ МАТЕРИАЛ - используем StandardMaterial для освещения
+                const material = new THREE.MeshStandardMaterial({ 
+                    color: 0xCCCCCC,
+                    roughness: 0.3,
+                    metalness: 0.1
                 });
                 const modelObject = new THREE.Mesh(geometry, material);
                 
                 this.previewScene.add(modelObject);
                 this.previewModelObject = modelObject;
                 
+                // 🔧 ДОБАВЛЯЕМ ОСВЕЩЕНИЕ В ПРЕВЬЮ
+                this.setupPreviewLighting();
+                
+                // 🔧 УЛУЧШЕННОЕ ПОЗИЦИОНИРОВАНИЕ КАМЕРЫ
                 this.setupPreviewCamera(modelObject);
                 
                 this.previewThreejs.hidden = false;
@@ -317,6 +346,7 @@ class ModelViewerApp {
         });
     }
 
+    // 🔧 ПЕРЕПИСАННЫЙ МЕТОД ДЛЯ ПРЕВЬЮ - ЛУЧШЕЕ МАСШТАБИРОВАНИЕ
     setupPreviewCamera(object) {
         const box = new THREE.Box3().setFromObject(object);
         const center = box.getCenter(new THREE.Vector3());
@@ -324,23 +354,44 @@ class ModelViewerApp {
         
         console.log('📐 Размер модели для превью:', size);
         
+        // Центрируем модель
         object.position.x = -center.x;
         object.position.y = -center.y;
         object.position.z = -center.z;
         
         this.autoAlignModel(object, size);
         
+        // 🔧 УЛУЧШЕННОЕ ВЫЧИСЛЕНИЕ ДИСТАНЦИИ КАМЕРЫ
         const maxDim = Math.max(size.x, size.y, size.z);
-        const fov = this.previewCamera.fov * (Math.PI / 180);
-        let cameraDistance = Math.abs(maxDim / Math.sin(fov / 2)) * 1.2;
         
-        cameraDistance = Math.max(cameraDistance, 1);
+        // Для превью используем фиксированный коэффициент масштабирования
+        let cameraDistance;
+        if (maxDim > 10) {
+            // Большие модели - сильнее отдаляем камеру
+            cameraDistance = maxDim * 0.8;
+        } else if (maxDim < 1) {
+            // Маленькие модели - приближаем
+            cameraDistance = maxDim * 3;
+        } else {
+            // Средние модели - стандартный масштаб
+            cameraDistance = maxDim * 1.5;
+        }
+        
+        // Ограничиваем минимальную и максимальную дистанцию
+        cameraDistance = Math.max(cameraDistance, 2);
+        cameraDistance = Math.min(cameraDistance, 15);
         
         console.log('📷 Дистанция камеры превью:', cameraDistance);
         
-        this.previewCamera.position.set(cameraDistance * 0.7, cameraDistance * 0.3, cameraDistance * 0.7);
+        // 🔧 КАМЕРА С ЛУЧШИМ УГЛОМ ОБЗОРА
+        this.previewCamera.position.set(cameraDistance * 0.5, cameraDistance * 0.3, cameraDistance * 0.8);
         this.previewCamera.lookAt(0, 0, 0);
         this.previewCamera.updateProjectionMatrix();
+        
+        // 🔧 АВТОМАТИЧЕСКИЙ ПОВОРОТ ДЛЯ ПРЕВЬЮ
+        if (this.previewModelObject) {
+            this.previewModelObject.rotation.y += 0.01;
+        }
     }
 
     setupMainCamera(object) {
@@ -397,6 +448,10 @@ class ModelViewerApp {
         
         // Всегда рендерим превью если он активен
         if (this.previewRenderer && this.previewScene && this.previewCamera) {
+            // 🔧 АВТОПОВОРОТ ДЛЯ ПРЕВЬЮ
+            if (this.previewModelObject) {
+                this.previewModelObject.rotation.y += 0.01;
+            }
             this.previewRenderer.render(this.previewScene, this.previewCamera);
         }
         
