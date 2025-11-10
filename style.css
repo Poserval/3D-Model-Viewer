@@ -1,3 +1,11 @@
+:root {
+    --primary-color: #007AFF;
+    --gradient-start: #667eea;
+    --gradient-end: #764ba2;
+    --border-radius: 12px;
+    --transition: all 0.3s ease;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -6,7 +14,7 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
     min-height: 100vh;
     color: #333;
 }
@@ -25,6 +33,7 @@ body {
     max-width: 400px;
     margin: 0 auto;
     padding: 20px;
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -48,7 +57,7 @@ body {
     width: 200px;
     height: 200px;
     background: rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
+    border-radius: var(--border-radius);
     border: 2px dashed rgba(255, 255, 255, 0.3);
     display: flex;
     align-items: center;
@@ -56,6 +65,9 @@ body {
     position: relative;
     overflow: hidden;
     backdrop-filter: blur(10px);
+    box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .preview-placeholder {
@@ -73,14 +85,15 @@ body {
     display: none !important;
 }
 
-/* СТИЛИ ДЛЯ РЕНДЕРЕРОВ - ИСПРАВЛЕННЫЕ */
+/* СТИЛИ ДЛЯ РЕНДЕРЕРОВ */
 .preview-model, .preview-threejs {
     width: 100%;
     height: 100%;
-    border-radius: 18px;
+    border-radius: calc(var(--border-radius) - 2px);
     position: absolute;
     top: 0;
     left: 0;
+    transform: translateZ(0);
 }
 
 .main-model, .main-threejs {
@@ -89,9 +102,9 @@ body {
     position: absolute;
     top: 0;
     left: 0;
+    transform: translateZ(0);
 }
 
-/* Гарантируем что скрытые элементы действительно скрыты */
 model-viewer[hidden],
 canvas[hidden] {
     display: none !important;
@@ -102,17 +115,25 @@ canvas[hidden] {
 .btn {
     padding: 12px 24px;
     border: none;
-    border-radius: 12px;
+    border-radius: var(--border-radius);
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: var(--transition);
     width: 200px;
     text-align: center;
+    position: relative;
+    overflow: hidden;
+    touch-action: manipulation;
+}
+
+.btn:focus-visible {
+    outline: 3px solid rgba(255, 255, 255, 0.8);
+    outline-offset: 2px;
 }
 
 .btn.primary {
-    background: #007AFF;
+    background: var(--primary-color);
     color: white;
 }
 
@@ -145,6 +166,12 @@ canvas[hidden] {
     text-align: center;
     margin-top: 10px;
     word-break: break-all;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    max-height: 2.8em;
+    line-height: 1.4em;
 }
 
 /* Индикатор загрузки */
@@ -160,7 +187,7 @@ canvas[hidden] {
     align-items: center;
     justify-content: center;
     gap: 15px;
-    border-radius: 18px;
+    border-radius: calc(var(--border-radius) - 2px);
     z-index: 10;
 }
 
@@ -172,9 +199,10 @@ canvas[hidden] {
     width: 40px;
     height: 40px;
     border: 4px solid rgba(255, 255, 255, 0.3);
-    border-top: 4px solid #007AFF;
+    border-top: 4px solid var(--primary-color);
     border-radius: 50%;
     animation: spin 1s linear infinite;
+    will-change: transform;
 }
 
 @keyframes spin {
@@ -206,7 +234,7 @@ canvas[hidden] {
 
 .progress-fill {
     height: 100%;
-    background: #007AFF;
+    background: var(--primary-color);
     width: 0%;
     transition: width 0.3s ease;
 }
@@ -231,9 +259,12 @@ canvas[hidden] {
     backdrop-filter: blur(10px);
     display: flex;
     align-items: center;
-    padding: 0 20px;
+    padding: 0 max(20px, env(safe-area-inset-left));
+    padding-top: env(safe-area-inset-top);
+    padding-right: max(20px, env(safe-area-inset-right));
     z-index: 100;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
 }
 
 .back-btn {
@@ -245,6 +276,7 @@ canvas[hidden] {
     cursor: pointer;
     font-size: 14px;
     margin-right: 15px;
+    touch-action: manipulation;
 }
 
 .back-btn:hover {
@@ -268,6 +300,9 @@ canvas[hidden] {
     flex: 1;
     text-align: center;
     margin-right: 80px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .viewer-container {
@@ -292,6 +327,8 @@ canvas[hidden] {
     justify-content: center;
     gap: 20px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: env(safe-area-inset-bottom);
+    box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.3);
 }
 
 .control-btn {
@@ -299,11 +336,12 @@ canvas[hidden] {
     color: white;
     border: none;
     padding: 12px 24px;
-    border-radius: 12px;
+    border-radius: var(--border-radius);
     cursor: pointer;
     font-size: 14px;
     font-weight: 600;
-    transition: all 0.3s ease;
+    transition: var(--transition);
+    touch-action: manipulation;
 }
 
 .control-btn:hover {
@@ -312,7 +350,7 @@ canvas[hidden] {
 }
 
 .control-btn[data-active="true"] {
-    background: #007AFF;
+    background: var(--primary-color);
 }
 
 /* Адаптивность */
