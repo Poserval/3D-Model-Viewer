@@ -264,7 +264,7 @@
                     environment-image="neutral"
                     style="width: 200px; height: 200px; display: none;">
                 </model-viewer>
-                <div id="threejsPreview" style="width: 200px; height: 200px; display: none;"></div>
+                <div id="threejsPreview" style="width: 200px; height: 200px; display: none; background: #f8f9fa; border-radius: 10px;"></div>
                 <div id="fileName" class="file-name"></div>
             </div>
 
@@ -278,7 +278,7 @@
             <div class="viewer-header">
                 <button class="btn" onclick="backToMain()">← Назад</button>
                 <div id="viewerTitle" style="font-size: 1.2em;"></div>
-                <div style="width: 100px;"></div> <!-- Для выравнивания -->
+                <div style="width: 100px;"></div>
             </div>
             
             <div class="viewer-content">
@@ -322,17 +322,8 @@
         let currentFileName = '';
         let isAutoRotate = true;
 
-        // Three.js переменные (объявляются один раз)
-        let threeScene = null;
-        let threeCamera = null;
-        let threeRenderer = null;
-        let threeControls = null;
-        
-        // Освещение (создается один раз)
-        let orbitingLight = null;
-        let ambientLight = null;
-        let directionalLight = null;
-        let spotlights = [];
+        // Three.js переменные
+        let scene, camera, renderer, controls, orbitingLight;
 
         // Инициализация при загрузке
         document.addEventListener('DOMContentLoaded', function() {
@@ -343,10 +334,8 @@
             const fileInput = document.getElementById('fileInput');
             const uploadArea = document.getElementById('uploadArea');
 
-            // Обработчик выбора файла
             fileInput.addEventListener('change', handleFileSelect);
 
-            // Drag and drop
             uploadArea.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 uploadArea.style.background = 'rgba(102, 126, 234, 0.15)';
@@ -378,13 +367,9 @@
             const fileExt = fileName.split('.').pop().toLowerCase();
             currentFileName = fileName;
 
-            // Показываем имя файла
             document.getElementById('fileName').textContent = fileName;
-
-            // Активируем кнопку
             document.getElementById('open3dBtn').disabled = false;
 
-            // Определяем рендерер и показываем превью
             if (['glb', 'gltf', 'obj'].includes(fileExt)) {
                 currentRenderer = 'model-viewer';
                 showModelViewerPreview(file);
@@ -424,78 +409,17 @@
         }
 
         function initThreeJSPreview(container, file) {
-            // Создаем сцену для превью
-            const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
-            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            
-            renderer.setSize(200, 200);
-            renderer.setClearColor(0x000000, 0);
-            container.appendChild(renderer.domElement);
-
-            // Базовое освещение для превью
-            const ambientLight = new THREE.AmbientLight(0x404080, 0.6);
-            scene.add(ambientLight);
-
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            directionalLight.position.set(5, 10, 5);
-            scene.add(directionalLight);
-
-            // Загружаем модель
-            const url = URL.createObjectURL(file);
-            const fileExt = file.name.split('.').pop().toLowerCase();
-
-            loadModelForPreview(scene, url, fileExt).then((model) => {
-                if (model) {
-                    // Центрируем модель
-                    const bbox = new THREE.Box3().setFromObject(model);
-                    const center = bbox.getCenter(new THREE.Vector3());
-                    const size = bbox.getSize(new THREE.Vector3());
-
-                    model.position.x = -center.x;
-                    model.position.y = -center.y;
-                    model.position.z = -center.z;
-
-                    // Настраиваем камеру
-                    const maxDim = Math.max(size.x, size.y, size.z);
-                    camera.position.z = maxDim * 1.5;
-                    camera.lookAt(0, 0, 0);
-
-                    // Анимация
-                    function animate() {
-                        requestAnimationFrame(animate);
-                        if (model) {
-                            model.rotation.y += 0.01;
-                        }
-                        renderer.render(scene, camera);
-                    }
-                    animate();
-                }
-            });
-        }
-
-        async function loadModelForPreview(scene, url, fileExt) {
-            return new Promise((resolve) => {
-                if (fileExt === 'stl') {
-                    const loader = new THREE.STLLoader();
-                    loader.load(url, (geometry) => {
-                        const material = new THREE.MeshStandardMaterial({ 
-                            color: 0x808080,
-                            roughness: 0.7,
-                            metalness: 0.2
-                        });
-                        const mesh = new THREE.Mesh(geometry, material);
-                        scene.add(mesh);
-                        resolve(mesh);
-                    });
-                } else if (fileExt === 'fbx') {
-                    const loader = new THREE.FBXLoader();
-                    loader.load(url, (object) => {
-                        scene.add(object);
-                        resolve(object);
-                    });
-                }
-            });
+            // Просто показываем placeholder для превью
+            const placeholder = document.createElement('div');
+            placeholder.style.width = '100%';
+            placeholder.style.height = '100%';
+            placeholder.style.display = 'flex';
+            placeholder.style.alignItems = 'center';
+            placeholder.style.justifyContent = 'center';
+            placeholder.style.color = '#666';
+            placeholder.style.fontSize = '14px';
+            placeholder.innerHTML = '3D превью<br>' + file.name;
+            container.appendChild(placeholder);
         }
 
         function open3DViewer() {
@@ -523,7 +447,6 @@
             threeContainer.style.display = 'none';
             modelContainer.style.display = 'block';
             
-            // Используем тот же файл что и в превью
             const fileInput = document.getElementById('fileInput');
             if (fileInput.files.length) {
                 const url = URL.createObjectURL(fileInput.files[0]);
@@ -550,38 +473,35 @@
                 container.removeChild(container.firstChild);
             }
 
-            // Инициализация сцены (только один раз!)
-            threeScene = new THREE.Scene();
-            threeScene.background = new THREE.Color(0x111111);
+            // Сцена
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x111111);
 
             // Камера
-            threeCamera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
-            threeCamera.position.z = 5;
+            camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.z = 5;
 
             // Рендерер
-            threeRenderer = new THREE.WebGLRenderer({ antialias: true });
-            threeRenderer.setSize(container.clientWidth, container.clientHeight);
-            threeRenderer.shadowMap.enabled = true;
-            threeRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            container.appendChild(threeRenderer.domElement);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
 
             // Controls
-            threeControls = new THREE.OrbitControls(threeCamera, threeRenderer.domElement);
-            threeControls.enableDamping = true;
-            threeControls.dampingFactor = 0.05;
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
 
-            // Создаем освещение ТОЛЬКО ОДИН РАЗ
+            // Создаем освещение ТОЛЬКО ОДИН РАЗ - это ключевое исправление!
             createLightingSystem();
 
-            // Обработчик ресайза
+            // Ресайз
             window.addEventListener('resize', onWindowResize);
 
             // Анимация
             function animate() {
                 requestAnimationFrame(animate);
-                threeControls.update();
+                controls.update();
                 
-                // Анимация движущегося света
                 if (orbitingLight && isAutoRotate) {
                     const time = Date.now() * 0.001;
                     orbitingLight.position.x = Math.cos(time * 0.5) * 8;
@@ -589,72 +509,30 @@
                     orbitingLight.position.y = 4 + Math.sin(time * 0.3) * 2;
                 }
                 
-                threeRenderer.render(threeScene, threeCamera);
+                renderer.render(scene, camera);
             }
             animate();
         }
 
         function createLightingSystem() {
-            // Очищаем предыдущее освещение (на случай переинициализации)
-            if (orbitingLight) threeScene.remove(orbitingLight);
-            if (ambientLight) threeScene.remove(ambientLight);
-            if (directionalLight) threeScene.remove(directionalLight);
-            spotlights.forEach(light => threeScene.remove(light));
-            spotlights = [];
-
-            // 1. Движущийся точечный свет
+            // Удаляем старое освещение если было
+            if (orbitingLight) scene.remove(orbitingLight);
+            
+            // 1. Движущийся свет
             orbitingLight = new THREE.PointLight(0xffffff, 1.2, 100);
             orbitingLight.position.set(8, 4, 0);
-            orbitingLight.castShadow = true;
-            threeScene.add(orbitingLight);
+            scene.add(orbitingLight);
 
             // 2. Окружающее освещение
-            ambientLight = new THREE.AmbientLight(0x404080, 0.4);
-            threeScene.add(ambientLight);
+            const ambientLight = new THREE.AmbientLight(0x404080, 0.4);
+            scene.add(ambientLight);
 
             // 3. Направленный свет
-            directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
             directionalLight.position.set(10, 10, 5);
-            directionalLight.castShadow = true;
-            threeScene.add(directionalLight);
-        }
+            scene.add(directionalLight);
 
-        function setupModelSpotlights(model) {
-            // Удаляем старые прожекторы
-            spotlights.forEach(light => {
-                threeScene.remove(light);
-                if (light.target) {
-                    threeScene.remove(light.target);
-                }
-            });
-            spotlights = [];
-
-            const bbox = new THREE.Box3().setFromObject(model);
-            const size = bbox.getSize(new THREE.Vector3());
-            const center = bbox.getCenter(new THREE.Vector3());
-
-            const positions = [
-                { pos: [0, size.y * 2, 0], target: [0, 0, 0] },
-                { pos: [0, -size.y * 2, 0], target: [0, 0, 0] },
-                { pos: [size.x * 2, 0, 0], target: [0, 0, 0] },
-                { pos: [-size.x * 2, 0, 0], target: [0, 0, 0] },
-                { pos: [0, 0, size.z * 2], target: [0, 0, 0] }
-            ];
-
-            positions.forEach(({ pos, target }) => {
-                const spotlight = new THREE.SpotLight(0xffffff, 1.0, 
-                    Math.max(size.x, size.y, size.z) * 3, 
-                    Math.PI / 4, 0.2, 1.5);
-                
-                spotlight.position.set(pos[0], pos[1], pos[2]);
-                spotlight.castShadow = true;
-                
-                threeScene.add(spotlight);
-                threeScene.add(spotlight.target);
-                
-                spotlight.target.position.set(target[0], target[1], target[2]);
-                spotlights.push(spotlight);
-            });
+            console.log('Освещение создано один раз');
         }
 
         function loadThreeJSModel() {
@@ -664,12 +542,6 @@
             const file = fileInput.files[0];
             const url = URL.createObjectURL(file);
             const fileExt = file.name.split('.').pop().toLowerCase();
-
-            // Удаляем предыдущую модель
-            if (currentModel) {
-                threeScene.remove(currentModel);
-                currentModel = null;
-            }
 
             showLoading('Загрузка модели...');
 
@@ -683,6 +555,11 @@
         function loadSTLModel(url) {
             const loader = new THREE.STLLoader();
             loader.load(url, (geometry) => {
+                // Удаляем старую модель
+                if (currentModel) {
+                    scene.remove(currentModel);
+                }
+                
                 const material = new THREE.MeshStandardMaterial({
                     color: 0x808080,
                     roughness: 0.7,
@@ -693,23 +570,21 @@
                 currentModel.castShadow = true;
                 currentModel.receiveShadow = true;
                 
-                threeScene.add(currentModel);
-                setupModelSpotlights(currentModel);
+                scene.add(currentModel);
                 centerModel(currentModel);
                 hideLoading();
-            }, 
-            (progress) => {
-                const percent = (progress.loaded / progress.total) * 100;
-                updateProgress(percent);
             });
         }
 
         function loadFBXModel(url) {
             const loader = new THREE.FBXLoader();
             loader.load(url, (object) => {
-                currentModel = object;
+                // Удаляем старую модель
+                if (currentModel) {
+                    scene.remove(currentModel);
+                }
                 
-                // Настраиваем тени для всех мешей
+                currentModel = object;
                 object.traverse((child) => {
                     if (child.isMesh) {
                         child.castShadow = true;
@@ -717,14 +592,9 @@
                     }
                 });
                 
-                threeScene.add(currentModel);
-                setupModelSpotlights(currentModel);
+                scene.add(currentModel);
                 centerModel(currentModel);
                 hideLoading();
-            },
-            (progress) => {
-                const percent = (progress.loaded / progress.total) * 100;
-                updateProgress(percent);
             });
         }
 
@@ -733,22 +603,20 @@
             const center = bbox.getCenter(new THREE.Vector3());
             const size = bbox.getSize(new THREE.Vector3());
 
-            // Центрируем модель
             model.position.x = -center.x;
             model.position.y = -center.y;
             model.position.z = -center.z;
 
-            // Настраиваем камеру
             const maxDim = Math.max(size.x, size.y, size.z);
-            const fov = threeCamera.fov * (Math.PI / 180);
+            const fov = camera.fov * (Math.PI / 180);
             let cameraZ = Math.abs(maxDim / Math.sin(fov / 2));
 
-            threeCamera.position.z = cameraZ * 1.5;
-            threeCamera.near = cameraZ / 100;
-            threeCamera.far = cameraZ * 100;
-            threeCamera.updateProjectionMatrix();
+            camera.position.z = cameraZ * 1.5;
+            camera.near = cameraZ / 100;
+            camera.far = cameraZ * 100;
+            camera.updateProjectionMatrix();
 
-            threeControls.reset();
+            controls.reset();
         }
 
         function resetCamera() {
@@ -756,10 +624,10 @@
                 const modelViewer = document.getElementById('modelContainer');
                 modelViewer.cameraOrbit = '0deg 75deg 105%';
                 modelViewer.cameraTarget = '0m 0m 0m';
-            } else if (currentRenderer === 'threejs' && threeControls) {
-                threeControls.reset();
+            } else if (currentRenderer === 'threejs' && controls) {
+                controls.reset();
+                // Освещение НЕ пересоздается - баг исправлен!
             }
-            // Освещение НЕ пересоздается - баг исправлен!
         }
 
         function toggleAutoRotate() {
@@ -772,30 +640,19 @@
             }
             
             btn.textContent = `Автоповорот: ${isAutoRotate ? 'ВКЛ' : 'ВЫКЛ'}`;
-            btn.classList.toggle('active', isAutoRotate);
         }
 
         function backToMain() {
             document.getElementById('viewerScreen').style.display = 'none';
             document.getElementById('mainScreen').style.display = 'block';
-            
-            // Очищаем Three.js сцену при возврате
-            if (threeRenderer) {
-                threeRenderer.dispose();
-                threeScene = null;
-                threeCamera = null;
-                threeRenderer = null;
-                threeControls = null;
-                currentModel = null;
-            }
         }
 
         function onWindowResize() {
-            if (threeCamera && threeRenderer) {
+            if (camera && renderer) {
                 const container = document.getElementById('threejsContainer');
-                threeCamera.aspect = container.clientWidth / container.clientHeight;
-                threeCamera.updateProjectionMatrix();
-                threeRenderer.setSize(container.clientWidth, container.clientHeight);
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
             }
         }
 
@@ -806,11 +663,6 @@
 
         function hideLoading() {
             document.getElementById('loadingOverlay').style.display = 'none';
-            document.getElementById('progressFill').style.width = '0%';
-        }
-
-        function updateProgress(percent) {
-            document.getElementById('progressFill').style.width = percent + '%';
         }
     </script>
 </body>
