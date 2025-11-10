@@ -1,4 +1,4 @@
-name: Build Signed APK
+name: Build Android APK
 
 on:
   push:
@@ -22,6 +22,12 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
       
+    - name: Copy web files to Android assets
+      run: |
+        mkdir -p android/app/src/main/assets/www
+        cp -r www/* android/app/src/main/assets/www/
+        cp -r icons android/app/src/main/assets/www/
+      
     - name: Make gradlew executable
       run: chmod +x ./gradlew
       
@@ -43,17 +49,11 @@ jobs:
       run: |
         $ANDROID_HOME/build-tools/34.0.0/zipalign -v 4 \
           android/app/build/outputs/apk/release/app-release-unsigned.apk \
-          android/app/build/outputs/apk/release/app-release.apk
+          3d-model-viewer.apk
       
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: 3d-model-viewer-apk
-        path: android/app/build/outputs/apk/release/app-release.apk
+        name: 3d-model-viewer
+        path: 3d-model-viewer.apk
         retention-days: 30
-        
-    - name: Create Release
-      uses: softprops/action-gh-release@v1
-      if: startsWith(github.ref, 'refs/tags/')
-      with:
-        files: android/app/build/outputs/apk/release/app-release.apk
