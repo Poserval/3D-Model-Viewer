@@ -73,7 +73,6 @@ class SimpleFBXParser {
     isVertexData(dataView, position) {
         try {
             // Проверяем несколько последовательных float значений
-            // Вершины обычно идут последовательно
             const testCount = 10;
             let validCount = 0;
             
@@ -82,13 +81,12 @@ class SimpleFBXParser {
                 if (offset + 4 > dataView.byteLength) break;
                 
                 const value = dataView.getFloat32(offset, true);
-                // Вершины обычно в разумном диапазоне
                 if (Math.abs(value) < 10000 && !isNaN(value)) {
                     validCount++;
                 }
             }
             
-            return validCount >= testCount * 0.8; // 80% значений должны быть валидными
+            return validCount >= testCount * 0.8;
         } catch (e) {
             return false;
         }
@@ -96,7 +94,6 @@ class SimpleFBXParser {
 
     isFBXStructure(dataView, position) {
         try {
-            // Проверяем маркеры FBX
             const header = this.readString(dataView, position, 4);
             return header.includes('FBX') || header.includes('Kaydara');
         } catch (e) {
@@ -110,7 +107,6 @@ class SimpleFBXParser {
         const vertices = [];
         let position = startPosition;
         
-        // Собираем вершины пока они выглядят валидными
         while (position < fileSize - 12 && vertices.length < 1000) {
             try {
                 const x = dataView.getFloat32(position, true);
@@ -128,7 +124,7 @@ class SimpleFBXParser {
             }
         }
         
-        if (vertices.length >= 9) { // Минимум 3 вершины для треугольника
+        if (vertices.length >= 9) {
             console.log(`✅ Найдено ${vertices.length / 3} вершин`);
             return this.createGeometryFromVertices(vertices);
         }
@@ -139,14 +135,11 @@ class SimpleFBXParser {
     parseFBXStructure(dataView, startPosition, fileSize) {
         console.log('🏗️ Парсим структуру FBX...');
         
-        // Упрощенный парсинг - создаем геометрию на основе размера файла
-        const complexity = Math.min(fileSize / 100000, 10); // Сложность от размера файла
+        const complexity = Math.min(fileSize / 100000, 10);
         
         if (complexity > 2) {
-            // Для больших файлов создаем более сложную геометрию
             return this.createComplexGeometry(complexity);
         } else {
-            // Для маленьких файлов - простую геометрию
             return this.createSimpleGeometry();
         }
     }
@@ -160,7 +153,6 @@ class SimpleFBXParser {
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
         
-        // Создаем простые грани (индексы)
         const indices = [];
         for (let i = 0; i < vertices.length / 3 - 2; i++) {
             indices.push(i, i + 1, i + 2);
@@ -178,7 +170,6 @@ class SimpleFBXParser {
     createComplexGeometry(complexity) {
         console.log('🎨 Создаем сложную геометрию...');
         
-        // Создаем составную геометрию на основе сложности
         const group = new THREE.Group();
         
         const geometries = [
@@ -213,7 +204,6 @@ class SimpleFBXParser {
     createFallbackModel(scene) {
         console.log('🔄 Создаем резервную модель...');
         
-        // Создаем заметную модель с текстом
         const geometry = new THREE.IcosahedronGeometry(2, 1);
         const material = new THREE.MeshStandardMaterial({
             color: 0xe74c3c,
@@ -303,7 +293,6 @@ function loadImprovedFBXModel(url, isPreview = false) {
             (object) => {
                 console.log('✅ FBX модель успешно распарсена!');
                 
-                // Настраиваем материалы
                 object.traverse((child) => {
                     if (child.isMesh) {
                         child.castShadow = true;
@@ -335,46 +324,138 @@ function loadImprovedFBXModel(url, isPreview = false) {
     });
 }
 
-// 🔧 В КЛАССЕ ModelViewerApp ЗАМЕНЯЕМ ТОЛЬКО FBX ЧАСТИ:
+// 🔧 В КЛАССЕ ModelViewerApp ЗАМЕНЯЕМ ТОЛЬКО FBX ЧАСТИ
+// Находим метод loadThreeJSPreview и заменяем FBX часть:
+async loadThreeJSPreview() {
+    return new Promise((resolve, reject) => {
+        if (this.currentFileType === '.stl') {
+            const loader = new THREE.STLLoader();
+            console.log('🎮 Загрузка STL превью...');
 
-// В методе loadThreeJSPreview заменяем FBX часть:
-} else if (this.currentFileType === '.fbx') {
-    console.log('🎯 Загрузка FBX превью через улучшенный парсер...');
-    
-    loadImprovedFBXModel(this.currentFileURL, true)
-        .then((object) => {
-            this.clearThreeJSScene(this.previewScene);
-            this.previewScene.add(object);
-            this.previewModelObject = object;
-            this.setupPreviewCamera(object);
-            this.previewThreejs.hidden = false;
-            this.hidePreviewPlaceholder();
-            console.log('✅ FBX превью отображен');
-            resolve();
-        })
-        .catch(reject);
+            loader.load(this.currentFileURL, (object) => {
+                console.log('✅ STL превью загружено');
+                
+                this.clearThreeJSScene(this.previewScene);
+                
+                const geometry = object;
+                const material = new THREE.MeshBasicMaterial({ 
+                    color: 0x000000,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                const modelObject = new THREE.Mesh(geometry, material);
+                
+                this.previewScene.add(modelObject);
+                this.previewModelObject = modelObject;
+                
+                this.setupPreviewCamera(modelObject);
+                
+                this.previewThreejs.hidden = false;
+                this.hidePreviewPlaceholder();
+                
+                console.log('✅ STL превью отображен');
+                resolve();
+            }, 
+            (progress) => {
+                if (progress.lengthComputable) {
+                    this.updateProgress((progress.loaded / progress.total) * 100);
+                }
+            },
+            (error) => {
+                console.error('❌ Ошибка загрузки STL превью:', error);
+                reject(new Error('Не удалось загрузить модель'));
+            });
+            
+        } else if (this.currentFileType === '.fbx') {
+            console.log('🎯 Загрузка FBX превью через улучшенный парсер...');
+            
+            loadImprovedFBXModel(this.currentFileURL, true)
+                .then((object) => {
+                    this.clearThreeJSScene(this.previewScene);
+                    this.previewScene.add(object);
+                    this.previewModelObject = object;
+                    this.setupPreviewCamera(object);
+                    this.previewThreejs.hidden = false;
+                    this.hidePreviewPlaceholder();
+                    console.log('✅ FBX превью отображен');
+                    resolve();
+                })
+                .catch(reject);
+        }
+    });
 }
 
-// В методе openThreeJSViewer заменяем FBX часть:
-} else if (this.currentFileType === '.fbx') {
-    console.log('🎯 Загрузка FBX в основной просмотрщик через улучшенный парсер...');
-    
-    loadImprovedFBXModel(this.currentFileURL, false)
-        .then((object) => {
-            this.clearThreeJSScene(this.mainScene);
-            this.mainScene.add(object);
-            this.mainModelObject = object;
-            this.setupMainLighting();
-            this.setupMainCamera(object);
-            this.mainControls = new THREE.OrbitControls(this.mainCamera, this.mainThreejs);
-            this.mainControls.enableDamping = true;
-            this.mainControls.dampingFactor = 0.05;
-            this.autoRotate = true;
-            this.mainThreejs.hidden = false;
-            this.updateMainThreeJSSize();
-            console.log('✅ FBX настроен для отображения');
-            this.updateProgress(100);
-            resolve();
-        })
-        .catch(reject);
+// Находим метод openThreeJSViewer и заменяем FBX часть:
+async openThreeJSViewer() {
+    return new Promise((resolve, reject) => {
+        if (this.currentFileType === '.stl') {
+            const loader = new THREE.STLLoader();
+            console.log('🎮 Открытие STL просмотрщика...');
+
+            loader.load(this.currentFileURL, (object) => {
+                console.log('✅ STL модель загружена');
+                
+                this.clearThreeJSScene(this.mainScene);
+                
+                const geometry = object;
+                const material = new THREE.MeshStandardMaterial({ 
+                    color: 0xCCCCCC,
+                    roughness: 0.3,
+                    metalness: 0.1
+                });
+                const modelObject = new THREE.Mesh(geometry, material);
+                
+                this.mainScene.add(modelObject);
+                this.mainModelObject = modelObject;
+                
+                this.setupMainLighting();
+                this.setupMainCamera(modelObject);
+                
+                this.mainControls = new THREE.OrbitControls(this.mainCamera, this.mainThreejs);
+                this.mainControls.enableDamping = true;
+                this.mainControls.dampingFactor = 0.05;
+                
+                this.autoRotate = true;
+                this.mainThreejs.hidden = false;
+                this.updateMainThreeJSSize();
+                
+                console.log('✅ STL настроен для отображения');
+                this.updateProgress(100);
+                resolve();
+            }, 
+            (progress) => {
+                this.updateProgress((progress.loaded / progress.total) * 100);
+            },
+            (error) => {
+                console.error('❌ Ошибка загрузки:', error);
+                reject(new Error('Не удалось загрузить модель'));
+            });
+            
+        } else if (this.currentFileType === '.fbx') {
+            console.log('🎯 Загрузка FBX в основной просмотрщик через улучшенный парсер...');
+            
+            loadImprovedFBXModel(this.currentFileURL, false)
+                .then((object) => {
+                    this.clearThreeJSScene(this.mainScene);
+                    this.mainScene.add(object);
+                    this.mainModelObject = object;
+                    
+                    this.setupMainLighting();
+                    this.setupMainCamera(object);
+                    
+                    this.mainControls = new THREE.OrbitControls(this.mainCamera, this.mainThreejs);
+                    this.mainControls.enableDamping = true;
+                    this.mainControls.dampingFactor = 0.05;
+                    
+                    this.autoRotate = true;
+                    this.mainThreejs.hidden = false;
+                    this.updateMainThreeJSSize();
+                    
+                    console.log('✅ FBX настроен для отображения');
+                    this.updateProgress(100);
+                    resolve();
+                })
+                .catch(reject);
+        }
+    });
 }
