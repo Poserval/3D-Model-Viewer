@@ -1,4 +1,4 @@
-// script.js - ИСПРАВЛЕННАЯ ВЕРСИЯ БЕЗ ПОВТОРНОГО СОЗДАНИЯ СВЕТА
+// script.js - ИСПРАВЛЕННАЯ ВЕРСИЯ С РАБОТАЮЩИМ FBX
 
 // Состояния приложения
 const APP_STATES = {
@@ -153,19 +153,26 @@ class ModelViewerApp {
 
         console.log('💡 Создаем основное освещение...');
         
-        // 1. Окружающий свет
-        const ambientLight = new THREE.AmbientLight(0x404080, 0.4);
+        // 1. Окружающий свет - УВЕЛИЧЕНА ИНТЕНСИВНОСТЬ ДЛЯ FBX
+        const ambientLight = new THREE.AmbientLight(0x404080, 0.8);
         this.mainScene.add(ambientLight);
         
-        // 2. Направленный свет
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        // 2. Направленный свет - УВЕЛИЧЕНА ИНТЕНСИВНОСТЬ
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
         directionalLight.position.set(10, 10, 5);
+        directionalLight.castShadow = true;
         this.mainScene.add(directionalLight);
         
-        // 3. Движущийся точечный свет
-        this.orbitingLight = new THREE.PointLight(0xffffff, 1.2, 100);
+        // 3. Движущийся точечный свет - УВЕЛИЧЕНА ИНТЕНСИВНОСТЬ
+        this.orbitingLight = new THREE.PointLight(0xffffff, 1.8, 100);
         this.orbitingLight.position.set(8, 4, 0);
+        this.orbitingLight.castShadow = true;
         this.mainScene.add(this.orbitingLight);
+
+        // 4. ДОПОЛНИТЕЛЬНЫЙ СВЕТ ДЛЯ FBX
+        const backLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        backLight.position.set(-5, 5, -5);
+        this.mainScene.add(backLight);
         
         // Помечаем, что освещение создано
         this.lightsInitialized = true;
@@ -294,18 +301,9 @@ class ModelViewerApp {
                     });
                     modelObject = new THREE.Mesh(geometry, material);
                 } else {
+                    // 🔧 ИСПРАВЛЕНИЕ ДЛЯ FBX ПРЕВЬЮ
                     modelObject = object;
-                    if (modelObject.traverse) {
-                        modelObject.traverse((child) => {
-                            if (child.isMesh) {
-                                child.material = new THREE.MeshBasicMaterial({
-                                    color: 0x000000,
-                                    transparent: true,
-                                    opacity: 0.9
-                                });
-                            }
-                        });
-                    }
+                    this.fixFBXMaterials(modelObject, true); // true - для превью
                 }
                 
                 this.previewScene.add(modelObject);
@@ -328,6 +326,46 @@ class ModelViewerApp {
                 console.error('❌ Ошибка загрузки Three.js превью:', error);
                 reject(new Error('Не удалось загрузить модель'));
             });
+        });
+    }
+
+    // 🔧 НОВЫЙ МЕТОД ДЛЯ ИСПРАВЛЕНИЯ МАТЕРИАЛОВ FBX
+    fixFBXMaterials(object, isPreview = false) {
+        object.traverse((child) => {
+            if (child.isMesh) {
+                // Включаем тени
+                child.castShadow = true;
+                child.receiveShadow = true;
+                
+                if (isPreview) {
+                    // Для превью - простой материал
+                    child.material = new THREE.MeshBasicMaterial({
+                        color: 0x000000,
+                        transparent: true,
+                        opacity: 0.9
+                    });
+                } else {
+                    // Для основного просмотра - качественный материал с освещением
+                    if (child.material) {
+                        // Сохраняем оригинальные цвета если есть
+                        const color = child.material.color ? child.material.color : new THREE.Color(0x888888);
+                        
+                        child.material = new THREE.MeshStandardMaterial({
+                            color: color,
+                            roughness: 0.7,
+                            metalness: 0.3,
+                            envMapIntensity: 1.0
+                        });
+                    } else {
+                        // Если материала нет - создаем стандартный
+                        child.material = new THREE.MeshStandardMaterial({
+                            color: 0x888888,
+                            roughness: 0.7,
+                            metalness: 0.3
+                        });
+                    }
+                }
+            }
         });
     }
 
@@ -372,21 +410,19 @@ class ModelViewerApp {
         
         this.autoAlignModel(object, size);
         
-        // 🔧 ОСВЕЩЕНИЕ СОЗДАЕТСЯ ТОЛЬКО ОДИН РАЗ В setupMainLighting()
-        // НИКАКИХ ПРОЖЕКТОРОВ ЗДЕСЬ НЕ ДОБАВЛЯЕМ!
-        
         const maxDim = Math.max(size.x, size.y, size.z);
         let cameraDistance;
         
         if (this.currentFileType === '.stl') {
             cameraDistance = maxDim * 1.2;
         } else {
+            // 🔧 ДЛЯ FBX - БОЛЬШАЯ ДИСТАНЦИЯ КАМЕРЫ
             const fov = this.mainCamera.fov * (Math.PI / 180);
-            cameraDistance = Math.abs(maxDim / Math.sin(fov / 2)) * 1.5;
+            cameraDistance = Math.abs(maxDim / Math.sin(fov / 2)) * 2.0;
         }
         
         cameraDistance = Math.max(cameraDistance, 0.5);
-        cameraDistance = Math.min(cameraDistance, 10);
+        cameraDistance = Math.min(cameraDistance, 15); // УВЕЛИЧЕН МАКСИМУМ ДЛЯ FBX
         
         console.log('📷 Дистанция камеры основного просмотра:', cameraDistance);
         
@@ -395,8 +431,8 @@ class ModelViewerApp {
         this.mainCamera.updateProjectionMatrix();
         
         if (this.mainControls) {
-            this.mainControls.minDistance = cameraDistance * 0.5;
-            this.mainControls.maxDistance = cameraDistance * 3;
+            this.mainControls.minDistance = cameraDistance * 0.3; // УМЕНЬШЕН МИНИМУМ
+            this.mainControls.maxDistance = cameraDistance * 4;   // УВЕЛИЧЕН МАКСИМУМ
             this.mainControls.reset();
         }
     }
@@ -546,18 +582,9 @@ class ModelViewerApp {
                     });
                     modelObject = new THREE.Mesh(geometry, material);
                 } else {
+                    // 🔧 ИСПРАВЛЕНИЕ ДЛЯ FBX
                     modelObject = object;
-                    if (modelObject.traverse) {
-                        modelObject.traverse((child) => {
-                            if (child.isMesh) {
-                                child.material = new THREE.MeshStandardMaterial({
-                                    color: 0x888888,
-                                    roughness: 0.7,
-                                    metalness: 0.2
-                                });
-                            }
-                        });
-                    }
+                    this.fixFBXMaterials(modelObject, false); // false - для основного просмотра
                 }
                 
                 this.mainScene.add(modelObject);
