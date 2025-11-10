@@ -1,0 +1,59 @@
+name: Build Signed APK
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+      
+    - name: Make gradlew executable
+      run: chmod +x ./gradlew
+      
+    - name: Build Release APK
+      run: |
+        ./gradlew assembleRelease
+      
+    - name: Sign APK
+      run: |
+        echo "${{ secrets.KEYSTORE_FILE }}" | base64 --decode > keystore.jks
+        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+          -keystore keystore.jks \
+          -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
+          -keypass "${{ secrets.KEY_PASSWORD }}" \
+          android/app/build/outputs/apk/release/app-release-unsigned.apk \
+          "${{ secrets.KEY_ALIAS }}"
+          
+    - name: Zipalign APK
+      run: |
+        $ANDROID_HOME/build-tools/34.0.0/zipalign -v 4 \
+          android/app/build/outputs/apk/release/app-release-unsigned.apk \
+          android/app/build/outputs/apk/release/app-release.apk
+      
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: 3d-model-viewer-apk
+        path: android/app/build/outputs/apk/release/app-release.apk
+        retention-days: 30
+        
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: android/app/build/outputs/apk/release/app-release.apk
