@@ -1,4 +1,4 @@
-// script.js - ОПТИМИЗИРОВАННАЯ ВЕРСИЯ БЕЗ FBX
+// script.js - ИСПРАВЛЕННАЯ ВЕРСИЯ
 
 // Состояния приложения
 const APP_STATES = {
@@ -23,8 +23,6 @@ class ModelViewerApp {
         
         this.autoRotate = true;
         this.currentFileURL = null;
-        this.animationId = null;
-        this.needsRender = true;
         
         // Three.js переменные
         this.previewScene = null;
@@ -107,11 +105,6 @@ class ModelViewerApp {
 
         window.addEventListener('resize', () => {
             this.handleResize();
-        });
-
-        // Обработка видимости страницы для оптимизации
-        document.addEventListener('visibilitychange', () => {
-            this.needsRender = !document.hidden;
         });
     }
 
@@ -400,43 +393,42 @@ class ModelViewerApp {
     }
 
     animate() {
-        this.animationId = requestAnimationFrame(() => this.animate());
+        requestAnimationFrame(() => this.animate());
         
-        if (this.needsRender) {
-            // Рендер превью
-            if (this.previewRenderer && this.previewScene && this.previewCamera) {
-                this.previewRenderer.render(this.previewScene, this.previewCamera);
+        // Всегда рендерим превью если он активен
+        if (this.previewRenderer && this.previewScene && this.previewCamera) {
+            this.previewRenderer.render(this.previewScene, this.previewCamera);
+        }
+        
+        // Всегда рендерим основной просмотрщик если он активен
+        if (this.mainRenderer && this.mainScene && this.mainCamera) {
+            // Анимация движущегося света
+            if (this.orbitingLight && this.autoRotate) {
+                const time = Date.now() * 0.001;
+                this.orbitingLight.position.x = Math.cos(time * 0.5) * 8;
+                this.orbitingLight.position.z = Math.sin(time * 0.5) * 8;
+                this.orbitingLight.position.y = 4 + Math.sin(time * 0.3) * 2;
             }
             
-            // Рендер основного просмотрщика
-            if (this.mainRenderer && this.mainScene && this.mainCamera) {
-                // Анимация движущегося света
-                if (this.orbitingLight && this.autoRotate) {
-                    const time = Date.now() * 0.001;
-                    this.orbitingLight.position.x = Math.cos(time * 0.5) * 8;
-                    this.orbitingLight.position.z = Math.sin(time * 0.5) * 8;
-                    this.orbitingLight.position.y = 4 + Math.sin(time * 0.3) * 2;
-                }
-                
-                if (this.autoRotate && this.mainModelObject && this.currentRenderer === 'threejs') {
-                    this.mainModelObject.rotation.y += 0.01;
-                }
-                
-                this.mainRenderer.render(this.mainScene, this.mainCamera);
-                
-                if (this.mainControls) {
-                    this.mainControls.update();
-                }
+            // Автоповорот модели
+            if (this.autoRotate && this.mainModelObject && this.currentRenderer === 'threejs') {
+                this.mainModelObject.rotation.y += 0.01;
             }
-            this.needsRender = false;
+            
+            this.mainRenderer.render(this.mainScene, this.mainCamera);
+            
+            if (this.mainControls) {
+                this.mainControls.update();
+            }
         }
     }
 
     clearThreeJSScene(scene) {
         if (scene) {
+            // Удаляем только меши, оставляем освещение
             const objectsToRemove = [];
             scene.traverse((child) => {
-                if (child.isMesh || child.isLine || child.isPoints) {
+                if (child.isMesh) {
                     objectsToRemove.push(child);
                 }
             });
@@ -501,7 +493,7 @@ class ModelViewerApp {
     }
 
     async openModelViewer() {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             console.log('📱 Открытие Model Viewer...');
             
             this.clearThreeJSScene(this.mainScene);
@@ -510,32 +502,17 @@ class ModelViewerApp {
                 this.mainControls = null;
             }
             
-            // Обработчики ошибок и загрузки
-            const errorHandler = (e) => {
-                reject(new Error('Ошибка загрузки модели в Model Viewer'));
-            };
-            
-            const loadHandler = () => {
-                this.mainModel.removeEventListener('error', errorHandler);
-                this.mainModel.removeEventListener('load', loadHandler);
-                console.log('✅ Model Viewer загружен');
-                this.updateProgress(100);
-                resolve();
-            };
-            
-            this.mainModel.addEventListener('error', errorHandler);
-            this.mainModel.addEventListener('load', loadHandler);
-            
             this.mainModel.src = this.currentFileURL;
             this.mainModel.autoRotate = true;
             this.mainModel.hidden = false;
             
-            // Таймаут на случай если события не сработают
+            console.log('✅ Model Viewer настроен для отображения');
+            
             setTimeout(() => {
-                this.mainModel.removeEventListener('error', errorHandler);
-                this.mainModel.removeEventListener('load', loadHandler);
+                console.log('✅ Model Viewer загружен');
+                this.updateProgress(100);
                 resolve();
-            }, 2000);
+            }, 500);
         });
     }
 
@@ -604,7 +581,6 @@ class ModelViewerApp {
                 this.mainCamera.updateProjectionMatrix();
                 
                 this.mainRenderer.render(this.mainScene, this.mainCamera);
-                this.needsRender = true;
             }
         }
     }
@@ -629,12 +605,11 @@ class ModelViewerApp {
     toggleAutoRotate() {
         this.autoRotate = !this.autoRotate;
         
-        if (this.currentRenderer === 'model-viewer' && this.mainModel) {
+        if (this.currentRenderer === 'model-viewer') {
             this.mainModel.autoRotate = this.autoRotate;
         }
         
         this.updateAutoRotateButton();
-        this.needsRender = true;
     }
 
     updateAutoRotateButton() {
@@ -644,7 +619,7 @@ class ModelViewerApp {
     }
 
     resetCamera() {
-        if (this.currentRenderer === 'model-viewer' && this.mainModel) {
+        if (this.currentRenderer === 'model-viewer') {
             this.mainModel.cameraOrbit = '0deg 75deg 105%';
         } else if (this.currentRenderer === 'threejs' && this.mainModelObject) {
             this.setupMainCamera(this.mainModelObject);
@@ -653,7 +628,6 @@ class ModelViewerApp {
             }
             console.log('🎯 Камера сброшена');
         }
-        this.needsRender = true;
     }
 
     showMainScreen() {
@@ -662,7 +636,7 @@ class ModelViewerApp {
         this.currentState = APP_STATES.MAIN;
         
         this.autoRotate = false;
-        if (this.currentRenderer === 'model-viewer' && this.mainModel) {
+        if (this.currentRenderer === 'model-viewer') {
             this.mainModel.autoRotate = false;
         }
         
@@ -705,34 +679,9 @@ class ModelViewerApp {
         this.loadingIndicator.classList.remove('active');
         this.updateProgress(0);
     }
-
-    // Очистка ресурсов
-    dispose() {
-        if (this.animationId) {
-            cancelAnimationFrame(this.animationId);
-        }
-        this.resetPreview();
-        
-        if (this.mainRenderer) {
-            this.mainRenderer.dispose();
-        }
-        if (this.previewRenderer) {
-            this.previewRenderer.dispose();
-        }
-        if (this.mainControls) {
-            this.mainControls.dispose();
-        }
-    }
 }
 
 // Инициализация приложения
 document.addEventListener('DOMContentLoaded', () => {
-    window.modelViewerApp = new ModelViewerApp();
-});
-
-// Очистка при выгрузке страницы
-window.addEventListener('beforeunload', () => {
-    if (window.modelViewerApp) {
-        window.modelViewerApp.dispose();
-    }
+    new ModelViewerApp();
 });
