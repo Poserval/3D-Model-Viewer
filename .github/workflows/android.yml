@@ -58,18 +58,16 @@ jobs:
         chmod +x gradlew
         ./gradlew assembleRelease --no-daemon
       
-    - name: Sign APK with GitHub Secrets
+    - name: Debug Secrets
       run: |
-        echo "🔐 Подписываем APK..."
-        cd android/app/build/outputs/apk/release/
-        echo "${{ secrets.KEYSTORE_FILE }}" | base64 --decode > keystore.jks
-        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
-          -keystore keystore.jks \
-          -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
-          -keypass "${{ secrets.KEY_PASSWORD }}" \
-          app-release.apk \
-          "${{ secrets.KEY_ALIAS }}"
-        echo "✅ APK подписан!"
+        echo "=== Проверяем секреты ==="
+        echo "KEYSTORE_FILE длина: ${#KEYSTORE_FILE}"
+        echo "KEYSTORE_PASSWORD: ${KEYSTORE_PASSWORD}"
+        echo "KEY_ALIAS: ${KEY_ALIAS}"
+      env:
+        KEYSTORE_FILE: ${{ secrets.KEYSTORE_FILE }}
+        KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
       
     - name: Upload APK
       uses: actions/upload-artifact@v4
