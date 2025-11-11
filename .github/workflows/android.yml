@@ -29,16 +29,9 @@ jobs:
         mkdir -p capacitor-web
         cp index.html style.css script.js manifest.json capacitor-web/
         cp -r icons capacitor-web/
-        ls -la capacitor-web/
         
     - name: Generate Android project
       run: npx cap add android && npx cap sync android
-      
-    - name: Replace ALL possible icons
-      run: |
-        find android -name "*.png" -type f | while read file; do
-          cp ./icons/icon-192x192.png "$file" 2>/dev/null || true
-        done
       
     - name: Setup Java
       uses: actions/setup-java@v4
@@ -51,20 +44,21 @@ jobs:
         cd android
         chmod +x gradlew
         ./gradlew assembleRelease --no-daemon
-
-    - name: Find APK files 
+        
+    - name: Find and Prepare APK
       run: |
-        echo "=== Ищем APK файлы ==="
-        find . -name "*.apk" -type f | while read file; do
-          echo "Найден APK: $file"
-          ls -la "$file"
-        done
-        echo "=== Содержимое android/ ==="
-        find android/ -name "*.apk" -type f
+        echo "🔍 Ищем APK файл..."
+        APK_PATH=$(find . -name "*.apk" -type f | head -1)
+        echo "Найден APK: $APK_PATH"
+        
+        # Копируем APK в корень с понятным именем
+        cp "$APK_PATH" ./3d-model-viewer.apk
+        echo "✅ APK подготовлен: ./3d-model-viewer.apk"
+        ls -la ./3d-model-viewer.apk
       
-    - name: Upload APK
+    - name: Upload APK to Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: 3d-model-viewer-apk
-        path: android/app/build/outputs/apk/release/app-release.apk
+        path: ./3d-model-viewer.apk
         retention-days: 30
