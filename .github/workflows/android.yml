@@ -45,15 +45,38 @@ jobs:
         chmod +x gradlew
         ./gradlew assembleRelease --no-daemon
         
+    - name: Sign APK
+      run: |
+        echo "🔐 Подписываем APK..."
+        cd android/app
+        # Создаем временный ключ для подписи
+        keytool -genkeypair -v \
+          -keystore temp.keystore \
+          -alias temp_key \
+          -keyalg RSA \
+          -keysize 2048 \
+          -validity 10000 \
+          -storepass "android123" \
+          -keypass "android123" \
+          -dname "CN=3D Viewer, O=3DViewer, C=RU"
+        
+        # Подписываем APK
+        cd ../build/outputs/apk/release/
+        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+          -keystore ../../../app/temp.keystore \
+          -storepass "android123" \
+          -keypass "android123" \
+          app-release.apk \
+          temp_key
+        echo "✅ APK подписан!"
+        
     - name: Find and Prepare APK
       run: |
         echo "🔍 Ищем APK файл..."
-        APK_PATH=$(find . -name "*.apk" -type f | head -1)
+        APK_PATH=$(find . -name "app-release.apk" -type f | head -1)
         echo "Найден APK: $APK_PATH"
-        
-        # Копируем APK в корень с понятным именем
         cp "$APK_PATH" ./3d-model-viewer.apk
-        echo "✅ APK подготовлен: ./3d-model-viewer.apk"
+        echo "✅ APK подготовлен"
         ls -la ./3d-model-viewer.apk
       
     - name: Upload APK to Artifacts
