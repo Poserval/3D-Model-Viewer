@@ -58,15 +58,22 @@ jobs:
         chmod +x gradlew
         ./gradlew assembleRelease --no-daemon
       
-    - name: Debug Secrets
+    - name: Sign APK
       run: |
-        echo "=== Проверяем секреты ==="
-        echo "KEYSTORE_FILE длина: ${#KEYSTORE_FILE}"
-        echo "KEYSTORE_PASSWORD: ${KEYSTORE_PASSWORD}"
-        echo "KEY_ALIAS: ${KEY_ALIAS}"
+        echo "🔐 Подписываем APK..."
+        cd android/app/build/outputs/apk/release/
+        echo "$KEYSTORE_BASE64" | base64 --decode > keystore.jks
+        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+          -keystore keystore.jks \
+          -storepass "$KEYSTORE_PASSWORD" \
+          -keypass "$KEY_PASSWORD" \
+          app-release.apk \
+          "$KEY_ALIAS"
+        echo "✅ APK подписан!"
       env:
-        KEYSTORE_FILE: ${{ secrets.KEYSTORE_FILE }}
+        KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
       
     - name: Upload APK
