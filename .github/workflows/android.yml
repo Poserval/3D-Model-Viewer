@@ -33,34 +33,15 @@ jobs:
     - name: Generate Android project
       run: npx cap add android && npx cap sync android
       
-    - name: Setup Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
-        
-    - name: Build Release APK
+    - name: Configure Android signing
       run: |
-        cd android
-        chmod +x gradlew
-        ./gradlew assembleRelease --no-daemon
+        echo "🔐 Настраиваем подпись в Android..."
+        cd android/app
         
-    - name: Find APK Location
-      run: |
-        echo "🔍 Ищем где лежит APK..."
-        find . -name "*.apk" -type f
-        echo "=== Содержимое android/ ==="
-        find android/ -name "*.apk" -type f
-        echo "=== Содержимое android/app/ ==="
-        find android/app/ -name "*.apk" -type f
-        
-    - name: Sign APK
-      run: |
-        echo "🔐 Подписываем APK..."
-        # Создаем временный ключ для подписи
+        # Создаем ключ
         keytool -genkeypair -v \
-          -keystore temp.keystore \
-          -alias temp_key \
+          -keystore release.keystore \
+          -alias release_key \
           -keyalg RSA \
           -keysize 2048 \
           -validity 10000 \
@@ -68,21 +49,45 @@ jobs:
           -keypass "android123" \
           -dname "CN=3D Viewer, O=3DViewer, C=RU"
         
-        # Находим APK и подписываем
-        APK_PATH=$(find . -name "*.apk" -path "*/release/*" -type f | head -1)
-        echo "Подписываем APK: $APK_PATH"
+        # Создаем конфиг подписи
+        cat > signing-config.gradle << 'EOF'
+        android {
+            signingConfigs {
+                release {
+                    storeFile file("release.keystore")
+                    storePassword "android123"
+                    keyAlias "release_key"
+                    keyPassword "android123"
+                }
+            }
+            buildTypes {
+                release {
+                    signingConfig signingConfigs.release
+                    minifyEnabled false
+                }
+            }
+        }
+        EOF
         
-        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
-          -keystore temp.keystore \
-          -storepass "android123" \
-          -keypass "android123" \
-          "$APK_PATH" \
-          temp_key
-        echo "✅ APK подписан!"
+        # Добавляем в build.gradle
+        echo "apply from: 'signing-config.gradle'" >> build.gradle
+        echo "✅ Подпись настроена!"
+      
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        
+    - name: Build Signed Release APK
+      run: |
+        cd android
+        chmod +x gradlew
+        ./gradlew assembleRelease --no-daemon
         
     - name: Upload APK to Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: 3d-model-viewer-apk
-        path: "**/*.apk"
+        path: android/app/build/outputs/apk/release/*.apk
         retention-days: 30
