@@ -33,19 +33,19 @@ jobs:
     - name: Generate Android project
       run: npx cap add android && npx cap sync android
       
-    - name: Replace ONLY launcher icons with 162px
+    - name: Replace ONLY launcher icons with 100px
       run: |
-        echo "🔄 Заменяем иконки запуска на 162px..."
+        echo "🔄 Заменяем иконки запуска на 100px..."
         # Заменяем только иконки приложения
         find android -name "ic_launcher*.png" -type f | while read file; do
           echo "Заменяем иконку: $file"
-          cp ./icons/icon-app-162.png "$file" 2>/dev/null || true
+          cp ./icons/icon-app-100.png "$file" 2>/dev/null || true
         done
         find android -name "ic_launcher_round*.png" -type f | while read file; do
           echo "Заменяем круглую иконку: $file"
-          cp ./icons/icon-app-162.png "$file" 2>/dev/null || true
+          cp ./icons/icon-app-100.png "$file" 2>/dev/null || true
         done
-        echo "✅ Иконки 162px установлены!"
+        echo "✅ Иконки 100px установлены!"
       
     - name: Configure Android signing
       run: |
