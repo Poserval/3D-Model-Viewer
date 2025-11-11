@@ -18,6 +18,9 @@ jobs:
       with:
         node-version: '18'
         
+    - name: Clean previous build
+      run: rm -rf capacitor-web android
+      
     - name: Install dependencies
       run: npm install --package-lock=false
       
@@ -43,44 +46,6 @@ jobs:
         done
         echo "✅ Все иконки заменены!"
       
-    - name: Create signing config
-      run: |
-        echo "🔐 Создаем ключ и конфиг подписи..."
-        # Создаем ключ в папке app
-        cd android/app
-        keytool -genkeypair -v \
-          -keystore release.keystore \
-          -alias release \
-          -keyalg RSA \
-          -keysize 2048 \
-          -validity 10000 \
-          -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
-          -keypass "${{ secrets.KEY_PASSWORD }}" \
-          -dname "CN=3D Viewer, O=3DViewer, C=RU"
-        
-        # Создаем файл конфигурации подписи
-        cat > signing-config.gradle << 'EOF'
-        android {
-            signingConfigs {
-                release {
-                    storeFile file("release.keystore")
-                    storePassword "${{ secrets.KEYSTORE_PASSWORD }}"
-                    keyAlias "${{ secrets.KEY_ALIAS }}"
-                    keyPassword "${{ secrets.KEY_PASSWORD }}"
-                }
-            }
-            buildTypes {
-                release {
-                    signingConfig signingConfigs.release
-                }
-            }
-        }
-        EOF
-        
-        # Добавляем подключение конфига в build.gradle
-        echo "apply from: 'signing-config.gradle'" >> build.gradle
-        echo "✅ Конфиг подписи создан!"
-      
     - name: Setup Java
       uses: actions/setup-java@v4
       with:
@@ -92,6 +57,19 @@ jobs:
         cd android
         chmod +x gradlew
         ./gradlew assembleRelease --no-daemon
+      
+    - name: Sign APK with GitHub Secrets
+      run: |
+        echo "🔐 Подписываем APK..."
+        cd android/app/build/outputs/apk/release/
+        echo "${{ secrets.KEYSTORE_FILE }}" | base64 --decode > keystore.jks
+        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+          -keystore keystore.jks \
+          -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
+          -keypass "${{ secrets.KEY_PASSWORD }}" \
+          app-release.apk \
+          "${{ secrets.KEY_ALIAS }}"
+        echo "✅ APK подписан!"
       
     - name: Upload APK
       uses: actions/upload-artifact@v4
