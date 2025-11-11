@@ -33,6 +33,15 @@ jobs:
     - name: Generate Android project
       run: npx cap add android && npx cap sync android
       
+    - name: Replace ALL icons with correct ones
+      run: |
+        echo "🔄 Заменяем ВСЕ иконки на правильные..."
+        find android -name "*.png" -type f | while read file; do
+          echo "Заменяем: $file"
+          cp ./icons/icon-app-192.png "$file" 2>/dev/null || true
+        done
+        echo "✅ Все иконки заменены!"
+      
     - name: Configure Android signing
       run: |
         echo "🔐 Настраиваем подпись в Android..."
