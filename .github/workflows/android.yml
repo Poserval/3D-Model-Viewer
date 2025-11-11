@@ -19,12 +19,67 @@ jobs:
         node-version: '18'
         
     - name: Install dependencies
-      run: npm install
+      run: npm install --package-lock=false
       
-    - name: Generate Android project
+    - name: Build web assets
       run: |
-        npx cap add android
-        npx cap sync android
+        echo "=== Создаем папку capacitor-web ==="
+        mkdir -p capacitor-web
+        echo "=== Копируем файлы ==="
+        cp index.html style.css script.js manifest.json capacitor-web/
+        cp -r icons capacitor-web/
+        echo "=== Проверяем результат ==="
+        ls -la capacitor-web/
+        
+    - name: Generate Android project
+      run: npx cap add android && npx cap sync android
+      
+    - name: Replace ALL possible icons
+      run: |
+        echo "🔄 Заменяем ВСЕ возможные иконки..."
+        find android -name "*.png" -type f | while read file; do
+          echo "Заменяем: $file"
+          cp ./icons/icon-192x192.png "$file" 2>/dev/null || true
+        done
+        echo "✅ Все иконки заменены!"
+      
+    - name: Create signing config
+      run: |
+        echo "🔐 Создаем ключ и конфиг подписи..."
+        # Создаем ключ в папке app
+        cd android/app
+        keytool -genkeypair -v \
+          -keystore release.keystore \
+          -alias release \
+          -keyalg RSA \
+          -keysize 2048 \
+          -validity 10000 \
+          -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
+          -keypass "${{ secrets.KEY_PASSWORD }}" \
+          -dname "CN=3D Viewer, O=3DViewer, C=RU"
+        
+        # Создаем файл конфигурации подписи
+        cat > signing-config.gradle << 'EOF'
+        android {
+            signingConfigs {
+                release {
+                    storeFile file("release.keystore")
+                    storePassword "${{ secrets.KEYSTORE_PASSWORD }}"
+                    keyAlias "${{ secrets.KEY_ALIAS }}"
+                    keyPassword "${{ secrets.KEY_PASSWORD }}"
+                }
+            }
+            buildTypes {
+                release {
+                    signingConfig signingConfigs.release
+                }
+            }
+        }
+        EOF
+        
+        # Добавляем подключение конфига в build.gradle
+        echo "apply from: 'signing-config.gradle'" >> build.gradle
+        echo "✅ Конфиг подписи создан!"
       
     - name: Setup Java
       uses: actions/setup-java@v4
