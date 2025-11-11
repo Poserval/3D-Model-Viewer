@@ -33,19 +33,66 @@ jobs:
     - name: Generate Android project
       run: npx cap add android && npx cap sync android
       
-    - name: Replace ONLY launcher icons with 100px
+    - name: Replace ONLY launcher icons with 162px
       run: |
-        echo "🔄 Заменяем иконки запуска на 100px..."
-        # Заменяем только иконки приложения
+        echo "🔄 Заменяем иконки запуска на 162px..."
         find android -name "ic_launcher*.png" -type f | while read file; do
           echo "Заменяем иконку: $file"
-          cp ./icons/icon-app-100.png "$file" 2>/dev/null || true
+          cp ./icons/icon-app-162.png "$file" 2>/dev/null || true
         done
         find android -name "ic_launcher_round*.png" -type f | while read file; do
           echo "Заменяем круглую иконку: $file"
-          cp ./icons/icon-app-100.png "$file" 2>/dev/null || true
+          cp ./icons/icon-app-162.png "$file" 2>/dev/null || true
         done
-        echo "✅ Иконки 100px установлены!"
+        echo "✅ Иконки 162px установлены!"
+      
+    - name: Configure Android app icon display
+      run: |
+        echo "🎨 Настраиваем отображение иконки в Android..."
+        cd android/app/src/main
+        
+        # Создаем адаптивную иконку
+        mkdir -p res/mipmap-anydpi-v26
+        cat > res/mipmap-anydpi-v26/ic_launcher.xml << 'EOF'
+        <?xml version="1.0" encoding="utf-8"?>
+        <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+            <background android:drawable="@color/ic_launcher_background"/>
+            <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
+        </adaptive-icon>
+        EOF
+        
+        cat > res/mipmap-anydpi-v26/ic_launcher_round.xml << 'EOF'
+        <?xml version="1.0" encoding="utf-8"?>
+        <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+            <background android:drawable="@color/ic_launcher_background"/>
+            <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
+        </adaptive-icon>
+        EOF
+        
+        # Создаем foreground (твоя иконка)
+        cat > res/mipmap-hdpi/ic_launcher_foreground.xml << 'EOF'
+        <?xml version="1.0" encoding="utf-8"?>
+        <vector xmlns:android="http://schemas.android.com/apk/res/android"
+            android:width="108dp"
+            android:height="108dp"
+            android:viewportWidth="108"
+            android:viewportHeight="108">
+            <bitmap
+                android:src="@mipmap/ic_launcher"
+                android:gravity="center" />
+        </vector>
+        EOF
+        
+        # Создаем цвет фона
+        mkdir -p res/values
+        cat > res/values/colors.xml << 'EOF'
+        <?xml version="1.0" encoding="utf-8"?>
+        <resources>
+            <color name="ic_launcher_background">#FFFFFF</color>
+        </resources>
+        EOF
+        
+        echo "✅ Адаптивная иконка настроена!"
       
     - name: Configure Android signing
       run: |
