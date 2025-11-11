@@ -1,0 +1,13 @@
+{
+  "name": "3d-model-viewer",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "echo 'Building web assets'",
+    "cap:add:android": "npx cap add android",
+    "cap:sync": "npx cap sync"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^5.0.0",
+    "@capacitor/android": "^5.0.0"
+  }
+}
