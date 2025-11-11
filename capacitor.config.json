@@ -1,5 +1,5 @@
 {
-  "appId": "ru.3dviewer.app",
+  "appId": "ru.dviewer.app",
   "appName": "3D Model Viewer",
   "webDir": "capacitor-web",
   "server": {
