@@ -1,4 +1,4 @@
-package com.yourcompany.modelviewer;
+package ru.3dviewer.app;
 
 import android.app.Activity;
 import android.os.Bundle;
