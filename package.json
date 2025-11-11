@@ -4,8 +4,7 @@
   "scripts": {
     "build": "mkdir -p capacitor-web && cp *.html *.json *.js *.css capacitor-web/ && cp -r icons capacitor-web/",
     "clean": "rm -rf capacitor-web android",
-    "cap:add": "npm run build && npx cap add android && npm run clean",
-    "cap:sync": "npm run build && npx cap sync android && npm run clean"
+    "cap:clean": "rm -rf android && npm run build && npx cap add android"
   },
   "dependencies": {
     "@capacitor/android": "^5.0.0",
