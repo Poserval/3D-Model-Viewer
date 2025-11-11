@@ -1,7 +1,7 @@
 {
-  "appId": "ru.3dviewer.app",
+  "appId": "ru.3dviewer.app", 
   "appName": "3D Model Viewer",
-  "webDir": "www",
+  "webDir": ".",
   "server": {
     "androidScheme": "https"
   }
