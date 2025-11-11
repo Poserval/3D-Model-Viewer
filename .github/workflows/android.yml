@@ -1,84 +1,44 @@
-name: Build Android APK
-
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        
-    - name: Clean previous build
-      run: rm -rf capacitor-web android
-      
-    - name: Install dependencies
-      run: npm install --package-lock=false
-      
-    - name: Build web assets
-      run: |
-        echo "=== Создаем папку capacitor-web ==="
-        mkdir -p capacitor-web
-        echo "=== Копируем файлы ==="
-        cp index.html style.css script.js manifest.json capacitor-web/
-        cp -r icons capacitor-web/
-        echo "=== Проверяем результат ==="
-        ls -la capacitor-web/
-        
-    - name: Generate Android project
-      run: npx cap add android && npx cap sync android
-      
-    - name: Replace ALL possible icons
-      run: |
-        echo "🔄 Заменяем ВСЕ возможные иконки..."
-        find android -name "*.png" -type f | while read file; do
-          echo "Заменяем: $file"
-          cp ./icons/icon-192x192.png "$file" 2>/dev/null || true
-        done
-        echo "✅ Все иконки заменены!"
-      
-    - name: Setup Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
-        
-    - name: Build Release APK
-      run: |
-        cd android
-        chmod +x gradlew
-        ./gradlew assembleRelease --no-daemon
-      
     - name: Sign APK
       run: |
         echo "🔐 Подписываем APK..."
         cd android/app/build/outputs/apk/release/
-        echo "$KEYSTORE_BASE64" | base64 --decode > keystore.jks
-        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
-          -keystore keystore.jks \
-          -storepass "$KEYSTORE_PASSWORD" \
-          -keypass "$KEY_PASSWORD" \
-          app-release.apk \
-          "$KEY_ALIAS"
-        echo "✅ APK подписан!"
+        
+        # ДИАГНОСТИКА
+        echo "=== ДИАГНОСТИКА СЕКРЕТА ==="
+        echo "KEYSTORE_BASE64: $KEYSTORE_BASE64"
+        echo "Длина KEYSTORE_BASE64: ${#KEYSTORE_BASE64}"
+        
+        # Сохраняем секрет в файл для анализа
+        echo "$KEYSTORE_BASE64" > secret.txt
+        echo "Размер secret.txt: $(wc -c < secret.txt)"
+        echo "Первые 100 символов:"
+        head -c 100 secret.txt
+        echo ""
+        echo "Последние 100 символов:"
+        tail -c 100 secret.txt
+        echo ""
+        
+        # Пробуем разные варианты base64
+        echo "=== ПРОБУЕМ BASE64 ==="
+        base64 -d secret.txt > keystore.jks 2>&1 || echo "❌ Стандартный base64 не сработал"
+        
+        # Проверяем результат
+        if [ -f keystore.jks ] && [ -s keystore.jks ]; then
+          echo "✅ Keystore создан! Размер: $(wc -c < keystore.jks) bytes"
+          # Подписываем APK
+          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+            -keystore keystore.jks \
+            -storepass "$KEYSTORE_PASSWORD" \
+            -keypass "$KEY_PASSWORD" \
+            app-release.apk \
+            "$KEY_ALIAS"
+          echo "✅ APK подписан!"
+        else
+          echo "❌ Не удалось создать keystore"
+          echo "ПРОБЛЕМА: Невалидный base64 в KEYSTORE_BASE64"
+        fi
       env:
         KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-      
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: 3d-model-viewer-apk
-        path: android/app/build/outputs/apk/release/app-release.apk
-        retention-days: 30
