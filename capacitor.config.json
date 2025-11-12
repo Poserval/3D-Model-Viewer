@@ -1,6 +1,6 @@
 {
   "appId": "ru.dviewer.app",
-  "appName": "3D Model Viewer",
+  "appName": "3DViewer",
   "webDir": "capacitor-web",
   "server": {
     "androidScheme": "https"
