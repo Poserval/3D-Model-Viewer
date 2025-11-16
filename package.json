@@ -1,6 +1,6 @@
 {
   "name": "3d-model-viewer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "scripts": {
     "build": "mkdir -p capacitor-web && cp *.html *.json *.js *.css capacitor-web/ && cp -r icons capacitor-web/",
     "clean": "rm -rf capacitor-web android",
