@@ -1,4 +1,4 @@
-// script.js - ИСПРАВЛЕННАЯ ВЕРСИЯ С КОНВЕРТЕРОМ
+// script.js - ИСПРАВЛЕННАЯ ВЕРСИЯ С КОНВЕРТЕРОМ НА THREE.JS
 
 // Состояния приложения
 const APP_STATES = {
@@ -42,7 +42,8 @@ class ModelViewerApp {
         this.orbitingLight = null;
         
         // КОНВЕРТЕР
-        this.assimp = null;
+        this.stlExporter = null;
+        this.gltfExporter = null;
         
         this.init();
     }
@@ -51,6 +52,7 @@ class ModelViewerApp {
         this.initializeElements();
         this.bindEvents();
         this.initThreeJS();
+        this.initExporters();
         
         console.log('🚀 3D Model Viewer запущен');
     }
@@ -163,6 +165,42 @@ class ModelViewerApp {
 
         console.log('Three.js инициализирован');
         this.animate();
+    }
+
+    initExporters() {
+        // Проверяем наличие экспортеров
+        if (typeof THREE.STLExporter !== 'undefined') {
+            this.stlExporter = new THREE.STLExporter();
+        } else {
+            console.warn('STLExporter не найден');
+        }
+        
+        if (typeof THREE.GLTFExporter !== 'undefined') {
+            this.gltfExporter = new THREE.GLTFExporter();
+        } else {
+            console.warn('GLTFExporter не найден');
+        }
+        
+        // OBJ экспортера нет в стандартной поставке, сделаем свой
+        this.objExporter = {
+            parse: (geometry) => {
+                const vertices = geometry.attributes.position.array;
+                let output = '';
+                
+                for (let i = 0; i < vertices.length; i += 3) {
+                    output += `v ${vertices[i]} ${vertices[i+1]} ${vertices[i+2]}\n`;
+                }
+                
+                if (geometry.index) {
+                    const indices = geometry.index.array;
+                    for (let i = 0; i < indices.length; i += 3) {
+                        output += `f ${indices[i]+1} ${indices[i+1]+1} ${indices[i+2]+1}\n`;
+                    }
+                }
+                
+                return output;
+            }
+        };
     }
 
     setupPreviewLighting() {
@@ -743,35 +781,34 @@ class ModelViewerApp {
         const fromFormat = this.formatFrom.value;
         const toFormat = this.formatTo.value;
         
-        // ЗАЩИТА ОТ КОНВЕРТАЦИИ В ТОТ ЖЕ ФОРМАТ
         if (fromFormat === toFormat) {
             if (!confirm(`⚠️ Вы пытаетесь конвертировать ${fromFormat.toUpperCase()} в ${toFormat.toUpperCase()}.\n\nЭто не изменит файл. Просто скачать оригинал?`)) {
                 return;
             }
             
-            this.showDownloadLink(await this.currentFile.arrayBuffer(), this.currentFile.name, fromFormat, toFormat);
-            return;
-        }
-        
-        // Проверяем, что целевой формат поддерживается приложением
-        const supportedFormats = ['glb', 'gltf', 'obj', 'stl'];
-        if (!supportedFormats.includes(toFormat)) {
-            alert(`❌ Формат ${toFormat} не поддерживается для просмотра в приложении`);
+            // Просто отдаем оригинальный файл
+            const blob = new Blob([await this.currentFile.arrayBuffer()]);
+            const url = URL.createObjectURL(blob);
+            const baseName = this.currentFile.name.replace(`.${fromFormat}`, '').replace(`.${fromFormat.toUpperCase()}`, '');
+            const fileName = `${baseName}.${toFormat}`;
+            
+            this.downloadLink.href = url;
+            this.downloadLink.download = fileName;
+            this.downloadLinkContainer.style.display = 'block';
+            
+            this.downloadLink.onclick = () => {
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            };
             return;
         }
         
         this.showConvertProgress();
         
         try {
-            if (!this.assimp) {
-                await this.loadMeshFlow();
-            }
-            
-            await this.convertWithMeshFlow(this.currentFile, fromFormat, toFormat);
-            
+            await this.convertWithThreeJS(this.currentFile, fromFormat, toFormat);
         } catch (error) {
             console.error('❌ Ошибка конвертации:', error);
-            alert('❌ Не удалось загрузить модуль конвертации. Проверьте подключение к интернету');
+            alert('❌ Не удалось конвертировать файл');
             this.convertProgressContainer.style.display = 'none';
         }
     }
@@ -791,99 +828,109 @@ class ModelViewerApp {
         }
     }
     
-    async loadMeshFlow() {
+    async convertWithThreeJS(file, fromFormat, toFormat) {
         return new Promise((resolve, reject) => {
-            console.log('📦 Загрузка модуля конвертации...');
+            this.updateConvertProgress(10);
             
-            const scripts = [
-                'https://cdn.jsdelivr.net/npm/assimpjs@0.0.10/dist/assimpjs.js',
-                'https://unpkg.com/assimpjs@0.0.10/dist/assimpjs.js',
-                'https://cdn.jsdelivr.net/npm/@sruim/mesh-flow@0.5.0/dist/mesh-flow.min.js'
-            ];
+            const reader = new FileReader();
             
-            let currentScript = 0;
-            
-            const tryLoadScript = () => {
-                if (currentScript >= scripts.length) {
-                    reject(new Error('Не удалось загрузить модуль конвертации. Проверьте подключение к интернету'));
-                    return;
-                }
-                
-                const script = document.createElement('script');
-                script.src = scripts[currentScript];
-                script.onload = async () => {
-                    try {
-                        // Пробуем все возможные имена API
-                        if (window.createAssimp) {
-                            this.assimp = await window.createAssimp({
-                                locateFile: (file) => `https://cdn.jsdelivr.net/npm/assimpjs@0.0.10/dist/${file}`
-                            });
-                            console.log('✅ Модуль конвертации загружен');
-                            resolve();
-                        } else if (window.Assimp) {
-                            this.assimp = await window.Assimp();
-                            console.log('✅ Модуль конвертации загружен');
-                            resolve();
-                        } else if (window.MeshFlow) {
-                            this.assimp = await window.MeshFlow();
-                            console.log('✅ Модуль конвертации загружен');
-                            resolve();
-                        } else {
-                            console.warn(`API не найдено в скрипте ${scripts[currentScript]}`);
-                            currentScript++;
-                            tryLoadScript();
-                        }
-                    } catch (e) {
-                        console.warn(`Ошибка инициализации: ${e.message}`);
-                        currentScript++;
-                        tryLoadScript();
+            reader.onload = (e) => {
+                try {
+                    this.updateConvertProgress(30);
+                    
+                    let geometry;
+                    let result;
+                    
+                    // Загружаем геометрию в зависимости от исходного формата
+                    if (fromFormat === 'stl') {
+                        geometry = new THREE.STLLoader().parse(e.target.result);
+                    } else if (fromFormat === 'obj') {
+                        // Для OBJ нужно парсить по-другому
+                        reject(new Error('Конвертация из OBJ временно недоступна'));
+                        return;
+                    } else if (fromFormat === 'glb' || fromFormat === 'gltf') {
+                        reject(new Error('Конвертация из GLTF временно недоступна'));
+                        return;
+                    } else {
+                        reject(new Error(`Формат ${fromFormat} не поддерживается для конвертации`));
+                        return;
                     }
-                };
-                script.onerror = () => {
-                    console.warn(`Не удалось загрузить: ${scripts[currentScript]}`);
-                    currentScript++;
-                    tryLoadScript();
-                };
-                document.head.appendChild(script);
+                    
+                    this.updateConvertProgress(60);
+                    
+                    // Создаем временную сцену и меш
+                    const material = new THREE.MeshStandardMaterial();
+                    const mesh = new THREE.Mesh(geometry, material);
+                    const scene = new THREE.Scene();
+                    scene.add(mesh);
+                    
+                    // Экспортируем в нужный формат
+                    if (toFormat === 'stl') {
+                        if (!this.stlExporter) {
+                            reject(new Error('STL экспортер не доступен'));
+                            return;
+                        }
+                        result = this.stlExporter.parse(scene, { binary: false });
+                    } else if (toFormat === 'obj') {
+                        result = this.objExporter.parse(geometry);
+                    } else if (toFormat === 'glb' || toFormat === 'gltf') {
+                        if (!this.gltfExporter) {
+                            reject(new Error('GLTF экспортер не доступен'));
+                            return;
+                        }
+                        this.gltfExporter.parse(scene, (gltfResult) => {
+                            this.updateConvertProgress(100);
+                            
+                            const blob = new Blob([toFormat === 'glb' ? gltfResult : JSON.stringify(gltfResult)]);
+                            const url = URL.createObjectURL(blob);
+                            const baseName = file.name.replace(`.${fromFormat}`, '').replace(`.${fromFormat.toUpperCase()}`, '');
+                            const fileName = `${baseName}.${toFormat}`;
+                            
+                            this.downloadLink.href = url;
+                            this.downloadLink.download = fileName;
+                            this.downloadLinkContainer.style.display = 'block';
+                            
+                            this.downloadLink.onclick = () => {
+                                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                            };
+                            
+                            resolve();
+                        }, { binary: toFormat === 'glb' });
+                        return;
+                    } else {
+                        reject(new Error(`Формат ${toFormat} не поддерживается для конвертации`));
+                        return;
+                    }
+                    
+                    this.updateConvertProgress(100);
+                    
+                    // Создаем ссылку на скачивание
+                    const blob = new Blob([result]);
+                    const url = URL.createObjectURL(blob);
+                    const baseName = file.name.replace(`.${fromFormat}`, '').replace(`.${fromFormat.toUpperCase()}`, '');
+                    const fileName = `${baseName}.${toFormat}`;
+                    
+                    this.downloadLink.href = url;
+                    this.downloadLink.download = fileName;
+                    this.downloadLinkContainer.style.display = 'block';
+                    
+                    this.downloadLink.onclick = () => {
+                        setTimeout(() => URL.revokeObjectURL(url), 1000);
+                    };
+                    
+                    resolve();
+                    
+                } catch (e) {
+                    reject(e);
+                }
             };
             
-            tryLoadScript();
+            reader.onerror = () => {
+                reject(new Error('Ошибка чтения файла'));
+            };
+            
+            reader.readAsArrayBuffer(file);
         });
-    }
-    
-    async convertWithMeshFlow(file, fromFormat, toFormat) {
-        this.updateConvertProgress(10);
-        
-        const arrayBuffer = await file.arrayBuffer();
-        this.updateConvertProgress(30);
-        
-        let result;
-        try {
-            result = await this.assimp.convert(arrayBuffer, toFormat);
-        } catch (e) {
-            throw new Error(`Конвертация из ${fromFormat} в ${toFormat} пока не поддерживается`);
-        }
-        
-        this.updateConvertProgress(100);
-        this.showDownloadLink(result, file.name, fromFormat, toFormat);
-        
-        return result;
-    }
-    
-    showDownloadLink(resultBuffer, originalName, fromFormat, toFormat) {
-        const blob = new Blob([resultBuffer]);
-        const url = URL.createObjectURL(blob);
-        
-        const baseName = originalName.replace(`.${fromFormat}`, '').replace(`.${fromFormat.toUpperCase()}`, '');
-        const fileName = `${baseName}.${toFormat}`;
-        
-        this.downloadLink.href = url;
-        this.downloadLink.download = fileName;
-        this.downloadLinkContainer.style.display = 'block';
-        
-        this.downloadLink.onclick = () => {
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
-        };
     }
 }
 
