@@ -36,12 +36,12 @@ class ModelViewerApp {
         this.mainModelObject = null;
         this.mainControls = null;
         
-        // 🔧 ФЛАГИ ОСВЕЩЕНИЯ - ОДИН РАЗ ИНИЦИАЛИЗИРУЕМ
+        // ФЛАГИ ОСВЕЩЕНИЯ - ОДИН РАЗ ИНИЦИАЛИЗИРУЕМ
         this.previewLightsInitialized = false;
         this.mainLightsInitialized = false;
         this.orbitingLight = null;
         
-        // 🔧 КОНВЕРТЕР
+        // КОНВЕРТЕР
         this.assimp = null;
         
         this.init();
@@ -81,7 +81,7 @@ class ModelViewerApp {
         this.progressFill = document.querySelector('.progress-fill');
         this.progressText = document.querySelector('.progress-text');
         
-        // 🔧 ЭЛЕМЕНТЫ КОНВЕРТЕРА
+        // ЭЛЕМЕНТЫ КОНВЕРТЕРА
         this.convertBtn = document.getElementById('convert-btn');
         this.converterPanel = document.getElementById('converter-panel');
         this.formatFrom = document.getElementById('format-from');
@@ -123,7 +123,7 @@ class ModelViewerApp {
             this.handleResize();
         });
         
-        // 🔧 СОБЫТИЯ КОНВЕРТЕРА
+        // СОБЫТИЯ КОНВЕРТЕРА
         this.convertBtn.addEventListener('click', () => {
             this.toggleConverterPanel();
         });
@@ -165,9 +165,8 @@ class ModelViewerApp {
         this.animate();
     }
 
-    // 🔧 ПЕРЕПИСАННЫЙ МЕТОД - ОСВЕЩЕНИЕ ДЛЯ ПРЕВЬЮ (ОДИН РАЗ)
+    // ОСВЕЩЕНИЕ ДЛЯ ПРЕВЬЮ (ОДИН РАЗ)
     setupPreviewLighting() {
-        // Если освещение уже создано - выходим
         if (this.previewLightsInitialized) {
             console.log('💡 Освещение превью уже создано, пропускаем');
             return;
@@ -175,19 +174,15 @@ class ModelViewerApp {
 
         console.log('💡 Создаем освещение превью...');
         
-        // Очищаем ВСЕ старые источники света
         this.removeAllLights(this.previewScene);
         
-        // 1. Окружающий свет
         const ambientLight = new THREE.AmbientLight(0x404080, 0.6);
         this.previewScene.add(ambientLight);
         
-        // 2. Направленный свет
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
         directionalLight.position.set(5, 10, 3);
         this.previewScene.add(directionalLight);
         
-        // 3. Точечный свет спереди
         const pointLight = new THREE.PointLight(0xffffff, 0.5, 50);
         pointLight.position.set(0, 0, 8);
         this.previewScene.add(pointLight);
@@ -196,7 +191,7 @@ class ModelViewerApp {
         console.log('💡 Освещение превью создано один раз');
     }
 
-    // 🔧 ПЕРЕПИСАННЫЙ МЕТОД - ОСВЕЩЕНИЕ ДЛЯ ОСНОВНОГО ПРОСМОТРА (ОДИН РАЗ)
+    // ОСВЕЩЕНИЕ ДЛЯ ОСНОВНОГО ПРОСМОТРА (ОДИН РАЗ)
     setupMainLighting() {
         if (this.mainLightsInitialized) {
             console.log('💡 Основное освещение уже создано, пропускаем');
@@ -205,19 +200,15 @@ class ModelViewerApp {
 
         console.log('💡 Создаем основное освещение...');
         
-        // Очищаем ВСЕ старые источники света
         this.removeAllLights(this.mainScene);
         
-        // 1. Окружающий свет
         const ambientLight = new THREE.AmbientLight(0x404080, 0.4);
         this.mainScene.add(ambientLight);
         
-        // 2. Направленный свет
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
         directionalLight.position.set(10, 10, 5);
         this.mainScene.add(directionalLight);
         
-        // 3. Движущийся точечный свет
         this.orbitingLight = new THREE.PointLight(0xffffff, 1.2, 100);
         this.orbitingLight.position.set(8, 4, 0);
         this.mainScene.add(this.orbitingLight);
@@ -226,7 +217,7 @@ class ModelViewerApp {
         console.log('💡 Основное освещение создано один раз');
     }
 
-    // 🔧 НОВЫЙ МЕТОД - УДАЛЕНИЕ ВСЕХ ИСТОЧНИКОВ СВЕТА
+    // УДАЛЕНИЕ ВСЕХ ИСТОЧНИКОВ СВЕТА
     removeAllLights(scene) {
         const lightsToRemove = [];
         scene.traverse((child) => {
@@ -239,8 +230,6 @@ class ModelViewerApp {
             scene.remove(light);
             if (light.dispose) light.dispose();
         });
-        
-        console.log(`💡 Удалено источников света: ${lightsToRemove.length}`);
     }
 
     getRendererForFormat(extension) {
@@ -256,7 +245,6 @@ class ModelViewerApp {
         const file = event.target.files[0];
         if (!file) return;
 
-        // Освобождаем предыдущий URL
         if (this.currentFileURL) {
             URL.revokeObjectURL(this.currentFileURL);
         }
@@ -370,9 +358,7 @@ class ModelViewerApp {
                 this.previewScene.add(modelObject);
                 this.previewModelObject = modelObject;
                 
-                // 🔧 ОСВЕЩЕНИЕ СОЗДАЕТСЯ ТОЛЬКО ОДИН РАЗ
                 this.setupPreviewLighting();
-                
                 this.setupPreviewCamera(modelObject);
                 
                 this.previewThreejs.hidden = false;
@@ -398,8 +384,6 @@ class ModelViewerApp {
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
         
-        console.log('📐 Размер модели для превью:', size);
-        
         object.position.x = -center.x;
         object.position.y = -center.y;
         object.position.z = -center.z;
@@ -412,8 +396,6 @@ class ModelViewerApp {
         
         cameraDistance = Math.max(cameraDistance, 1);
         
-        console.log('📷 Дистанция камеры превью:', cameraDistance);
-        
         this.previewCamera.position.set(0, 0, cameraDistance);
         this.previewCamera.lookAt(0, 0, 0);
         this.previewCamera.updateProjectionMatrix();
@@ -423,8 +405,6 @@ class ModelViewerApp {
         const box = new THREE.Box3().setFromObject(object);
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
-        
-        console.log('📐 Размер модели для основного просмотра:', size);
         
         object.position.x = -center.x;
         object.position.y = -center.y;
@@ -437,8 +417,6 @@ class ModelViewerApp {
         let cameraDistance = maxDim / (2 * Math.tan(fov / 2));
         cameraDistance = Math.max(cameraDistance * 1.5, 1);
         cameraDistance = Math.min(cameraDistance, 10);
-        
-        console.log('📷 Дистанция камеры основного просмотра:', cameraDistance);
         
         this.mainCamera.position.set(0, 0, cameraDistance);
         this.mainCamera.lookAt(0, 0, 0);
@@ -455,15 +433,12 @@ class ModelViewerApp {
         const maxDim = Math.max(size.x, size.y, size.z);
         
         if (size.y === maxDim) {
-            console.log('🎯 Модель ориентирована вертикально');
             object.rotation.x = 0;
             object.rotation.y = 0;
             object.rotation.z = 0;
         } else if (size.z === maxDim) {
-            console.log('🎯 Модель лежит - поворачиваем в вертикальное положение');
             object.rotation.x = -Math.PI / 2;
         } else if (size.x === maxDim) {
-            console.log('🎯 Модель на боку - поворачиваем в вертикальное положение');
             object.rotation.z = -Math.PI / 2;
         }
     }
@@ -471,14 +446,11 @@ class ModelViewerApp {
     animate() {
         requestAnimationFrame(() => this.animate());
         
-        // Рендер превью
         if (this.previewRenderer && this.previewScene && this.previewCamera) {
             this.previewRenderer.render(this.previewScene, this.previewCamera);
         }
         
-        // Рендер основного просмотрщика
         if (this.mainRenderer && this.mainScene && this.mainCamera) {
-            // Анимация движущегося света
             if (this.orbitingLight && this.autoRotate) {
                 const time = Date.now() * 0.001;
                 this.orbitingLight.position.x = Math.cos(time * 0.5) * 8;
@@ -486,7 +458,6 @@ class ModelViewerApp {
                 this.orbitingLight.position.y = 4 + Math.sin(time * 0.3) * 2;
             }
             
-            // Автоповорот модели
             if (this.autoRotate && this.mainModelObject && this.currentRenderer === 'threejs') {
                 this.mainModelObject.rotation.y += 0.01;
             }
@@ -501,7 +472,6 @@ class ModelViewerApp {
 
     clearThreeJSScene(scene) {
         if (scene) {
-            // Удаляем только меши, оставляем освещение
             const objectsToRemove = [];
             scene.traverse((child) => {
                 if (child.isMesh) {
@@ -613,12 +583,9 @@ class ModelViewerApp {
                 this.mainScene.add(modelObject);
                 this.mainModelObject = modelObject;
                 
-                // 🔧 ОСВЕЩЕНИЕ СОЗДАЕТСЯ ТОЛЬКО ОДИН РАЗ
                 this.setupMainLighting();
-                
                 this.setupMainCamera(modelObject);
                 
-                // Инициализация контролов
                 this.mainControls = new THREE.OrbitControls(this.mainCamera, this.mainThreejs);
                 this.mainControls.enableDamping = true;
                 this.mainControls.dampingFactor = 0.05;
@@ -649,8 +616,6 @@ class ModelViewerApp {
             if (container) {
                 const width = container.clientWidth;
                 const height = container.clientHeight;
-                
-                console.log('📏 Размер основного Three.js:', width, 'x', height);
                 
                 this.mainRenderer.setSize(width, height);
                 this.mainCamera.aspect = width / height;
@@ -745,12 +710,11 @@ class ModelViewerApp {
             this.mainControls = null;
         }
         
-        // 🔧 СКРЫВАЕМ ПАНЕЛЬ КОНВЕРТЕРА ПРИ СБРОСЕ
+        // СКРЫВАЕМ ПАНЕЛЬ КОНВЕРТЕРА ПРИ СБРОСЕ
         if (this.converterPanel) {
             this.converterPanel.style.display = 'none';
         }
         
-        // 🔧 НЕ СБРАСЫВАЕМ ФЛАГИ ОСВЕЩЕНИЯ - освещение остается стабильным
         console.log('✅ Превью сброшено, освещение сохранено');
     }
 
@@ -763,7 +727,7 @@ class ModelViewerApp {
         this.updateProgress(0);
     }
     
-    // 🔧 МЕТОДЫ КОНВЕРТЕРА
+    // МЕТОДЫ КОНВЕРТЕРА
     
     toggleConverterPanel() {
         if (!this.converterPanel) return;
@@ -771,7 +735,6 @@ class ModelViewerApp {
         const isHidden = this.converterPanel.style.display === 'none';
         this.converterPanel.style.display = isHidden ? 'block' : 'none';
         
-        // Если открываем — прячем результаты предыдущей конвертации
         if (isHidden) {
             this.convertProgressContainer.style.display = 'none';
             this.downloadLinkContainer.style.display = 'none';
@@ -787,20 +750,31 @@ class ModelViewerApp {
         const fromFormat = this.formatFrom.value;
         const toFormat = this.formatTo.value;
         
+        // ЗАЩИТА ОТ КОНВЕРТАЦИИ В ТОТ ЖЕ ФОРМАТ
         if (fromFormat === toFormat) {
-            alert('❌ Ну ты чего? Форматы одинаковые, смысл конвертить?');
+            if (!confirm(`⚠️ Ты пытаешься конвертировать ${fromFormat.toUpperCase()} в ${toFormat.toUpperCase()}.\n\nЭто бессмысленно, файл останется тем же.\n\nПродолжить?`)) {
+                return;
+            }
+            
+            // Если пользователь все-таки хочет продолжать
+            this.showDownloadLink(await this.currentFile.arrayBuffer(), this.currentFile.name, fromFormat, toFormat);
+            return;
+        }
+        
+        // Проверяем, что целевой формат поддерживается приложением
+        const supportedFormats = ['glb', 'gltf', 'obj', 'stl'];
+        if (!supportedFormats.includes(toFormat)) {
+            alert(`❌ Формат ${toFormat} не поддерживается для просмотра в приложении`);
             return;
         }
         
         this.showConvertProgress();
         
         try {
-            // Загружаем MeshFlow если еще не загружен
             if (!this.assimp) {
                 await this.loadMeshFlow();
             }
             
-            // Конвертация с эмуляцией прогресса
             await this.convertWithMeshFlow(this.currentFile, fromFormat, toFormat);
             
         } catch (error) {
@@ -829,7 +803,6 @@ class ModelViewerApp {
         return new Promise((resolve, reject) => {
             console.log('📦 Загрузка MeshFlow...');
             
-            // Сначала проверяем доступность createAssimp
             if (window.createAssimp) {
                 window.createAssimp().then(assimp => {
                     this.assimp = assimp;
@@ -839,7 +812,6 @@ class ModelViewerApp {
                 return;
             }
             
-            // Если нет - загружаем скрипт
             const script = document.createElement('script');
             script.src = 'https://cdn.jsdelivr.net/npm/@sruim/mesh-flow@0.5.0/dist/mesh-flow.min.js';
             script.onload = async () => {
@@ -852,56 +824,4 @@ class ModelViewerApp {
                 }
             };
             script.onerror = () => {
-                reject(new Error('Не удалось загрузить MeshFlow'));
-            };
-            document.head.appendChild(script);
-        });
-    }
-    
-    async convertWithMeshFlow(file, fromFormat, toFormat) {
-        // Эмуляция прогресса (так как реальный прогресс не всегда доступен)
-        this.updateConvertProgress(10);
-        
-        // Читаем файл
-        const arrayBuffer = await file.arrayBuffer();
-        this.updateConvertProgress(30);
-        
-        // Конвертируем
-        let result;
-        try {
-            result = await this.assimp.convert(arrayBuffer, toFormat);
-        } catch (e) {
-            throw new Error(`Конвертация из ${fromFormat} в ${toFormat} пока не поддерживается`);
-        }
-        
-        this.updateConvertProgress(100);
-        
-        // Показываем ссылку на скачивание
-        this.showDownloadLink(result, file.name, fromFormat, toFormat);
-        
-        return result;
-    }
-    
-    showDownloadLink(resultBuffer, originalName, fromFormat, toFormat) {
-        const blob = new Blob([resultBuffer]);
-        const url = URL.createObjectURL(blob);
-        
-        // Генерируем имя файла
-        const baseName = originalName.replace(`.${fromFormat}`, '').replace(`.${fromFormat.toUpperCase()}`, '');
-        const fileName = `${baseName}.${toFormat}`;
-        
-        this.downloadLink.href = url;
-        this.downloadLink.download = fileName;
-        this.downloadLinkContainer.style.display = 'block';
-        
-        // Чистим URL после скачивания
-        this.downloadLink.onclick = () => {
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
-        };
-    }
-}
-
-// Инициализация приложения
-document.addEventListener('DOMContentLoaded', () => {
-    new ModelViewerApp();
-});
+                reject(new Error('
