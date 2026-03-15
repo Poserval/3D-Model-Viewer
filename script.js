@@ -824,4 +824,49 @@ class ModelViewerApp {
                 }
             };
             script.onerror = () => {
-                reject(new Error('
+                reject(new Error('Не удалось загрузить MeshFlow'));
+            };
+            document.head.appendChild(script);
+        });
+    }
+    
+    async convertWithMeshFlow(file, fromFormat, toFormat) {
+        this.updateConvertProgress(10);
+        
+        const arrayBuffer = await file.arrayBuffer();
+        this.updateConvertProgress(30);
+        
+        let result;
+        try {
+            result = await this.assimp.convert(arrayBuffer, toFormat);
+        } catch (e) {
+            throw new Error(`Конвертация из ${fromFormat} в ${toFormat} пока не поддерживается`);
+        }
+        
+        this.updateConvertProgress(100);
+        this.showDownloadLink(result, file.name, fromFormat, toFormat);
+        
+        return result;
+    }
+    
+    showDownloadLink(resultBuffer, originalName, fromFormat, toFormat) {
+        const blob = new Blob([resultBuffer]);
+        const url = URL.createObjectURL(blob);
+        
+        const baseName = originalName.replace(`.${fromFormat}`, '').replace(`.${fromFormat.toUpperCase()}`, '');
+        const fileName = `${baseName}.${toFormat}`;
+        
+        this.downloadLink.href = url;
+        this.downloadLink.download = fileName;
+        this.downloadLinkContainer.style.display = 'block';
+        
+        this.downloadLink.onclick = () => {
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        };
+    }
+}
+
+// Инициализация приложения
+document.addEventListener('DOMContentLoaded', () => {
+    new ModelViewerApp();
+});
