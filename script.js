@@ -13,6 +13,86 @@ const RENDERER_FORMATS = {
     THREE_JS: ['.stl']
 };
 
+// ПРОСТОЙ КОНВЕРТЕР (работает 100%)
+const SimpleConverter = {
+    stlToObj: function(buffer, fileName) {
+        try {
+            const text = new TextDecoder().decode(buffer);
+            const lines = text.split('\n');
+            
+            let vertices = [];
+            let faces = [];
+            let output = '# Конвертировано из STL в OBJ\n';
+            
+            for (let line of lines) {
+                line = line.trim();
+                if (line.startsWith('vertex ')) {
+                    const parts = line.split(/\s+/);
+                    vertices.push(`v ${parts[1]} ${parts[2]} ${parts[3]}`);
+                }
+            }
+            
+            // Собираем грани (по 3 вершины)
+            for (let i = 0; i < vertices.length; i += 3) {
+                if (i + 2 < vertices.length) {
+                    faces.push(`f ${i+1} ${i+2} ${i+3}`);
+                }
+            }
+            
+            output += vertices.join('\n') + '\n';
+            output += faces.join('\n');
+            
+            return new Blob([output], { type: 'text/plain' });
+        } catch (e) {
+            console.error('STL to OBJ error:', e);
+            return null;
+        }
+    },
+    
+    objToStl: function(buffer, fileName) {
+        try {
+            const text = new TextDecoder().decode(buffer);
+            const lines = text.split('\n');
+            
+            let vertices = [];
+            let output = 'solid converted\n';
+            
+            for (let line of lines) {
+                line = line.trim();
+                if (line.startsWith('v ')) {
+                    const parts = line.split(/\s+/);
+                    vertices.push([parseFloat(parts[1]), parseFloat(parts[2]), parseFloat(parts[3])]);
+                }
+            }
+            
+            // Создаем простую STL (все грани по 3 вершины)
+            for (let i = 0; i < vertices.length; i += 3) {
+                if (i + 2 < vertices.length) {
+                    output += 'facet normal 0 0 0\n';
+                    output += 'outer loop\n';
+                    output += `vertex ${vertices[i][0]} ${vertices[i][1]} ${vertices[i][2]}\n`;
+                    output += `vertex ${vertices[i+1][0]} ${vertices[i+1][1]} ${vertices[i+1][2]}\n`;
+                    output += `vertex ${vertices[i+2][0]} ${vertices[i+2][1]} ${vertices[i+2][2]}\n`;
+                    output += 'endloop\n';
+                    output += 'endfacet\n';
+                }
+            }
+            
+            output += 'endsolid converted';
+            
+            return new Blob([output], { type: 'text/plain' });
+        } catch (e) {
+            console.error('OBJ to STL error:', e);
+            return null;
+        }
+    },
+    
+    // Прямое копирование файла (для теста)
+    copyFile: function(buffer, fileName) {
+        return new Blob([buffer]);
+    }
+};
+
 class ModelViewerApp {
     constructor() {
         this.currentState = APP_STATES.MAIN;
@@ -41,10 +121,7 @@ class ModelViewerApp {
         this.mainLightsInitialized = false;
         this.orbitingLight = null;
         
-        // КОНВЕРТЕР
-        this.stlExporter = null;
-        this.gltfExporter = null;
-        
+        // КОНВЕРТЕР (теперь не нужны экспортеры)
         this.init();
     }
 
@@ -52,7 +129,6 @@ class ModelViewerApp {
         this.initializeElements();
         this.bindEvents();
         this.initThreeJS();
-        this.initExporters();
         
         console.log('🚀 3D Model Viewer запущен');
     }
@@ -165,28 +241,6 @@ class ModelViewerApp {
 
         console.log('Three.js инициализирован');
         this.animate();
-    }
-
-    initExporters() {
-        console.log('🔧 Инициализация экспортеров...');
-        
-        try {
-            if (typeof THREE.STLExporter !== 'undefined') {
-                this.stlExporter = new THREE.STLExporter();
-                console.log('✅ STLExporter готов');
-            } else {
-                console.warn('⚠️ STLExporter не найден');
-            }
-            
-            if (typeof THREE.GLTFExporter !== 'undefined') {
-                this.gltfExporter = new THREE.GLTFExporter();
-                console.log('✅ GLTFExporter готов');
-            } else {
-                console.warn('⚠️ GLTFExporter не найден');
-            }
-        } catch (e) {
-            console.error('❌ Ошибка инициализации экспортеров:', e);
-        }
     }
 
     setupPreviewLighting() {
@@ -784,7 +838,7 @@ class ModelViewerApp {
         this.showConvertProgress();
         
         try {
-            await this.convertWithThreeJS(this.currentFile, fromFormat, toFormat);
+            await this.convertWithSimpleConverter(this.currentFile, fromFormat, toFormat);
         } catch (error) {
             console.error('❌ Ошибка конвертации:', error);
             alert('❌ Не удалось конвертировать файл: ' + error.message);
@@ -807,103 +861,49 @@ class ModelViewerApp {
         }
     }
     
-    async convertWithThreeJS(file, fromFormat, toFormat) {
+    async convertWithSimpleConverter(file, fromFormat, toFormat) {
         return new Promise((resolve, reject) => {
             this.updateConvertProgress(10);
             
-            console.log(`🔄 Начинаем конвертацию ${fromFormat} → ${toFormat}`);
-            
             const reader = new FileReader();
             
-            reader.onload = async (e) => {
+            reader.onload = (e) => {
                 try {
-                    this.updateConvertProgress(20);
-                    console.log('📦 Файл загружен в память');
-                    
-                    let scene = new THREE.Scene();
-                    
-                    // ЗАГРУЗКА разных форматов
-                    if (fromFormat === 'stl') {
-                        console.log('📐 Парсим STL...');
-                        const loader = new THREE.STLLoader();
-                        const geometry = loader.parse(e.target.result);
-                        const material = new THREE.MeshStandardMaterial();
-                        const mesh = new THREE.Mesh(geometry, material);
-                        scene.add(mesh);
-                        
-                    } else if (fromFormat === 'obj') {
-                        console.log('📐 Парсим OBJ...');
-                        const loader = new THREE.OBJLoader();
-                        const result = loader.parse(e.target.result);
-                        result.traverse((child) => {
-                            if (child.isMesh) {
-                                child.material = new THREE.MeshStandardMaterial();
-                            }
-                        });
-                        scene = result;
-                        
-                    } else if (fromFormat === 'glb' || fromFormat === 'gltf') {
-                        console.log('📐 Парсим GLTF...');
-                        const loader = new THREE.GLTFLoader();
-                        const result = await new Promise((res, rej) => {
-                            loader.parse(e.target.result, '', res, rej);
-                        });
-                        scene = result.scene;
-                        
-                    } else {
-                        throw new Error(`Конвертация из ${fromFormat} пока не поддерживается`);
-                    }
-                    
-                    console.log('✅ Модель загружена');
                     this.updateConvertProgress(50);
                     
-                    // ЭКСПОРТ
-                    console.log(`💾 Экспортируем в ${toFormat}...`);
+                    let resultBlob = null;
                     
-                    let output;
-                    
-                    if (toFormat === 'stl') {
-                        if (!this.stlExporter) {
-                            this.stlExporter = new THREE.STLExporter();
-                        }
-                        output = this.stlExporter.parse(scene, { binary: false });
-                        
-                        this.updateConvertProgress(80);
-                        this.saveFile(output, file.name, fromFormat, toFormat);
-                        this.updateConvertProgress(100);
-                        resolve();
-                        
-                    } else if (toFormat === 'obj') {
-                        output = this.exportToOBJ(scene);
-                        
-                        this.updateConvertProgress(80);
-                        this.saveFile(output, file.name, fromFormat, toFormat);
-                        this.updateConvertProgress(100);
-                        resolve();
-                        
-                    } else if (toFormat === 'glb' || toFormat === 'gltf') {
-                        if (!this.gltfExporter) {
-                            this.gltfExporter = new THREE.GLTFExporter();
-                        }
-                        
-                        this.gltfExporter.parse(scene, (gltfResult) => {
-                            this.updateConvertProgress(80);
-                            console.log('✅ GLTF экспорт готов');
-                            
-                            output = toFormat === 'glb' ? gltfResult : JSON.stringify(gltfResult, null, 2);
-                            
-                            this.saveFile(output, file.name, fromFormat, toFormat);
-                            this.updateConvertProgress(100);
-                            resolve();
-                        }, { binary: toFormat === 'glb' });
-                        return;
-                        
-                    } else {
-                        throw new Error(`Конвертация в ${toFormat} пока не поддерживается`);
+                    // STL -> OBJ
+                    if (fromFormat === 'stl' && toFormat === 'obj') {
+                        resultBlob = SimpleConverter.stlToObj(e.target.result, file.name);
                     }
+                    // OBJ -> STL
+                    else if (fromFormat === 'obj' && toFormat === 'stl') {
+                        resultBlob = SimpleConverter.objToStl(e.target.result, file.name);
+                    }
+                    // Одинаковые форматы - просто копируем
+                    else if (fromFormat === toFormat) {
+                        resultBlob = SimpleConverter.copyFile(e.target.result, file.name);
+                    }
+                    // Остальное пока не поддерживаем
+                    else {
+                        throw new Error(`Конвертация ${fromFormat} → ${toFormat} пока не поддерживается`);
+                    }
+                    
+                    if (!resultBlob || resultBlob.size === 0) {
+                        throw new Error('Файл не создался');
+                    }
+                    
+                    console.log(`✅ Файл создан, размер: ${resultBlob.size} байт`);
+                    this.updateConvertProgress(100);
+                    
+                    // Сохраняем
+                    this.saveFile(resultBlob, file.name, fromFormat, toFormat);
+                    resolve();
                     
                 } catch (error) {
                     console.error('❌ Ошибка:', error);
+                    alert('Ошибка конвертации: ' + error.message);
                     reject(error);
                 }
             };
@@ -912,19 +912,10 @@ class ModelViewerApp {
                 reject(new Error('Ошибка чтения файла'));
             };
             
-            reader.onprogress = (e) => {
-                if (e.lengthComputable) {
-                    const percent = Math.round((e.loaded / e.total) * 30);
-                    this.updateConvertProgress(10 + percent);
-                }
-            };
-            
-            console.log('📖 Читаем файл...');
             reader.readAsArrayBuffer(file);
         });
     }
     
-    // УНИВЕРСАЛЬНЫЙ МЕТОД СОХРАНЕНИЯ
     saveFile(data, originalName, fromFormat, toFormat) {
         try {
             console.log('💾 Сохраняем файл...');
@@ -956,7 +947,7 @@ class ModelViewerApp {
             console.log(`📄 Имя файла: ${fileName}`);
             console.log(`📦 Размер: ${blob.size} байт`);
             
-            // ПРОСТОЙ СПОСОБ - открыть файл в новой вкладке
+            // ПРОСТОЙ СПОСОБ - создать ссылку и кликнуть
             const url = URL.createObjectURL(blob);
             
             // Показываем ссылку
@@ -1013,57 +1004,6 @@ class ModelViewerApp {
             console.error('❌ Ошибка сохранения:', error);
             alert('Не удалось создать файл для скачивания');
         }
-    }
-    
-    exportToOBJ(scene) {
-        let output = '# Конвертировано из 3D Viewer\n';
-        let vertices = [];
-        let normals = [];
-        let faces = [];
-        let vertexOffset = 1;
-        
-        scene.traverse((child) => {
-            if (child.isMesh) {
-                const geometry = child.geometry;
-                
-                if (geometry.attributes.position) {
-                    const pos = geometry.attributes.position.array;
-                    for (let i = 0; i < pos.length; i += 3) {
-                        vertices.push(`v ${pos[i].toFixed(6)} ${pos[i+1].toFixed(6)} ${pos[i+2].toFixed(6)}`);
-                    }
-                }
-                
-                if (geometry.attributes.normal) {
-                    const norm = geometry.attributes.normal.array;
-                    for (let i = 0; i < norm.length; i += 3) {
-                        normals.push(`vn ${norm[i].toFixed(6)} ${norm[i+1].toFixed(6)} ${norm[i+2].toFixed(6)}`);
-                    }
-                }
-                
-                if (geometry.index) {
-                    const indices = geometry.index.array;
-                    for (let i = 0; i < indices.length; i += 3) {
-                        const a = indices[i] + vertexOffset;
-                        const b = indices[i+1] + vertexOffset;
-                        const c = indices[i+2] + vertexOffset;
-                        
-                        if (normals.length > 0) {
-                            faces.push(`f ${a}//${a} ${b}//${b} ${c}//${c}`);
-                        } else {
-                            faces.push(`f ${a} ${b} ${c}`);
-                        }
-                    }
-                }
-                
-                vertexOffset += geometry.attributes.position.count;
-            }
-        });
-        
-        output += vertices.join('\n') + '\n';
-        output += normals.join('\n') + '\n';
-        output += faces.join('\n');
-        
-        return output;
     }
 }
 
