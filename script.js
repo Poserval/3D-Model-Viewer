@@ -55,6 +55,7 @@ class ModelViewerApp {
         this.initExporters();
         
         console.log('🚀 3D Model Viewer запущен');
+        console.log('📱 Capacitor:', window.Capacitor ? 'доступен' : 'недоступен');
     }
 
     initializeElements() {
@@ -774,17 +775,10 @@ class ModelViewerApp {
             
             // Просто отдаем оригинальный файл
             const blob = new Blob([await this.currentFile.arrayBuffer()]);
-            const url = URL.createObjectURL(blob);
             const baseName = this.currentFile.name.replace(`.${fromFormat}`, '').replace(`.${fromFormat.toUpperCase()}`, '');
             const fileName = `${baseName}.${toFormat}`;
             
-            this.downloadLink.href = url;
-            this.downloadLink.download = fileName;
-            this.downloadLinkContainer.style.display = 'block';
-            
-            this.downloadLink.onclick = () => {
-                setTimeout(() => URL.revokeObjectURL(url), 1000);
-            };
+            this.saveFile(blob, fileName, true);
             return;
         }
         
@@ -939,39 +933,65 @@ class ModelViewerApp {
             let blob;
             if (typeof data === 'string') {
                 blob = new Blob([data], { type: 'text/plain' });
+            } else if (data instanceof Blob) {
+                blob = data;
             } else {
                 blob = new Blob([data]);
             }
             
             // Генерируем имя файла
-            const baseName = originalName
-                .replace(`.${fromFormat}`, '')
-                .replace(`.${fromFormat.toUpperCase()}`, '')
-                .replace(`.${fromFormat.toLowerCase()}`, '');
-            const fileName = `${baseName}.${toFormat}`;
+            let fileName;
+            if (typeof originalName === 'string' && fromFormat && toFormat) {
+                const baseName = originalName
+                    .replace(`.${fromFormat}`, '')
+                    .replace(`.${fromFormat.toUpperCase()}`, '')
+                    .replace(`.${fromFormat.toLowerCase()}`, '');
+                fileName = `${baseName}.${toFormat}`;
+            } else if (typeof originalName === 'string') {
+                fileName = originalName;
+            } else {
+                fileName = 'converted_file';
+            }
             
             console.log(`📄 Имя файла: ${fileName}`);
             console.log(`📦 Размер: ${blob.size} байт`);
             
-            // СОЗДАЕМ ССЫЛКУ ДЛЯ СКАЧИВАНИЯ
+            // ПРОВЕРЯЕМ: запущено ли в Capacitor
+            const isCapacitor = window.Capacitor && window.Capacitor.isNativePlatform();
+            console.log('📱 Capacitor режим:', isCapacitor);
+            
+            if (isCapacitor) {
+                // 📱 Capacitor режим (нативное приложение)
+                this.saveFileCapacitor(blob, fileName);
+            } else {
+                // 🌐 Браузерный режим
+                this.saveFileBrowser(blob, fileName);
+            }
+            
+        } catch (error) {
+            console.error('❌ Ошибка сохранения:', error);
+            alert('Не удалось создать файл для скачивания');
+        }
+    }
+
+    // 🌐 Для браузера
+    saveFileBrowser(blob, fileName) {
+        console.log('🌐 Сохраняем в браузере...');
+        
+        try {
             const url = URL.createObjectURL(blob);
             
-            // ВАРИАНТ 1: Показываем ссылку пользователю
             this.downloadLink.href = url;
             this.downloadLink.download = fileName;
             this.downloadLinkContainer.style.display = 'block';
             
-            // ВАРИАНТ 2: Принудительное скачивание
             const forceDownload = () => {
                 console.log('📥 Принудительное скачивание...');
                 
-                // Создаем временную ссылку
                 const link = document.createElement('a');
                 link.href = url;
                 link.download = fileName;
                 link.style.display = 'none';
-                
-                // Добавляем в DOM, кликаем, удаляем
                 document.body.appendChild(link);
                 link.click();
                 
@@ -982,14 +1002,13 @@ class ModelViewerApp {
                 }, 1000);
             };
             
-            // При клике на нашу ссылку пробуем оба варианта
             this.downloadLink.onclick = (e) => {
                 e.preventDefault();
                 forceDownload();
                 return false;
             };
             
-            // Добавляем дополнительную кнопку если её нет
+            // Добавляем кнопку если её нет
             if (!document.getElementById('force-download-btn')) {
                 const downloadButton = document.createElement('button');
                 downloadButton.textContent = '📥 Скачать файл';
@@ -1004,11 +1023,75 @@ class ModelViewerApp {
                 this.downloadLinkContainer.appendChild(downloadButton);
             }
             
-            console.log('✅ Файл готов к скачиванию');
+            console.log('✅ Файл готов к скачиванию в браузере');
             
         } catch (error) {
-            console.error('❌ Ошибка сохранения:', error);
-            alert('Не удалось создать файл для скачивания');
+            console.error('❌ Ошибка браузерного сохранения:', error);
+            
+            // Запасной вариант
+            const textArea = document.createElement('textarea');
+            textArea.value = 'Ошибка скачивания. Попробуйте другой браузер.';
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            alert('❌ Не удалось скачать файл. Ошибка скопирована в буфер обмена.');
+        }
+    }
+
+    // 📱 Для Capacitor (нативное приложение)
+    async saveFileCapacitor(blob, fileName) {
+        console.log('📱 Сохраняем в Capacitor...');
+        
+        try {
+            // Конвертируем blob в base64
+            const reader = new FileReader();
+            
+            reader.onload = async () => {
+                try {
+                    const base64Data = reader.result.split(',')[1];
+                    
+                    // Показываем диалог сохранения
+                    if (confirm(`📥 Сохранить файл "${fileName}" (${blob.size} байт) в папку Downloads?`)) {
+                        
+                        // Получаем Capacitor Filesystem
+                        const { Filesystem, Directory } = window.Capacitor.Plugins;
+                        
+                        // Сохраняем файл
+                        const result = await Filesystem.writeFile({
+                            path: `Download/${fileName}`,
+                            data: base64Data,
+                            directory: Directory.External,
+                            recursive: true
+                        });
+                        
+                        console.log('✅ Файл сохранен:', result);
+                        
+                        // Показываем уведомление
+                        alert(`✅ Файл сохранен в папку Downloads как "${fileName}"`);
+                        
+                        // Очищаем прогресс
+                        this.convertProgressContainer.style.display = 'none';
+                    } else {
+                        console.log('❌ Сохранение отменено пользователем');
+                        this.convertProgressContainer.style.display = 'none';
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ Ошибка Capacitor сохранения:', error);
+                    
+                    // Если не удалось сохранить, пробуем браузерный метод
+                    console.log('⚠️ Пробуем браузерный метод...');
+                    this.saveFileBrowser(blob, fileName);
+                }
+            };
+            
+            reader.readAsDataURL(blob);
+            
+        } catch (error) {
+            console.error('❌ Ошибка подготовки файла:', error);
+            alert('❌ Не удалось подготовить файл для сохранения');
+            this.convertProgressContainer.style.display = 'none';
         }
     }
     
