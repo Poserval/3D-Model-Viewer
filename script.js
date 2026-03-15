@@ -55,7 +55,6 @@ class ModelViewerApp {
         this.initExporters();
         
         console.log('🚀 3D Model Viewer запущен');
-        console.log('📱 Capacitor:', window.Capacitor ? 'доступен' : 'недоступен');
     }
 
     initializeElements() {
@@ -957,7 +956,7 @@ class ModelViewerApp {
             console.log(`📦 Размер: ${blob.size} байт`);
             
             // ПРОВЕРЯЕМ: запущено ли в Capacitor
-            const isCapacitor = window.Capacitor && window.Capacitor.isNativePlatform();
+            const isCapacitor = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
             console.log('📱 Capacitor режим:', isCapacitor);
             
             if (isCapacitor) {
@@ -1042,6 +1041,8 @@ class ModelViewerApp {
     // 📱 Для Capacitor (нативное приложение)
     async saveFileCapacitor(blob, fileName) {
         console.log('📱 Сохраняем в Capacitor...');
+        console.log('📦 Размер blob:', blob.size, 'байт');
+        console.log('📄 Имя файла:', fileName);
         
         try {
             // Конвертируем blob в base64
@@ -1050,48 +1051,89 @@ class ModelViewerApp {
             reader.onload = async () => {
                 try {
                     const base64Data = reader.result.split(',')[1];
+                    console.log('✅ Файл сконвертирован в base64, длина:', base64Data.length);
                     
-                    // Показываем диалог сохранения
-                    if (confirm(`📥 Сохранить файл "${fileName}" (${blob.size} байт) в папку Downloads?`)) {
-                        
-                        // Получаем Capacitor Filesystem
-                        const { Filesystem, Directory } = window.Capacitor.Plugins;
-                        
-                        // Сохраняем файл
+                    // Проверяем наличие Capacitor
+                    if (!window.Capacitor || !window.Capacitor.Plugins || !window.Capacitor.Plugins.Filesystem) {
+                        console.error('❌ Capacitor Filesystem не доступен');
+                        alert('Ошибка: Capacitor Filesystem не доступен');
+                        return;
+                    }
+                    
+                    const { Filesystem, Directory } = window.Capacitor.Plugins;
+                    
+                    // Пробуем сохранить в External Storage
+                    try {
+                        console.log('📁 Сохраняем в External Storage...');
                         const result = await Filesystem.writeFile({
-                            path: `Download/${fileName}`,
+                            path: fileName,
                             data: base64Data,
                             directory: Directory.External,
                             recursive: true
                         });
+                        console.log('✅ Файл сохранен в External Storage:', result);
                         
-                        console.log('✅ Файл сохранен:', result);
+                        // Показываем успех
+                        alert(`✅ Файл "${fileName}" успешно сохранен в папку Downloads!`);
                         
-                        // Показываем уведомление
-                        alert(`✅ Файл сохранен в папку Downloads как "${fileName}"`);
-                        
-                        // Очищаем прогресс
+                        // Очищаем контейнер прогресса
                         this.convertProgressContainer.style.display = 'none';
-                    } else {
-                        console.log('❌ Сохранение отменено пользователем');
-                        this.convertProgressContainer.style.display = 'none';
+                        
+                    } catch (e) {
+                        console.error('❌ External Storage не сработал:', e);
+                        
+                        // Если не сработало, пробуем Documents
+                        try {
+                            console.log('📁 Пробуем сохранить в Documents...');
+                            const result = await Filesystem.writeFile({
+                                path: fileName,
+                                data: base64Data,
+                                directory: Directory.Documents,
+                                recursive: true
+                            });
+                            console.log('✅ Файл сохранен в Documents:', result);
+                            alert(`✅ Файл "${fileName}" успешно сохранен в папку Documents!`);
+                            this.convertProgressContainer.style.display = 'none';
+                            
+                        } catch (e2) {
+                            console.error('❌ Documents не сработал:', e2);
+                            
+                            // Если ничего не сработало, пробуем Data
+                            try {
+                                console.log('📁 Пробуем сохранить в Data...');
+                                const result = await Filesystem.writeFile({
+                                    path: fileName,
+                                    data: base64Data,
+                                    directory: Directory.Data,
+                                    recursive: true
+                                });
+                                console.log('✅ Файл сохранен в Data:', result);
+                                alert(`✅ Файл "${fileName}" сохранен во внутреннее хранилище. Используйте файловый менеджер чтобы найти его.`);
+                                this.convertProgressContainer.style.display = 'none';
+                                
+                            } catch (e3) {
+                                console.error('❌ Все варианты не сработали:', e3);
+                                alert('❌ Не удалось сохранить файл. Ошибка: ' + e3.message);
+                            }
+                        }
                     }
                     
                 } catch (error) {
-                    console.error('❌ Ошибка Capacitor сохранения:', error);
-                    
-                    // Если не удалось сохранить, пробуем браузерный метод
-                    console.log('⚠️ Пробуем браузерный метод...');
-                    this.saveFileBrowser(blob, fileName);
+                    console.error('❌ Ошибка при обработке base64:', error);
+                    alert('Ошибка при подготовке файла: ' + error.message);
                 }
+            };
+            
+            reader.onerror = (error) => {
+                console.error('❌ Ошибка чтения blob:', error);
+                alert('Ошибка чтения файла');
             };
             
             reader.readAsDataURL(blob);
             
         } catch (error) {
-            console.error('❌ Ошибка подготовки файла:', error);
-            alert('❌ Не удалось подготовить файл для сохранения');
-            this.convertProgressContainer.style.display = 'none';
+            console.error('❌ Ошибка сохранения:', error);
+            alert('❌ Не удалось сохранить файл');
         }
     }
     
