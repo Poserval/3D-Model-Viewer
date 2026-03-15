@@ -953,29 +953,58 @@ class ModelViewerApp {
             console.log(`📄 Имя файла: ${fileName}`);
             console.log(`📦 Размер: ${blob.size} байт`);
             
-            // Для мобильных устройств используем data URL
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const dataUrl = e.target.result;
+            // СОЗДАЕМ ССЫЛКУ ДЛЯ СКАЧИВАНИЯ
+            const url = URL.createObjectURL(blob);
+            
+            // ВАРИАНТ 1: Показываем ссылку пользователю
+            this.downloadLink.href = url;
+            this.downloadLink.download = fileName;
+            this.downloadLinkContainer.style.display = 'block';
+            
+            // ВАРИАНТ 2: Принудительное скачивание
+            const forceDownload = () => {
+                console.log('📥 Принудительное скачивание...');
                 
-                // Создаем ссылку
-                this.downloadLink.href = dataUrl;
-                this.downloadLink.download = fileName;
-                this.downloadLinkContainer.style.display = 'block';
+                // Создаем временную ссылку
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = fileName;
+                link.style.display = 'none';
                 
-                // Добавляем обработчик
-                this.downloadLink.onclick = () => {
-                    console.log('📥 Начинаем скачивание...');
-                    setTimeout(() => {
-                        URL.revokeObjectURL(dataUrl);
-                        console.log('✅ Ресурс очищен');
-                    }, 1000);
-                };
+                // Добавляем в DOM, кликаем, удаляем
+                document.body.appendChild(link);
+                link.click();
                 
-                console.log('✅ Файл готов к скачиванию');
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                    console.log('✅ Ресурс очищен');
+                }, 1000);
             };
             
-            reader.readAsDataURL(blob);
+            // При клике на нашу ссылку пробуем оба варианта
+            this.downloadLink.onclick = (e) => {
+                e.preventDefault();
+                forceDownload();
+                return false;
+            };
+            
+            // Добавляем дополнительную кнопку если её нет
+            if (!document.getElementById('force-download-btn')) {
+                const downloadButton = document.createElement('button');
+                downloadButton.textContent = '📥 Скачать файл';
+                downloadButton.className = 'btn primary';
+                downloadButton.style.marginTop = '10px';
+                downloadButton.id = 'force-download-btn';
+                downloadButton.onclick = (e) => {
+                    e.preventDefault();
+                    forceDownload();
+                    return false;
+                };
+                this.downloadLinkContainer.appendChild(downloadButton);
+            }
+            
+            console.log('✅ Файл готов к скачиванию');
             
         } catch (error) {
             console.error('❌ Ошибка сохранения:', error);
