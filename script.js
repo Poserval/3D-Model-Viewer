@@ -956,7 +956,7 @@ class ModelViewerApp {
             console.log(`📄 Имя файла: ${fileName}`);
             console.log(`📦 Размер: ${blob.size} байт`);
             
-            // УНИВЕРСАЛЬНОЕ РЕШЕНИЕ - работает везде
+            // ПРОСТОЙ СПОСОБ - открыть файл в новой вкладке
             const url = URL.createObjectURL(blob);
             
             // Показываем ссылку
@@ -964,36 +964,28 @@ class ModelViewerApp {
             this.downloadLink.download = fileName;
             this.downloadLinkContainer.style.display = 'block';
             
-            // Принудительное скачивание
-            const downloadNow = () => {
-                console.log('📥 Скачиваем файл...');
-                
-                // Создаем временную ссылку
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = fileName;
-                link.style.display = 'none';
-                
-                // Добавляем в DOM и кликаем
-                document.body.appendChild(link);
-                link.click();
-                
-                // Удаляем и чистим
-                setTimeout(() => {
-                    document.body.removeChild(link);
-                    URL.revokeObjectURL(url);
-                    console.log('✅ Ресурс очищен');
-                }, 1000);
-            };
-            
-            // По клику на ссылку
+            // При клике открываем в новой вкладке (на телефонах это часто срабатывает)
             this.downloadLink.onclick = (e) => {
                 e.preventDefault();
-                downloadNow();
+                
+                // Пробуем открыть в новой вкладке
+                const newWindow = window.open(url, '_blank');
+                
+                // Если не получилось - пробуем скачать
+                if (!newWindow) {
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    setTimeout(() => document.body.removeChild(link), 1000);
+                }
+                
+                setTimeout(() => URL.revokeObjectURL(url), 2000);
                 return false;
             };
             
-            // Добавляем кнопку если нет
+            // Кнопка для принудительного скачивания
             if (!document.getElementById('force-download-btn')) {
                 const downloadButton = document.createElement('button');
                 downloadButton.textContent = '📥 Скачать файл';
@@ -1002,8 +994,15 @@ class ModelViewerApp {
                 downloadButton.id = 'force-download-btn';
                 downloadButton.onclick = (e) => {
                     e.preventDefault();
-                    downloadNow();
-                    return false;
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    setTimeout(() => {
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+                    }, 1000);
                 };
                 this.downloadLinkContainer.appendChild(downloadButton);
             }
