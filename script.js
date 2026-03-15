@@ -36,7 +36,7 @@ class ModelViewerApp {
         this.mainModelObject = null;
         this.mainControls = null;
         
-        // ФЛАГИ ОСВЕЩЕНИЯ - ОДИН РАЗ ИНИЦИАЛИЗИРУЕМ
+        // ФЛАГИ ОСВЕЩЕНИЯ
         this.previewLightsInitialized = false;
         this.mainLightsInitialized = false;
         this.orbitingLight = null;
@@ -165,10 +165,8 @@ class ModelViewerApp {
         this.animate();
     }
 
-    // ОСВЕЩЕНИЕ ДЛЯ ПРЕВЬЮ (ОДИН РАЗ)
     setupPreviewLighting() {
         if (this.previewLightsInitialized) {
-            console.log('💡 Освещение превью уже создано, пропускаем');
             return;
         }
 
@@ -188,13 +186,10 @@ class ModelViewerApp {
         this.previewScene.add(pointLight);
         
         this.previewLightsInitialized = true;
-        console.log('💡 Освещение превью создано один раз');
     }
 
-    // ОСВЕЩЕНИЕ ДЛЯ ОСНОВНОГО ПРОСМОТРА (ОДИН РАЗ)
     setupMainLighting() {
         if (this.mainLightsInitialized) {
-            console.log('💡 Основное освещение уже создано, пропускаем');
             return;
         }
 
@@ -214,10 +209,8 @@ class ModelViewerApp {
         this.mainScene.add(this.orbitingLight);
         
         this.mainLightsInitialized = true;
-        console.log('💡 Основное освещение создано один раз');
     }
 
-    // УДАЛЕНИЕ ВСЕХ ИСТОЧНИКОВ СВЕТА
     removeAllLights(scene) {
         const lightsToRemove = [];
         scene.traverse((child) => {
@@ -715,7 +708,7 @@ class ModelViewerApp {
             this.converterPanel.style.display = 'none';
         }
         
-        console.log('✅ Превью сброшено, освещение сохранено');
+        console.log('✅ Превью сброшено');
     }
 
     showLoadingIndicator() {
@@ -743,7 +736,7 @@ class ModelViewerApp {
     
     async startConversion() {
         if (!this.currentFile) {
-            alert('❌ Сначала выбери файл на главном экране');
+            alert('❌ Сначала выберите файл на главном экране');
             return;
         }
         
@@ -752,11 +745,10 @@ class ModelViewerApp {
         
         // ЗАЩИТА ОТ КОНВЕРТАЦИИ В ТОТ ЖЕ ФОРМАТ
         if (fromFormat === toFormat) {
-            if (!confirm(`⚠️ Ты пытаешься конвертировать ${fromFormat.toUpperCase()} в ${toFormat.toUpperCase()}.\n\nЭто бессмысленно, файл останется тем же.\n\nПродолжить?`)) {
+            if (!confirm(`⚠️ Вы пытаетесь конвертировать ${fromFormat.toUpperCase()} в ${toFormat.toUpperCase()}.\n\nЭто не изменит файл. Просто скачать оригинал?`)) {
                 return;
             }
             
-            // Если пользователь все-таки хочет продолжать
             this.showDownloadLink(await this.currentFile.arrayBuffer(), this.currentFile.name, fromFormat, toFormat);
             return;
         }
@@ -779,7 +771,7 @@ class ModelViewerApp {
             
         } catch (error) {
             console.error('❌ Ошибка конвертации:', error);
-            alert('❌ Конвертация обосралась: ' + error.message);
+            alert('❌ Не удалось загрузить модуль конвертации. Проверьте подключение к интернету');
             this.convertProgressContainer.style.display = 'none';
         }
     }
@@ -801,32 +793,61 @@ class ModelViewerApp {
     
     async loadMeshFlow() {
         return new Promise((resolve, reject) => {
-            console.log('📦 Загрузка MeshFlow...');
+            console.log('📦 Загрузка модуля конвертации...');
             
-            if (window.createAssimp) {
-                window.createAssimp().then(assimp => {
-                    this.assimp = assimp;
-                    console.log('✅ MeshFlow загружен');
-                    resolve();
-                }).catch(reject);
-                return;
-            }
+            const scripts = [
+                'https://cdn.jsdelivr.net/npm/assimpjs@0.0.10/dist/assimpjs.js',
+                'https://unpkg.com/assimpjs@0.0.10/dist/assimpjs.js',
+                'https://cdn.jsdelivr.net/npm/@sruim/mesh-flow@0.5.0/dist/mesh-flow.min.js'
+            ];
             
-            const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/@sruim/mesh-flow@0.5.0/dist/mesh-flow.min.js';
-            script.onload = async () => {
-                try {
-                    this.assimp = await createAssimp();
-                    console.log('✅ MeshFlow загружен');
-                    resolve();
-                } catch (e) {
-                    reject(e);
+            let currentScript = 0;
+            
+            const tryLoadScript = () => {
+                if (currentScript >= scripts.length) {
+                    reject(new Error('Не удалось загрузить модуль конвертации. Проверьте подключение к интернету'));
+                    return;
                 }
+                
+                const script = document.createElement('script');
+                script.src = scripts[currentScript];
+                script.onload = async () => {
+                    try {
+                        // Пробуем все возможные имена API
+                        if (window.createAssimp) {
+                            this.assimp = await window.createAssimp({
+                                locateFile: (file) => `https://cdn.jsdelivr.net/npm/assimpjs@0.0.10/dist/${file}`
+                            });
+                            console.log('✅ Модуль конвертации загружен');
+                            resolve();
+                        } else if (window.Assimp) {
+                            this.assimp = await window.Assimp();
+                            console.log('✅ Модуль конвертации загружен');
+                            resolve();
+                        } else if (window.MeshFlow) {
+                            this.assimp = await window.MeshFlow();
+                            console.log('✅ Модуль конвертации загружен');
+                            resolve();
+                        } else {
+                            console.warn(`API не найдено в скрипте ${scripts[currentScript]}`);
+                            currentScript++;
+                            tryLoadScript();
+                        }
+                    } catch (e) {
+                        console.warn(`Ошибка инициализации: ${e.message}`);
+                        currentScript++;
+                        tryLoadScript();
+                    }
+                };
+                script.onerror = () => {
+                    console.warn(`Не удалось загрузить: ${scripts[currentScript]}`);
+                    currentScript++;
+                    tryLoadScript();
+                };
+                document.head.appendChild(script);
             };
-            script.onerror = () => {
-                reject(new Error('Не удалось загрузить MeshFlow'));
-            };
-            document.head.appendChild(script);
+            
+            tryLoadScript();
         });
     }
     
