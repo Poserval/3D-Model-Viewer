@@ -1,4 +1,4 @@
-// script.js - ИСПРАВЛЕННАЯ ВЕРСИЯ С КОНВЕРТЕРОМ НА THREE.JS
+// script.js - ИСПРАВЛЕННАЯ ВЕРСИЯ С РАБОЧИМ КОНВЕРТЕРОМ
 
 // Состояния приложения
 const APP_STATES = {
@@ -822,91 +822,70 @@ class ModelViewerApp {
             
             const reader = new FileReader();
             
-            reader.onload = (e) => {
+            reader.onload = async (e) => {
                 try {
                     this.updateConvertProgress(20);
                     console.log('📦 Файл загружен в память');
                     
-                    let geometry;
+                    let scene = new THREE.Scene();
                     
-                    // ЗАГРУЗКА
+                    // ЗАГРУЗКА разных форматов
                     if (fromFormat === 'stl') {
                         console.log('📐 Парсим STL...');
-                        geometry = new THREE.STLLoader().parse(e.target.result);
-                        console.log(`✅ STL распарсен. Вершин: ${geometry.attributes.position.count}`);
+                        const loader = new THREE.STLLoader();
+                        const geometry = loader.parse(e.target.result);
+                        const material = new THREE.MeshStandardMaterial();
+                        const mesh = new THREE.Mesh(geometry, material);
+                        scene.add(mesh);
+                        
+                    } else if (fromFormat === 'obj') {
+                        console.log('📐 Парсим OBJ...');
+                        const loader = new THREE.OBJLoader();
+                        const result = loader.parse(e.target.result);
+                        result.traverse((child) => {
+                            if (child.isMesh) {
+                                child.material = new THREE.MeshStandardMaterial();
+                            }
+                        });
+                        scene = result;
+                        
+                    } else if (fromFormat === 'glb' || fromFormat === 'gltf') {
+                        console.log('📐 Парсим GLTF...');
+                        const loader = new THREE.GLTFLoader();
+                        const result = await new Promise((res, rej) => {
+                            loader.parse(e.target.result, '', res, rej);
+                        });
+                        scene = result.scene;
                         
                     } else {
                         throw new Error(`Конвертация из ${fromFormat} пока не поддерживается`);
                     }
                     
-                    this.updateConvertProgress(40);
-                    
-                    // Проверяем геометрию
-                    if (!geometry || !geometry.attributes || !geometry.attributes.position) {
-                        throw new Error('Не удалось загрузить геометрию модели');
-                    }
-                    
-                    this.updateConvertProgress(60);
+                    console.log('✅ Модель загружена');
+                    this.updateConvertProgress(50);
                     
                     // ЭКСПОРТ
                     console.log(`💾 Экспортируем в ${toFormat}...`);
+                    
+                    let output;
                     
                     if (toFormat === 'stl') {
                         if (!this.stlExporter) {
                             this.stlExporter = new THREE.STLExporter();
                         }
+                        output = this.stlExporter.parse(scene, { binary: false });
                         
-                        const scene = new THREE.Scene();
-                        const material = new THREE.MeshStandardMaterial();
-                        const mesh = new THREE.Mesh(geometry, material);
-                        scene.add(mesh);
-                        
-                        const result = this.stlExporter.parse(scene, { binary: false });
-                        console.log('✅ STL экспорт готов');
-                        
-                        this.updateConvertProgress(90);
-                        
-                        // Сохраняем результат
-                        const blob = new Blob([result]);
-                        const url = URL.createObjectURL(blob);
-                        const baseName = file.name.replace(`.${fromFormat}`, '').replace(`.${fromFormat.toUpperCase()}`, '');
-                        const fileName = `${baseName}.${toFormat}`;
-                        
+                        this.updateConvertProgress(80);
+                        this.saveFile(output, file.name, fromFormat, toFormat);
                         this.updateConvertProgress(100);
-                        
-                        this.downloadLink.href = url;
-                        this.downloadLink.download = fileName;
-                        this.downloadLinkContainer.style.display = 'block';
-                        
-                        this.downloadLink.onclick = () => {
-                            setTimeout(() => URL.revokeObjectURL(url), 1000);
-                        };
-                        
-                        console.log('✅ Конвертация завершена успешно');
                         resolve();
                         
                     } else if (toFormat === 'obj') {
-                        const result = this.exportToOBJ(geometry);
-                        console.log('✅ OBJ экспорт готов');
+                        output = this.exportToOBJ(scene);
                         
-                        this.updateConvertProgress(90);
-                        
-                        const blob = new Blob([result]);
-                        const url = URL.createObjectURL(blob);
-                        const baseName = file.name.replace(`.${fromFormat}`, '').replace(`.${fromFormat.toUpperCase()}`, '');
-                        const fileName = `${baseName}.${toFormat}`;
-                        
+                        this.updateConvertProgress(80);
+                        this.saveFile(output, file.name, fromFormat, toFormat);
                         this.updateConvertProgress(100);
-                        
-                        this.downloadLink.href = url;
-                        this.downloadLink.download = fileName;
-                        this.downloadLinkContainer.style.display = 'block';
-                        
-                        this.downloadLink.onclick = () => {
-                            setTimeout(() => URL.revokeObjectURL(url), 1000);
-                        };
-                        
-                        console.log('✅ Конвертация завершена успешно');
                         resolve();
                         
                     } else if (toFormat === 'glb' || toFormat === 'gltf') {
@@ -914,32 +893,14 @@ class ModelViewerApp {
                             this.gltfExporter = new THREE.GLTFExporter();
                         }
                         
-                        const scene = new THREE.Scene();
-                        const material = new THREE.MeshStandardMaterial();
-                        const mesh = new THREE.Mesh(geometry, material);
-                        scene.add(mesh);
-                        
                         this.gltfExporter.parse(scene, (gltfResult) => {
-                            this.updateConvertProgress(90);
+                            this.updateConvertProgress(80);
                             console.log('✅ GLTF экспорт готов');
                             
-                            const output = toFormat === 'glb' ? gltfResult : JSON.stringify(gltfResult, null, 2);
-                            const blob = new Blob([output]);
-                            const url = URL.createObjectURL(blob);
-                            const baseName = file.name.replace(`.${fromFormat}`, '').replace(`.${fromFormat.toUpperCase()}`, '');
-                            const fileName = `${baseName}.${toFormat}`;
+                            output = toFormat === 'glb' ? gltfResult : JSON.stringify(gltfResult, null, 2);
                             
+                            this.saveFile(output, file.name, fromFormat, toFormat);
                             this.updateConvertProgress(100);
-                            
-                            this.downloadLink.href = url;
-                            this.downloadLink.download = fileName;
-                            this.downloadLinkContainer.style.display = 'block';
-                            
-                            this.downloadLink.onclick = () => {
-                                setTimeout(() => URL.revokeObjectURL(url), 1000);
-                            };
-                            
-                            console.log('✅ Конвертация завершена успешно');
                             resolve();
                         }, { binary: toFormat === 'glb' });
                         return;
@@ -949,13 +910,12 @@ class ModelViewerApp {
                     }
                     
                 } catch (error) {
-                    console.error('❌ Ошибка в процессе конвертации:', error);
+                    console.error('❌ Ошибка:', error);
                     reject(error);
                 }
             };
             
             reader.onerror = () => {
-                console.error('❌ Ошибка чтения файла');
                 reject(new Error('Ошибка чтения файла'));
             };
             
@@ -971,38 +931,105 @@ class ModelViewerApp {
         });
     }
     
-    exportToOBJ(geometry) {
-        const vertices = geometry.attributes.position.array;
-        let output = '# Конвертировано из 3D Viewer\n';
-        
-        // Записываем вершины
-        for (let i = 0; i < vertices.length; i += 3) {
-            output += `v ${vertices[i].toFixed(6)} ${vertices[i+1].toFixed(6)} ${vertices[i+2].toFixed(6)}\n`;
-        }
-        
-        // Записываем нормали если есть
-        if (geometry.attributes.normal) {
-            const normals = geometry.attributes.normal.array;
-            for (let i = 0; i < normals.length; i += 3) {
-                output += `vn ${normals[i].toFixed(6)} ${normals[i+1].toFixed(6)} ${normals[i+2].toFixed(6)}\n`;
+    saveFile(data, originalName, fromFormat, toFormat) {
+        try {
+            console.log('💾 Сохраняем файл...');
+            
+            // Создаем Blob
+            let blob;
+            if (typeof data === 'string') {
+                blob = new Blob([data], { type: 'text/plain' });
+            } else {
+                blob = new Blob([data]);
             }
+            
+            // Генерируем имя файла
+            const baseName = originalName
+                .replace(`.${fromFormat}`, '')
+                .replace(`.${fromFormat.toUpperCase()}`, '')
+                .replace(`.${fromFormat.toLowerCase()}`, '');
+            const fileName = `${baseName}.${toFormat}`;
+            
+            console.log(`📄 Имя файла: ${fileName}`);
+            console.log(`📦 Размер: ${blob.size} байт`);
+            
+            // Для мобильных устройств используем data URL
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const dataUrl = e.target.result;
+                
+                // Создаем ссылку
+                this.downloadLink.href = dataUrl;
+                this.downloadLink.download = fileName;
+                this.downloadLinkContainer.style.display = 'block';
+                
+                // Добавляем обработчик
+                this.downloadLink.onclick = () => {
+                    console.log('📥 Начинаем скачивание...');
+                    setTimeout(() => {
+                        URL.revokeObjectURL(dataUrl);
+                        console.log('✅ Ресурс очищен');
+                    }, 1000);
+                };
+                
+                console.log('✅ Файл готов к скачиванию');
+            };
+            
+            reader.readAsDataURL(blob);
+            
+        } catch (error) {
+            console.error('❌ Ошибка сохранения:', error);
+            alert('Не удалось создать файл для скачивания');
         }
+    }
+    
+    exportToOBJ(scene) {
+        let output = '# Конвертировано из 3D Viewer\n';
+        let vertices = [];
+        let normals = [];
+        let faces = [];
+        let vertexOffset = 1;
         
-        // Записываем грани
-        if (geometry.index) {
-            const indices = geometry.index.array;
-            for (let i = 0; i < indices.length; i += 3) {
-                const a = indices[i] + 1;
-                const b = indices[i+1] + 1;
-                const c = indices[i+2] + 1;
+        scene.traverse((child) => {
+            if (child.isMesh) {
+                const geometry = child.geometry;
+                
+                if (geometry.attributes.position) {
+                    const pos = geometry.attributes.position.array;
+                    for (let i = 0; i < pos.length; i += 3) {
+                        vertices.push(`v ${pos[i].toFixed(6)} ${pos[i+1].toFixed(6)} ${pos[i+2].toFixed(6)}`);
+                    }
+                }
                 
                 if (geometry.attributes.normal) {
-                    output += `f ${a}//${a} ${b}//${b} ${c}//${c}\n`;
-                } else {
-                    output += `f ${a} ${b} ${c}\n`;
+                    const norm = geometry.attributes.normal.array;
+                    for (let i = 0; i < norm.length; i += 3) {
+                        normals.push(`vn ${norm[i].toFixed(6)} ${norm[i+1].toFixed(6)} ${norm[i+2].toFixed(6)}`);
+                    }
                 }
+                
+                if (geometry.index) {
+                    const indices = geometry.index.array;
+                    for (let i = 0; i < indices.length; i += 3) {
+                        const a = indices[i] + vertexOffset;
+                        const b = indices[i+1] + vertexOffset;
+                        const c = indices[i+2] + vertexOffset;
+                        
+                        if (normals.length > 0) {
+                            faces.push(`f ${a}//${a} ${b}//${b} ${c}//${c}`);
+                        } else {
+                            faces.push(`f ${a} ${b} ${c}`);
+                        }
+                    }
+                }
+                
+                vertexOffset += geometry.attributes.position.count;
             }
-        }
+        });
+        
+        output += vertices.join('\n') + '\n';
+        output += normals.join('\n') + '\n';
+        output += faces.join('\n');
         
         return output;
     }
