@@ -1,4 +1,4 @@
-// script.js - ИСПРАВЛЕННАЯ ВЕРСИЯ С СТАБИЛЬНЫМ ОСВЕЩЕНИЕМ
+// script.js - ИСПРАВЛЕННАЯ ВЕРСИЯ С КОНВЕРТЕРОМ
 
 // Состояния приложения
 const APP_STATES = {
@@ -41,6 +41,9 @@ class ModelViewerApp {
         this.mainLightsInitialized = false;
         this.orbitingLight = null;
         
+        // 🔧 КОНВЕРТЕР
+        this.assimp = null;
+        
         this.init();
     }
 
@@ -77,6 +80,18 @@ class ModelViewerApp {
         this.loadingIndicator = document.getElementById('loading-indicator');
         this.progressFill = document.querySelector('.progress-fill');
         this.progressText = document.querySelector('.progress-text');
+        
+        // 🔧 ЭЛЕМЕНТЫ КОНВЕРТЕРА
+        this.convertBtn = document.getElementById('convert-btn');
+        this.converterPanel = document.getElementById('converter-panel');
+        this.formatFrom = document.getElementById('format-from');
+        this.formatTo = document.getElementById('format-to');
+        this.startConvertBtn = document.getElementById('start-convert-btn');
+        this.convertProgressContainer = document.getElementById('convert-progress-container');
+        this.convertProgressBar = document.getElementById('convert-progress-bar');
+        this.convertProgressText = document.getElementById('convert-progress-text');
+        this.downloadLinkContainer = document.getElementById('download-link-container');
+        this.downloadLink = document.getElementById('download-link');
     }
 
     bindEvents() {
@@ -106,6 +121,15 @@ class ModelViewerApp {
 
         window.addEventListener('resize', () => {
             this.handleResize();
+        });
+        
+        // 🔧 СОБЫТИЯ КОНВЕРТЕРА
+        this.convertBtn.addEventListener('click', () => {
+            this.toggleConverterPanel();
+        });
+        
+        this.startConvertBtn.addEventListener('click', () => {
+            this.startConversion();
         });
     }
 
@@ -721,6 +745,11 @@ class ModelViewerApp {
             this.mainControls = null;
         }
         
+        // 🔧 СКРЫВАЕМ ПАНЕЛЬ КОНВЕРТЕРА ПРИ СБРОСЕ
+        if (this.converterPanel) {
+            this.converterPanel.style.display = 'none';
+        }
+        
         // 🔧 НЕ СБРАСЫВАЕМ ФЛАГИ ОСВЕЩЕНИЯ - освещение остается стабильным
         console.log('✅ Превью сброшено, освещение сохранено');
     }
@@ -732,6 +761,143 @@ class ModelViewerApp {
     hideLoadingIndicator() {
         this.loadingIndicator.classList.remove('active');
         this.updateProgress(0);
+    }
+    
+    // 🔧 МЕТОДЫ КОНВЕРТЕРА
+    
+    toggleConverterPanel() {
+        if (!this.converterPanel) return;
+        
+        const isHidden = this.converterPanel.style.display === 'none';
+        this.converterPanel.style.display = isHidden ? 'block' : 'none';
+        
+        // Если открываем — прячем результаты предыдущей конвертации
+        if (isHidden) {
+            this.convertProgressContainer.style.display = 'none';
+            this.downloadLinkContainer.style.display = 'none';
+        }
+    }
+    
+    async startConversion() {
+        if (!this.currentFile) {
+            alert('❌ Сначала выбери файл на главном экране');
+            return;
+        }
+        
+        const fromFormat = this.formatFrom.value;
+        const toFormat = this.formatTo.value;
+        
+        if (fromFormat === toFormat) {
+            alert('❌ Ну ты чего? Форматы одинаковые, смысл конвертить?');
+            return;
+        }
+        
+        this.showConvertProgress();
+        
+        try {
+            // Загружаем MeshFlow если еще не загружен
+            if (!this.assimp) {
+                await this.loadMeshFlow();
+            }
+            
+            // Конвертация с эмуляцией прогресса
+            await this.convertWithMeshFlow(this.currentFile, fromFormat, toFormat);
+            
+        } catch (error) {
+            console.error('❌ Ошибка конвертации:', error);
+            alert('❌ Конвертация обосралась: ' + error.message);
+            this.convertProgressContainer.style.display = 'none';
+        }
+    }
+    
+    showConvertProgress() {
+        this.convertProgressContainer.style.display = 'block';
+        this.downloadLinkContainer.style.display = 'none';
+        this.updateConvertProgress(0);
+    }
+    
+    updateConvertProgress(percent) {
+        if (this.convertProgressBar) {
+            this.convertProgressBar.style.width = percent + '%';
+        }
+        if (this.convertProgressText) {
+            this.convertProgressText.textContent = percent + '%';
+        }
+    }
+    
+    async loadMeshFlow() {
+        return new Promise((resolve, reject) => {
+            console.log('📦 Загрузка MeshFlow...');
+            
+            // Сначала проверяем доступность createAssimp
+            if (window.createAssimp) {
+                window.createAssimp().then(assimp => {
+                    this.assimp = assimp;
+                    console.log('✅ MeshFlow загружен');
+                    resolve();
+                }).catch(reject);
+                return;
+            }
+            
+            // Если нет - загружаем скрипт
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/@sruim/mesh-flow@0.5.0/dist/mesh-flow.min.js';
+            script.onload = async () => {
+                try {
+                    this.assimp = await createAssimp();
+                    console.log('✅ MeshFlow загружен');
+                    resolve();
+                } catch (e) {
+                    reject(e);
+                }
+            };
+            script.onerror = () => {
+                reject(new Error('Не удалось загрузить MeshFlow'));
+            };
+            document.head.appendChild(script);
+        });
+    }
+    
+    async convertWithMeshFlow(file, fromFormat, toFormat) {
+        // Эмуляция прогресса (так как реальный прогресс не всегда доступен)
+        this.updateConvertProgress(10);
+        
+        // Читаем файл
+        const arrayBuffer = await file.arrayBuffer();
+        this.updateConvertProgress(30);
+        
+        // Конвертируем
+        let result;
+        try {
+            result = await this.assimp.convert(arrayBuffer, toFormat);
+        } catch (e) {
+            throw new Error(`Конвертация из ${fromFormat} в ${toFormat} пока не поддерживается`);
+        }
+        
+        this.updateConvertProgress(100);
+        
+        // Показываем ссылку на скачивание
+        this.showDownloadLink(result, file.name, fromFormat, toFormat);
+        
+        return result;
+    }
+    
+    showDownloadLink(resultBuffer, originalName, fromFormat, toFormat) {
+        const blob = new Blob([resultBuffer]);
+        const url = URL.createObjectURL(blob);
+        
+        // Генерируем имя файла
+        const baseName = originalName.replace(`.${fromFormat}`, '').replace(`.${fromFormat.toUpperCase()}`, '');
+        const fileName = `${baseName}.${toFormat}`;
+        
+        this.downloadLink.href = url;
+        this.downloadLink.download = fileName;
+        this.downloadLinkContainer.style.display = 'block';
+        
+        // Чистим URL после скачивания
+        this.downloadLink.onclick = () => {
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        };
     }
 }
 
