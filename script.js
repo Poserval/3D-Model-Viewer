@@ -777,7 +777,7 @@ class ModelViewerApp {
             const baseName = this.currentFile.name.replace(`.${fromFormat}`, '').replace(`.${fromFormat.toUpperCase()}`, '');
             const fileName = `${baseName}.${toFormat}`;
             
-            this.saveFile(blob, fileName, true);
+            this.saveFile(blob, fileName);
             return;
         }
         
@@ -924,6 +924,7 @@ class ModelViewerApp {
         });
     }
     
+    // УНИВЕРСАЛЬНЫЙ МЕТОД СОХРАНЕНИЯ
     saveFile(data, originalName, fromFormat, toFormat) {
         try {
             console.log('💾 Сохраняем файл...');
@@ -955,45 +956,29 @@ class ModelViewerApp {
             console.log(`📄 Имя файла: ${fileName}`);
             console.log(`📦 Размер: ${blob.size} байт`);
             
-            // ПРОВЕРЯЕМ: запущено ли в Capacitor
-            const isCapacitor = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
-            console.log('📱 Capacitor режим:', isCapacitor);
-            
-            if (isCapacitor) {
-                // 📱 Capacitor режим (нативное приложение)
-                this.saveFileCapacitor(blob, fileName);
-            } else {
-                // 🌐 Браузерный режим
-                this.saveFileBrowser(blob, fileName);
-            }
-            
-        } catch (error) {
-            console.error('❌ Ошибка сохранения:', error);
-            alert('Не удалось создать файл для скачивания');
-        }
-    }
-
-    // 🌐 Для браузера
-    saveFileBrowser(blob, fileName) {
-        console.log('🌐 Сохраняем в браузере...');
-        
-        try {
+            // УНИВЕРСАЛЬНОЕ РЕШЕНИЕ - работает везде
             const url = URL.createObjectURL(blob);
             
+            // Показываем ссылку
             this.downloadLink.href = url;
             this.downloadLink.download = fileName;
             this.downloadLinkContainer.style.display = 'block';
             
-            const forceDownload = () => {
-                console.log('📥 Принудительное скачивание...');
+            // Принудительное скачивание
+            const downloadNow = () => {
+                console.log('📥 Скачиваем файл...');
                 
+                // Создаем временную ссылку
                 const link = document.createElement('a');
                 link.href = url;
                 link.download = fileName;
                 link.style.display = 'none';
+                
+                // Добавляем в DOM и кликаем
                 document.body.appendChild(link);
                 link.click();
                 
+                // Удаляем и чистим
                 setTimeout(() => {
                     document.body.removeChild(link);
                     URL.revokeObjectURL(url);
@@ -1001,13 +986,14 @@ class ModelViewerApp {
                 }, 1000);
             };
             
+            // По клику на ссылку
             this.downloadLink.onclick = (e) => {
                 e.preventDefault();
-                forceDownload();
+                downloadNow();
                 return false;
             };
             
-            // Добавляем кнопку если её нет
+            // Добавляем кнопку если нет
             if (!document.getElementById('force-download-btn')) {
                 const downloadButton = document.createElement('button');
                 downloadButton.textContent = '📥 Скачать файл';
@@ -1016,124 +1002,17 @@ class ModelViewerApp {
                 downloadButton.id = 'force-download-btn';
                 downloadButton.onclick = (e) => {
                     e.preventDefault();
-                    forceDownload();
+                    downloadNow();
                     return false;
                 };
                 this.downloadLinkContainer.appendChild(downloadButton);
             }
             
-            console.log('✅ Файл готов к скачиванию в браузере');
-            
-        } catch (error) {
-            console.error('❌ Ошибка браузерного сохранения:', error);
-            
-            // Запасной вариант
-            const textArea = document.createElement('textarea');
-            textArea.value = 'Ошибка скачивания. Попробуйте другой браузер.';
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
-            alert('❌ Не удалось скачать файл. Ошибка скопирована в буфер обмена.');
-        }
-    }
-
-    // 📱 Для Capacitor (нативное приложение)
-    async saveFileCapacitor(blob, fileName) {
-        console.log('📱 Сохраняем в Capacitor...');
-        console.log('📦 Размер blob:', blob.size, 'байт');
-        console.log('📄 Имя файла:', fileName);
-        
-        try {
-            // Конвертируем blob в base64
-            const reader = new FileReader();
-            
-            reader.onload = async () => {
-                try {
-                    const base64Data = reader.result.split(',')[1];
-                    console.log('✅ Файл сконвертирован в base64, длина:', base64Data.length);
-                    
-                    // Проверяем наличие Capacitor
-                    if (!window.Capacitor || !window.Capacitor.Plugins || !window.Capacitor.Plugins.Filesystem) {
-                        console.error('❌ Capacitor Filesystem не доступен');
-                        alert('Ошибка: Capacitor Filesystem не доступен');
-                        return;
-                    }
-                    
-                    const { Filesystem, Directory } = window.Capacitor.Plugins;
-                    
-                    // Пробуем сохранить в External Storage
-                    try {
-                        console.log('📁 Сохраняем в External Storage...');
-                        const result = await Filesystem.writeFile({
-                            path: fileName,
-                            data: base64Data,
-                            directory: Directory.External,
-                            recursive: true
-                        });
-                        console.log('✅ Файл сохранен в External Storage:', result);
-                        
-                        // Показываем успех
-                        alert(`✅ Файл "${fileName}" успешно сохранен в папку Downloads!`);
-                        
-                        // Очищаем контейнер прогресса
-                        this.convertProgressContainer.style.display = 'none';
-                        
-                    } catch (e) {
-                        console.error('❌ External Storage не сработал:', e);
-                        
-                        // Если не сработало, пробуем Documents
-                        try {
-                            console.log('📁 Пробуем сохранить в Documents...');
-                            const result = await Filesystem.writeFile({
-                                path: fileName,
-                                data: base64Data,
-                                directory: Directory.Documents,
-                                recursive: true
-                            });
-                            console.log('✅ Файл сохранен в Documents:', result);
-                            alert(`✅ Файл "${fileName}" успешно сохранен в папку Documents!`);
-                            this.convertProgressContainer.style.display = 'none';
-                            
-                        } catch (e2) {
-                            console.error('❌ Documents не сработал:', e2);
-                            
-                            // Если ничего не сработало, пробуем Data
-                            try {
-                                console.log('📁 Пробуем сохранить в Data...');
-                                const result = await Filesystem.writeFile({
-                                    path: fileName,
-                                    data: base64Data,
-                                    directory: Directory.Data,
-                                    recursive: true
-                                });
-                                console.log('✅ Файл сохранен в Data:', result);
-                                alert(`✅ Файл "${fileName}" сохранен во внутреннее хранилище. Используйте файловый менеджер чтобы найти его.`);
-                                this.convertProgressContainer.style.display = 'none';
-                                
-                            } catch (e3) {
-                                console.error('❌ Все варианты не сработали:', e3);
-                                alert('❌ Не удалось сохранить файл. Ошибка: ' + e3.message);
-                            }
-                        }
-                    }
-                    
-                } catch (error) {
-                    console.error('❌ Ошибка при обработке base64:', error);
-                    alert('Ошибка при подготовке файла: ' + error.message);
-                }
-            };
-            
-            reader.onerror = (error) => {
-                console.error('❌ Ошибка чтения blob:', error);
-                alert('Ошибка чтения файла');
-            };
-            
-            reader.readAsDataURL(blob);
+            console.log('✅ Файл готов к скачиванию');
             
         } catch (error) {
             console.error('❌ Ошибка сохранения:', error);
-            alert('❌ Не удалось сохранить файл');
+            alert('Не удалось создать файл для скачивания');
         }
     }
     
