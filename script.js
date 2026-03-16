@@ -1,4 +1,4 @@
-// script.js - ПОЛНОСТЬЮ ИСПРАВЛЕННАЯ ВЕРСИЯ С ЛОКАЛЬНЫМ КОНВЕРТЕРОМ
+// script.js - ПОЛНАЯ ВЕРСИЯ С КОНВЕРТЕРОМ
 
 // Состояния приложения
 const APP_STATES = {
@@ -807,35 +807,62 @@ class ModelViewerApp {
         return new Promise((resolve, reject) => {
             console.log('📦 Загрузка локального конвертера...');
             
-            // Пробуем загрузить с локального пути
+            // Загружаем скрипт
             const script = document.createElement('script');
-            script.src = 'wasm/assimpjs.js'; // Локальный файл в APK
+            script.src = 'wasm/assimpjs.js';
             
             script.onload = async () => {
+                console.log('✅ Скрипт assimpjs.js загружен');
+                
                 try {
-                    if (window.createAssimp) {
+                    // Для версии 0.0.8 API доступен как window.Assimp
+                    if (window.Assimp) {
+                        console.log('🔄 Инициализация через Assimp (версия 0.0.8)...');
+                        
+                        // Инициализируем с правильными путями к WASM
+                        this.assimp = await window.Assimp({
+                            locateFile: (path) => {
+                                console.log(`🔍 Загрузка: ${path}`);
+                                if (path.endsWith('.wasm')) {
+                                    return 'wasm/assimpjs.wasm';
+                                }
+                                return 'wasm/' + path;
+                            }
+                        });
+                        
+                        this.converterLoaded = true;
+                        console.log('✅ Конвертер загружен');
+                        resolve();
+                    }
+                    // Для новых версий
+                    else if (window.createAssimp) {
+                        console.log('🔄 Инициализация через createAssimp...');
                         this.assimp = await window.createAssimp({
                             locateFile: (path) => {
                                 if (path.endsWith('.wasm')) {
-                                    return 'wasm/assimpjs.wasm'; // Локальный WASM
+                                    return 'wasm/assimpjs.wasm';
                                 }
                                 return path;
                             }
                         });
                         this.converterLoaded = true;
-                        console.log('✅ Локальный конвертер загружен');
+                        console.log('✅ Конвертер загружен');
                         resolve();
-                    } else {
+                    }
+                    else {
+                        console.error('❌ API конвертера не найдено');
+                        console.log('📋 Доступные объекты:', Object.keys(window));
                         reject(new Error('API конвертера не найдено'));
                     }
                 } catch (e) {
-                    console.error('Ошибка инициализации:', e);
+                    console.error('❌ Ошибка инициализации:', e);
                     reject(e);
                 }
             };
             
-            script.onerror = () => {
-                reject(new Error('Не удалось загрузить конвертер из локального хранилища'));
+            script.onerror = (err) => {
+                console.error('❌ Ошибка загрузки скрипта:', err);
+                reject(new Error('Не удалось загрузить конвертер'));
             };
             
             document.head.appendChild(script);
