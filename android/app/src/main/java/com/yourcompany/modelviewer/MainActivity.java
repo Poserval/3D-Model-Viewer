@@ -9,6 +9,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.util.Base64;
+import android.util.Log;
 
 public class MainActivity extends Activity {
     private WebView webView;
@@ -18,12 +19,19 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // ВКЛЮЧАЕМ ОТЛАДКУ ДЛЯ WEBVIEW
+        // ВКЛЮЧАЕМ ОТЛАДКУ ДО ВСЕГО (ДАЖЕ ДО НАХОЖДЕНИЯ WebView)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             WebView.setWebContentsDebuggingEnabled(true);
+            Log.d("3DViewer", "ОТЛАДКА ВКЛЮЧЕНА!");
         }
 
         webView = findViewById(R.id.webview);
+        
+        // Включим еще раз для надежности
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            WebView.setWebContentsDebuggingEnabled(true);
+            Log.d("3DViewer", "ОТЛАДКА ПОДТВЕРЖДЕНА!");
+        }
         
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
@@ -49,6 +57,8 @@ public class MainActivity extends Activity {
         
         webView.setWebChromeClient(new WebChromeClient());
         webView.loadUrl("file:///android_asset/www/index.html");
+        
+        Log.d("3DViewer", "WebView создан и загружен");
     }
 
     @Override
@@ -64,10 +74,12 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void saveFile(String base64Data, String fileName) {
             try {
+                Log.d("3DViewer", "saveFile вызван: " + fileName);
                 byte[] data = Base64.decode(base64Data, Base64.DEFAULT);
+                Log.d("3DViewer", "Данные декодированы: " + data.length + " байт");
                 // DownloadHelper.saveFile(MainActivity.this, data, fileName);
             } catch (Exception e) {
-                e.printStackTrace();
+                Log.e("3DViewer", "Ошибка в saveFile", e);
             }
         }
     }
