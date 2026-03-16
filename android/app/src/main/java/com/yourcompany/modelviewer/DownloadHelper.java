@@ -1,4 +1,4 @@
-package com.yourcompany.modelviewer;
+package ru.dviewer.app;
 
 import android.content.ContentValues;
 import android.content.Context;
