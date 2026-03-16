@@ -1,4 +1,4 @@
-// script.js - ПОЛНАЯ ВЕРСИЯ С КОНВЕРТЕРОМ
+// script.js - ПОЛНАЯ ВЕРСИЯ С КОНВЕРТЕРОМ НА THREE.JS
 
 // Состояния приложения
 const APP_STATES = {
@@ -40,10 +40,6 @@ class ModelViewerApp {
         this.previewLightsInitialized = false;
         this.mainLightsInitialized = false;
         this.orbitingLight = null;
-        
-        // КОНВЕРТЕР
-        this.assimp = null;
-        this.converterLoaded = false;
         
         this.init();
     }
@@ -774,15 +770,11 @@ class ModelViewerApp {
         this.showConvertProgress();
         
         try {
-            if (!this.assimp) {
-                await this.loadConverter();
-            }
-            
-            await this.convertWithAssimp(this.currentFile, fromFormat, toFormat);
+            await this.convertWithThreeJS(this.currentFile, fromFormat, toFormat);
             
         } catch (error) {
             console.error('❌ Ошибка конвертации:', error);
-            alert('❌ Не удалось загрузить модуль конвертации');
+            alert('❌ Ошибка конвертации: ' + error.message);
             this.convertProgressContainer.style.display = 'none';
         }
     }
@@ -802,107 +794,123 @@ class ModelViewerApp {
         }
     }
     
-    // ЗАГРУЗКА ЛОКАЛЬНОГО КОНВЕРТЕРА
-    async loadConverter() {
+    async convertWithThreeJS(file, fromFormat, toFormat) {
+        this.updateConvertProgress(10);
+        
         return new Promise((resolve, reject) => {
-            console.log('📦 Загрузка локального конвертера...');
+            console.log(`🔄 Конвертация ${fromFormat} → ${toFormat}`);
             
-            // Загружаем скрипт
-            const script = document.createElement('script');
-            script.src = 'wasm/assimpjs.js';
+            const reader = new FileReader();
             
-            script.onload = async () => {
-                console.log('✅ Скрипт assimpjs.js загружен');
-                
+            reader.onload = async (e) => {
                 try {
-                    // Для версии 0.0.8 API доступен как window.Assimp
-                    if (window.Assimp) {
-                        console.log('🔄 Инициализация через Assimp (версия 0.0.8)...');
-                        
-                        // Инициализируем с правильными путями к WASM
-                        this.assimp = await window.Assimp({
-                            locateFile: (path) => {
-                                console.log(`🔍 Загрузка: ${path}`);
-                                if (path.endsWith('.wasm')) {
-                                    return 'wasm/assimpjs.wasm';
-                                }
-                                return 'wasm/' + path;
-                            }
-                        });
-                        
-                        this.converterLoaded = true;
-                        console.log('✅ Конвертер загружен');
-                        resolve();
+                    this.updateConvertProgress(30);
+                    
+                    // Создаем сцену
+                    const scene = new THREE.Scene();
+                    
+                    // Загружаем модель в зависимости от исходного формата
+                    if (fromFormat === 'stl') {
+                        const loader = new THREE.STLLoader();
+                        const geometry = loader.parse(e.target.result);
+                        const material = new THREE.MeshStandardMaterial({ color: 0xCCCCCC });
+                        const mesh = new THREE.Mesh(geometry, material);
+                        scene.add(mesh);
                     }
-                    // Для новых версий
-                    else if (window.createAssimp) {
-                        console.log('🔄 Инициализация через createAssimp...');
-                        this.assimp = await window.createAssimp({
-                            locateFile: (path) => {
-                                if (path.endsWith('.wasm')) {
-                                    return 'wasm/assimpjs.wasm';
-                                }
-                                return path;
-                            }
+                    else if (fromFormat === 'obj') {
+                        const loader = new THREE.OBJLoader();
+                        const object = loader.parse(e.target.result);
+                        scene.add(object);
+                    }
+                    else if (fromFormat === 'gltf' || fromFormat === 'glb') {
+                        const loader = new THREE.GLTFLoader();
+                        const gltf = await new Promise((res, rej) => {
+                            loader.parse(e.target.result, '', res, rej);
                         });
-                        this.converterLoaded = true;
-                        console.log('✅ Конвертер загружен');
-                        resolve();
+                        scene.add(gltf.scene);
                     }
                     else {
-                        console.error('❌ API конвертера не найдено');
-                        console.log('📋 Доступные объекты:', Object.keys(window));
-                        reject(new Error('API конвертера не найдено'));
+                        reject(new Error(`Формат ${fromFormat} не поддерживается для загрузки`));
+                        return;
                     }
-                } catch (e) {
-                    console.error('❌ Ошибка инициализации:', e);
-                    reject(e);
+                    
+                    this.updateConvertProgress(60);
+                    
+                    // Центрируем модель
+                    const box = new THREE.Box3().setFromObject(scene);
+                    const center = box.getCenter(new THREE.Vector3());
+                    scene.position.x = -center.x;
+                    scene.position.y = -center.y;
+                    scene.position.z = -center.z;
+                    
+                    // Экспортируем в целевой формат
+                    let result;
+                    
+                    if (toFormat === 'stl') {
+                        const exporter = new THREE.STLExporter();
+                        result = exporter.parse(scene);
+                    }
+                    else if (toFormat === 'obj') {
+                        const exporter = new THREE.OBJExporter();
+                        result = exporter.parse(scene);
+                    }
+                    else if (toFormat === 'gltf' || toFormat === 'glb') {
+                        const exporter = new THREE.GLTFExporter();
+                        result = await new Promise((res) => {
+                            exporter.parse(scene, (gltf) => {
+                                if (toFormat === 'glb') {
+                                    const str = JSON.stringify(gltf);
+                                    const buffer = new ArrayBuffer(str.length);
+                                    const view = new Uint8Array(buffer);
+                                    for (let i = 0; i < str.length; i++) {
+                                        view[i] = str.charCodeAt(i);
+                                    }
+                                    res(buffer);
+                                } else {
+                                    res(JSON.stringify(gltf, null, 2));
+                                }
+                            }, { binary: toFormat === 'glb' });
+                        });
+                    }
+                    else {
+                        reject(new Error(`Формат ${toFormat} не поддерживается для экспорта`));
+                        return;
+                    }
+                    
+                    this.updateConvertProgress(100);
+                    
+                    // Создаем Blob и ссылку
+                    const blob = new Blob([result], { 
+                        type: toFormat === 'glb' ? 'application/octet-stream' : 'text/plain' 
+                    });
+                    const url = URL.createObjectURL(blob);
+                    
+                    const baseName = file.name.replace(`.${fromFormat}`, '').replace(`.${fromFormat.toUpperCase()}`, '');
+                    const fileName = `${baseName}.${toFormat}`;
+                    
+                    this.downloadLink.href = url;
+                    this.downloadLink.download = fileName;
+                    this.downloadLinkContainer.style.display = 'block';
+                    
+                    this.downloadLink.onclick = () => {
+                        setTimeout(() => URL.revokeObjectURL(url), 1000);
+                    };
+                    
+                    console.log('✅ Конвертация завершена');
+                    resolve();
+                    
+                } catch (error) {
+                    console.error('❌ Ошибка конвертации:', error);
+                    reject(error);
                 }
             };
             
-            script.onerror = (err) => {
-                console.error('❌ Ошибка загрузки скрипта:', err);
-                reject(new Error('Не удалось загрузить конвертер'));
+            reader.onerror = () => {
+                reject(new Error('Не удалось прочитать файл'));
             };
             
-            document.head.appendChild(script);
+            reader.readAsArrayBuffer(file);
         });
-    }
-    
-    async convertWithAssimp(file, fromFormat, toFormat) {
-        this.updateConvertProgress(10);
-        
-        const arrayBuffer = await file.arrayBuffer();
-        this.updateConvertProgress(30);
-        
-        let result;
-        try {
-            // Assimp принимает буфер и возвращает результат
-            result = await this.assimp.convert(arrayBuffer, toFormat);
-        } catch (e) {
-            console.error('Ошибка конвертации Assimp:', e);
-            throw new Error(`Конвертация из ${fromFormat} в ${toFormat} не поддерживается`);
-        }
-        
-        this.updateConvertProgress(100);
-        
-        // СОЗДАЕМ ССЫЛКУ НА СКАЧИВАНИЕ
-        const blob = new Blob([result]);
-        const url = URL.createObjectURL(blob);
-        
-        const baseName = file.name.replace(`.${fromFormat}`, '').replace(`.${fromFormat.toUpperCase()}`, '');
-        const fileName = `${baseName}.${toFormat}`;
-        
-        this.downloadLink.href = url;
-        this.downloadLink.download = fileName;
-        this.downloadLinkContainer.style.display = 'block';
-        
-        this.downloadLink.onclick = () => {
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
-        };
-        
-        console.log('✅ Файл готов к скачиванию');
-        return result;
     }
 }
 
