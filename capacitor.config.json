@@ -5,6 +5,15 @@
   "server": {
     "androidScheme": "https"
   },
+  "android": {
+    "buildOptions": {
+      "targetSdkVersion": 35,
+      "minSdkVersion": 22,
+      "compileSdkVersion": 35,
+      "versionCode": 2,
+      "versionName": "1.0.1"
+    }
+  },
   "includeAssets": [
     "wasm/**/*"
   ]
