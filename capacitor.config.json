@@ -4,5 +4,8 @@
   "webDir": "capacitor-web",
   "server": {
     "androidScheme": "https"
-  }
+  },
+  "includeAssets": [
+    "wasm/**/*"
+  ]
 }
