@@ -947,62 +947,26 @@ class ModelViewerApp {
             console.log(`📄 Имя файла: ${fileName}`);
             console.log(`📦 Размер: ${blob.size} байт`);
             
-            // ПРОСТОЙ СПОСОБ - создать ссылку и кликнуть
+            // СОЗДАЕМ URL
             const url = URL.createObjectURL(blob);
             
-            // Показываем ссылку
+            // ПРОСТО ОТКРЫВАЕМ В НОВОЙ ВКЛАДКЕ
+            window.open(url, '_blank');
+            
+            // Показываем ссылку на всякий случай
             this.downloadLink.href = url;
             this.downloadLink.download = fileName;
             this.downloadLinkContainer.style.display = 'block';
+            this.downloadLink.textContent = `📥 ${fileName} (если не открылось, нажми сюда)`;
             
-            // При клике открываем в новой вкладке (на телефонах это часто срабатывает)
-            this.downloadLink.onclick = (e) => {
-                e.preventDefault();
-                
-                // Пробуем открыть в новой вкладке
-                const newWindow = window.open(url, '_blank');
-                
-                // Если не получилось - пробуем скачать
-                if (!newWindow) {
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = fileName;
-                    document.body.appendChild(link);
-                    link.click();
-                    setTimeout(() => document.body.removeChild(link), 1000);
-                }
-                
-                setTimeout(() => URL.revokeObjectURL(url), 2000);
-                return false;
-            };
+            // Чистим через 5 секунд
+            setTimeout(() => URL.revokeObjectURL(url), 5000);
             
-            // Кнопка для принудительного скачивания
-            if (!document.getElementById('force-download-btn')) {
-                const downloadButton = document.createElement('button');
-                downloadButton.textContent = '📥 Скачать файл';
-                downloadButton.className = 'btn primary';
-                downloadButton.style.marginTop = '10px';
-                downloadButton.id = 'force-download-btn';
-                downloadButton.onclick = (e) => {
-                    e.preventDefault();
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = fileName;
-                    document.body.appendChild(link);
-                    link.click();
-                    setTimeout(() => {
-                        document.body.removeChild(link);
-                        URL.revokeObjectURL(url);
-                    }, 1000);
-                };
-                this.downloadLinkContainer.appendChild(downloadButton);
-            }
-            
-            console.log('✅ Файл готов к скачиванию');
+            this.convertProgressContainer.style.display = 'none';
             
         } catch (error) {
-            console.error('❌ Ошибка сохранения:', error);
-            alert('Не удалось создать файл для скачивания');
+            console.error('❌ Ошибка:', error);
+            alert('Не удалось создать файл');
         }
     }
 }
