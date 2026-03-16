@@ -1,4 +1,4 @@
-// script.js - ПОЛНАЯ ВЕРСИЯ С СОХРАНЕНИЕМ В ПАПКУ
+// script.js - ПОЛНАЯ ВЕРСИЯ С КНОПКОЙ ПОДЕЛИТЬСЯ
 
 // Состояния приложения
 const APP_STATES = {
@@ -745,8 +745,7 @@ class ModelViewerApp {
             }
             
             const arrayBuffer = await this.currentFile.arrayBuffer();
-            const result = new Uint8Array(arrayBuffer);
-            await this.saveWithNative(result.buffer, this.currentFile.name, fromFormat, toFormat);
+            await this.showShareButton(arrayBuffer, this.currentFile.name, fromFormat, toFormat);
             return;
         }
         
@@ -866,8 +865,8 @@ class ModelViewerApp {
                         return;
                     }
                     
-                    // СОХРАНЯЕМ ЧЕРЕЗ NATIVE МЕТОД
-                    await this.saveWithNative(result, file.name, fromFormat, toFormat);
+                    // ПОКАЗЫВАЕМ КНОПКУ ПОДЕЛИТЬСЯ
+                    await this.showShareButton(result, file.name, fromFormat, toFormat);
                     
                     this.updateConvertProgress(100);
                     resolve();
@@ -886,41 +885,80 @@ class ModelViewerApp {
         });
     }
     
-    // МЕТОД СОХРАНЕНИЯ В ПАПКУ
-    async saveWithNative(result, originalName, fromFormat, toFormat) {
+    // МЕТОД ПОКАЗА КНОПКИ ПОДЕЛИТЬСЯ
+    async showShareButton(result, originalName, fromFormat, toFormat) {
         const baseName = originalName.replace(`.${fromFormat}`, '').replace(`.${fromFormat.toUpperCase()}`, '');
         const fileName = `${baseName}.${toFormat}`;
         
-        // Конвертируем результат в base64
-        const uint8Array = new Uint8Array(result);
-        let binary = '';
-        for (let i = 0; i < uint8Array.length; i++) {
-            binary += String.fromCharCode(uint8Array[i]);
-        }
-        const base64 = window.btoa(binary);
+        // Очищаем контейнер от старых кнопок
+        this.downloadLinkContainer.innerHTML = '';
+        this.downloadLinkContainer.style.display = 'block';
         
-        // Вызываем нативный метод
-        if (window.Android && window.Android.saveFile) {
-            window.Android.saveFile(base64, fileName);
-            alert(`✅ Файл "${fileName}" сохраняется в папку 3DViewer/`);
-            this.downloadLinkContainer.style.display = 'none';
-        } else {
-            // Запасной вариант - через blob
-            const blob = new Blob([result], { 
-                type: toFormat === 'glb' ? 'application/octet-stream' : 'text/plain' 
-            });
-            const url = URL.createObjectURL(blob);
-            
-            this.downloadLink.href = url;
-            this.downloadLink.download = fileName;
-            this.downloadLinkContainer.style.display = 'block';
-            
-            this.downloadLink.onclick = () => {
-                setTimeout(() => URL.revokeObjectURL(url), 1000);
-            };
-            
-            alert('✅ Файл готов к скачиванию в браузере');
-        }
+        // Создаем файл
+        const blob = new Blob([result], { 
+            type: toFormat === 'glb' ? 'model/gltf-binary' : 'text/plain' 
+        });
+        const url = URL.createObjectURL(blob);
+        
+        // Кнопка "Поделиться"
+        const shareBtn = document.createElement('button');
+        shareBtn.textContent = '📱 Поделиться файлом';
+        shareBtn.className = 'btn primary';
+        shareBtn.style.width = '100%';
+        shareBtn.style.marginBottom = '10px';
+        
+        shareBtn.onclick = async () => {
+            try {
+                if (navigator.share) {
+                    const file = new File([blob], fileName, { 
+                        type: toFormat === 'glb' ? 'model/gltf-binary' : 'text/plain' 
+                    });
+                    await navigator.share({
+                        title: '3D модель',
+                        text: `Файл конвертирован в ${toFormat.toUpperCase()}`,
+                        files: [file]
+                    });
+                } else {
+                    // Если Share не поддерживается - открываем ссылку
+                    window.open(url, '_blank');
+                }
+            } catch (e) {
+                console.log('Share отменен или не поддерживается');
+                // Запасной вариант - копируем ссылку
+                navigator.clipboard?.writeText(url).then(() => {
+                    alert('🔗 Ссылка скопирована');
+                });
+            }
+        };
+        
+        // Кнопка "Скачать" (запасной вариант)
+        const downloadBtn = document.createElement('a');
+        downloadBtn.href = url;
+        downloadBtn.download = fileName;
+        downloadBtn.textContent = '💾 Скачать файл';
+        downloadBtn.className = 'btn secondary';
+        downloadBtn.style.width = '100%';
+        downloadBtn.style.textDecoration = 'none';
+        downloadBtn.style.display = 'inline-block';
+        
+        downloadBtn.onclick = () => {
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        };
+        
+        // Добавляем кнопки
+        this.downloadLinkContainer.appendChild(shareBtn);
+        this.downloadLinkContainer.appendChild(downloadBtn);
+        
+        // Текст с названием файла
+        const fileNameDiv = document.createElement('div');
+        fileNameDiv.textContent = `📄 ${fileName}`;
+        fileNameDiv.style.color = 'white';
+        fileNameDiv.style.marginTop = '10px';
+        fileNameDiv.style.fontSize = '12px';
+        fileNameDiv.style.wordBreak = 'break-all';
+        this.downloadLinkContainer.appendChild(fileNameDiv);
+        
+        this.convertProgressContainer.style.display = 'none';
     }
 }
 
