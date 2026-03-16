@@ -1,4 +1,4 @@
-// script.js - ПОЛНАЯ ВЕРСИЯ С КОНВЕРТЕРОМ НА THREE.JS
+// script.js - ПОЛНАЯ ВЕРСИЯ С СОХРАНЕНИЕМ В ПАПКУ
 
 // Состояния приложения
 const APP_STATES = {
@@ -745,19 +745,8 @@ class ModelViewerApp {
             }
             
             const arrayBuffer = await this.currentFile.arrayBuffer();
-            const blob = new Blob([arrayBuffer]);
-            const url = URL.createObjectURL(blob);
-            
-            const baseName = this.currentFile.name.replace(`.${fromFormat}`, '').replace(`.${fromFormat.toUpperCase()}`, '');
-            const fileName = `${baseName}.${toFormat}`;
-            
-            this.downloadLink.href = url;
-            this.downloadLink.download = fileName;
-            this.downloadLinkContainer.style.display = 'block';
-            
-            this.downloadLink.onclick = () => {
-                setTimeout(() => URL.revokeObjectURL(url), 1000);
-            };
+            const result = new Uint8Array(arrayBuffer);
+            await this.saveWithNative(result.buffer, this.currentFile.name, fromFormat, toFormat);
             return;
         }
         
@@ -877,26 +866,10 @@ class ModelViewerApp {
                         return;
                     }
                     
+                    // СОХРАНЯЕМ ЧЕРЕЗ NATIVE МЕТОД
+                    await this.saveWithNative(result, file.name, fromFormat, toFormat);
+                    
                     this.updateConvertProgress(100);
-                    
-                    // Создаем Blob и ссылку
-                    const blob = new Blob([result], { 
-                        type: toFormat === 'glb' ? 'application/octet-stream' : 'text/plain' 
-                    });
-                    const url = URL.createObjectURL(blob);
-                    
-                    const baseName = file.name.replace(`.${fromFormat}`, '').replace(`.${fromFormat.toUpperCase()}`, '');
-                    const fileName = `${baseName}.${toFormat}`;
-                    
-                    this.downloadLink.href = url;
-                    this.downloadLink.download = fileName;
-                    this.downloadLinkContainer.style.display = 'block';
-                    
-                    this.downloadLink.onclick = () => {
-                        setTimeout(() => URL.revokeObjectURL(url), 1000);
-                    };
-                    
-                    console.log('✅ Конвертация завершена');
                     resolve();
                     
                 } catch (error) {
@@ -911,6 +884,43 @@ class ModelViewerApp {
             
             reader.readAsArrayBuffer(file);
         });
+    }
+    
+    // МЕТОД СОХРАНЕНИЯ В ПАПКУ
+    async saveWithNative(result, originalName, fromFormat, toFormat) {
+        const baseName = originalName.replace(`.${fromFormat}`, '').replace(`.${fromFormat.toUpperCase()}`, '');
+        const fileName = `${baseName}.${toFormat}`;
+        
+        // Конвертируем результат в base64
+        const uint8Array = new Uint8Array(result);
+        let binary = '';
+        for (let i = 0; i < uint8Array.length; i++) {
+            binary += String.fromCharCode(uint8Array[i]);
+        }
+        const base64 = window.btoa(binary);
+        
+        // Вызываем нативный метод
+        if (window.Android && window.Android.saveFile) {
+            window.Android.saveFile(base64, fileName);
+            alert(`✅ Файл "${fileName}" сохраняется в папку 3DViewer/`);
+            this.downloadLinkContainer.style.display = 'none';
+        } else {
+            // Запасной вариант - через blob
+            const blob = new Blob([result], { 
+                type: toFormat === 'glb' ? 'application/octet-stream' : 'text/plain' 
+            });
+            const url = URL.createObjectURL(blob);
+            
+            this.downloadLink.href = url;
+            this.downloadLink.download = fileName;
+            this.downloadLinkContainer.style.display = 'block';
+            
+            this.downloadLink.onclick = () => {
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            };
+            
+            alert('✅ Файл готов к скачиванию в браузере');
+        }
     }
 }
 
