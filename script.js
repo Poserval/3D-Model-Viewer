@@ -1,4 +1,4 @@
-// script.js - ПОЛНАЯ ВЕРСИЯ С ИНСТРУКЦИЕЙ ПО СОХРАНЕНИЮ
+// script.js - ПОЛНАЯ ВЕРСИЯ С ДЕТЕКТОРОМ СРЕДЫ
 
 // Состояния приложения
 const APP_STATES = {
@@ -41,15 +41,27 @@ class ModelViewerApp {
         this.mainLightsInitialized = false;
         this.orbitingLight = null;
         
+        // Определяем среду выполнения
+        this.isNativeApp = this.checkIfNativeApp();
+        
+        console.log('🚀 3D Model Viewer запущен');
+        console.log('📱 Нативное приложение:', this.isNativeApp);
+        
         this.init();
+    }
+
+    // ДЕТЕКТОР НАТИВНОГО ПРИЛОЖЕНИЯ
+    checkIfNativeApp() {
+        return window.location.protocol === 'file:' || 
+               window.location.href.includes('android_asset') ||
+               (window.Capacitor && window.Capacitor.isNativePlatform) ||
+               !!window.Android;
     }
 
     init() {
         this.initializeElements();
         this.bindEvents();
         this.initThreeJS();
-        
-        console.log('🚀 3D Model Viewer запущен');
     }
 
     initializeElements() {
@@ -885,10 +897,13 @@ class ModelViewerApp {
         });
     }
     
-    // МЕТОД ПОКАЗА КНОПОК ДЛЯ СОХРАНЕНИЯ
+    // ОСНОВНОЙ МЕТОД ДЛЯ СОХРАНЕНИЯ ФАЙЛА
     async showShareButton(result, originalName, fromFormat, toFormat) {
         const baseName = originalName.replace(`.${fromFormat}`, '').replace(`.${fromFormat.toUpperCase()}`, '');
         const fileName = `${baseName}.${toFormat}`;
+        
+        console.log('📁 Показ кнопок для файла:', fileName);
+        console.log('📱 Среда выполнения:', this.isNativeApp ? 'Нативное приложение' : 'Браузер');
         
         // Очищаем контейнер
         this.downloadLinkContainer.innerHTML = '';
@@ -899,35 +914,106 @@ class ModelViewerApp {
             type: toFormat === 'glb' ? 'model/gltf-binary' : 'text/plain' 
         });
         
-        // Конвертируем blob в data URL
-        const reader = new FileReader();
-        reader.readAsDataURL(blob);
+        // ЗАГОЛОВОК
+        const title = document.createElement('h3');
+        title.textContent = '✅ Конвертация завершена!';
+        title.style.color = '#4CAF50';
+        title.style.marginBottom = '15px';
+        this.downloadLinkContainer.appendChild(title);
         
-        reader.onloadend = () => {
-            const dataUrl = reader.result;
+        // НАЗВАНИЕ ФАЙЛА
+        const fileNameDiv = document.createElement('div');
+        fileNameDiv.textContent = `📄 ${fileName}`;
+        fileNameDiv.style.color = 'white';
+        fileNameDiv.style.marginBottom = '15px';
+        fileNameDiv.style.fontSize = '14px';
+        fileNameDiv.style.wordBreak = 'break-all';
+        fileNameDiv.style.padding = '10px';
+        fileNameDiv.style.background = 'rgba(0,0,0,0.3)';
+        fileNameDiv.style.borderRadius = '8px';
+        this.downloadLinkContainer.appendChild(fileNameDiv);
+        
+        // ===========================================
+        // КОД ДЛЯ НАТИВНОГО ПРИЛОЖЕНИЯ
+        // ===========================================
+        if (this.isNativeApp) {
+            console.log('📱 Используем нативный метод');
             
-            // Заголовок
-            const title = document.createElement('h3');
-            title.textContent = '✅ Конвертация завершена!';
-            title.style.color = '#4CAF50';
-            title.style.marginBottom = '15px';
-            this.downloadLinkContainer.appendChild(title);
+            // Конвертируем в base64 для нативного метода
+            const uint8Array = new Uint8Array(result);
+            let binary = '';
+            for (let i = 0; i < uint8Array.length; i++) {
+                binary += String.fromCharCode(uint8Array[i]);
+            }
+            const base64 = window.btoa(binary);
             
-            // Название файла
-            const fileNameDiv = document.createElement('div');
-            fileNameDiv.textContent = `📄 ${fileName}`;
-            fileNameDiv.style.color = 'white';
-            fileNameDiv.style.marginBottom = '15px';
-            fileNameDiv.style.fontSize = '14px';
-            fileNameDiv.style.wordBreak = 'break-all';
-            fileNameDiv.style.padding = '10px';
-            fileNameDiv.style.background = 'rgba(0,0,0,0.3)';
-            fileNameDiv.style.borderRadius = '8px';
-            this.downloadLinkContainer.appendChild(fileNameDiv);
+            // Кнопка "Поделиться" для нативного приложения
+            const shareBtn = document.createElement('button');
+            shareBtn.textContent = '📱 Поделиться файлом';
+            shareBtn.className = 'btn primary';
+            shareBtn.style.width = '100%';
+            shareBtn.style.marginBottom = '10px';
+            
+            shareBtn.onclick = async () => {
+                try {
+                    // Пробуем Web Share API
+                    if (navigator.share && navigator.canShare) {
+                        const file = new File([blob], fileName, { 
+                            type: toFormat === 'glb' ? 'model/gltf-binary' : 'text/plain' 
+                        });
+                        
+                        if (navigator.canShare({ files: [file] })) {
+                            await navigator.share({
+                                title: '3D модель',
+                                files: [file]
+                            });
+                            return;
+                        }
+                    }
+                    
+                    // Если Web Share не работает, пробуем нативный интерфейс
+                    if (window.Android && window.Android.saveFile) {
+                        window.Android.saveFile(base64, fileName);
+                        alert('📤 Файл отправлен в Android. Проверьте уведомление.');
+                    } else {
+                        // Если ничего не работает
+                        alert('❌ Нативные методы не доступны. Попробуйте использовать браузерную версию.');
+                    }
+                } catch (e) {
+                    console.error('❌ Ошибка:', e);
+                    alert('❌ Ошибка при попытке поделиться: ' + e.message);
+                }
+            };
+            
+            this.downloadLinkContainer.appendChild(shareBtn);
+            
+            // Кнопка "Сохранить в браузере" (запасной вариант)
+            const browserBtn = document.createElement('button');
+            browserBtn.textContent = '🌐 Открыть в браузере';
+            browserBtn.className = 'btn secondary';
+            browserBtn.style.width = '100%';
+            browserBtn.style.marginBottom = '15px';
+            
+            browserBtn.onclick = () => {
+                const url = URL.createObjectURL(blob);
+                window.open(url, '_blank');
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            };
+            
+            this.downloadLinkContainer.appendChild(browserBtn);
+            
+        } 
+        // ===========================================
+        // КОД ДЛЯ БРАУЗЕРНОЙ ВЕРСИИ
+        // ===========================================
+        else {
+            console.log('🌐 Используем браузерный метод');
+            
+            const url = URL.createObjectURL(blob);
             
             // Кнопка "Поделиться"
             const shareBtn = document.createElement('button');
-            shareBtn.textContent = '📱 Поделиться файлом';
+            shareBtn.textContent = '📱 Поделиться';
             shareBtn.className = 'btn primary';
             shareBtn.style.width = '100%';
             shareBtn.style.marginBottom = '10px';
@@ -940,49 +1026,52 @@ class ModelViewerApp {
                         });
                         await navigator.share({
                             title: '3D модель',
-                            text: `Файл конвертирован в ${toFormat.toUpperCase()}`,
                             files: [file]
                         });
                     } else {
-                        window.open(dataUrl, '_blank');
+                        window.open(url, '_blank');
                     }
                 } catch (e) {
-                    console.log('Share не сработал');
-                    window.open(dataUrl, '_blank');
+                    window.open(url, '_blank');
                 }
             };
             
-            // Кнопка "Сохранить"
-            const saveBtn = document.createElement('a');
-            saveBtn.href = dataUrl;
-            saveBtn.download = fileName;
-            saveBtn.textContent = '💾 Сохранить файл';
-            saveBtn.className = 'btn secondary';
-            saveBtn.style.width = '100%';
-            saveBtn.style.marginBottom = '15px';
-            saveBtn.style.textDecoration = 'none';
-            saveBtn.style.display = 'inline-block';
+            // Кнопка "Скачать"
+            const downloadBtn = document.createElement('a');
+            downloadBtn.href = url;
+            downloadBtn.download = fileName;
+            downloadBtn.textContent = '💾 Скачать файл';
+            downloadBtn.className = 'btn secondary';
+            downloadBtn.style.width = '100%';
+            downloadBtn.style.marginBottom = '15px';
+            downloadBtn.style.textDecoration = 'none';
+            downloadBtn.style.display = 'inline-block';
             
-            // Инструкция
-            const infoDiv = document.createElement('div');
-            infoDiv.innerHTML = `
-                <div style="color: #aaa; font-size: 12px; margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px;">
-                    <p style="color: #FFD700; margin-bottom: 8px;"><strong>📱 Как сохранить на телефон:</strong></p>
-                    <p style="margin-bottom: 5px;">1️⃣ Нажмите <strong style="color: #4CAF50;">"Поделиться файлом"</strong></p>
-                    <p style="margin-bottom: 5px;">2️⃣ Выберите <strong>Telegram, WhatsApp или Email</strong></p>
-                    <p style="margin-bottom: 5px;">3️⃣ Отправьте себе сообщение с файлом</p>
-                    <p style="margin-bottom: 5px;">4️⃣ В приложении нажмите на файл → <strong>"Сохранить"</strong></p>
-                    <p style="margin-top: 10px; color: #666;">Либо используйте кнопку <strong>"Сохранить файл"</strong> если браузер поддерживает</p>
-                </div>
-            `;
+            downloadBtn.onclick = () => {
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            };
             
-            // Добавляем все элементы
             this.downloadLinkContainer.appendChild(shareBtn);
-            this.downloadLinkContainer.appendChild(saveBtn);
-            this.downloadLinkContainer.appendChild(infoDiv);
-            
-            this.convertProgressContainer.style.display = 'none';
-        };
+            this.downloadLinkContainer.appendChild(downloadBtn);
+        }
+        
+        // ===========================================
+        // ИНСТРУКЦИЯ ДЛЯ ПОЛЬЗОВАТЕЛЯ
+        // ===========================================
+        const infoDiv = document.createElement('div');
+        infoDiv.innerHTML = `
+            <div style="color: #aaa; font-size: 12px; margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px;">
+                <p style="color: #FFD700; margin-bottom: 8px;"><strong>📱 КАК СОХРАНИТЬ ФАЙЛ:</strong></p>
+                <p style="margin-bottom: 5px;">1️⃣ Нажмите <strong style="color: #4CAF50;">"Поделиться файлом"</strong></p>
+                <p style="margin-bottom: 5px;">2️⃣ Выберите <strong>Telegram, WhatsApp</strong> или другое приложение</p>
+                <p style="margin-bottom: 5px;">3️⃣ Отправьте себе сообщение с файлом</p>
+                <p style="margin-bottom: 5px;">4️⃣ В приложении нажмите на файл → <strong>"Сохранить"</strong></p>
+                <p style="margin-top: 10px; color: #666;">Файл будет сохранён в папку Downloads</p>
+            </div>
+        `;
+        
+        this.downloadLinkContainer.appendChild(infoDiv);
+        this.convertProgressContainer.style.display = 'none';
     }
 }
 
