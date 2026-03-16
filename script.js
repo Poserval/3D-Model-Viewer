@@ -1,4 +1,4 @@
-// script.js - ИСПРАВЛЕННАЯ ВЕРСИЯ С РАБОЧИМ КОНВЕРТЕРОМ
+// script.js - ПОЛНОСТЬЮ ИСПРАВЛЕННАЯ ВЕРСИЯ С ЛОКАЛЬНЫМ КОНВЕРТЕРОМ
 
 // Состояния приложения
 const APP_STATES = {
@@ -11,86 +11,6 @@ const APP_STATES = {
 const RENDERER_FORMATS = {
     MODEL_VIEWER: ['.glb', '.gltf', '.obj'],
     THREE_JS: ['.stl']
-};
-
-// ПРОСТОЙ КОНВЕРТЕР (работает 100%)
-const SimpleConverter = {
-    stlToObj: function(buffer, fileName) {
-        try {
-            const text = new TextDecoder().decode(buffer);
-            const lines = text.split('\n');
-            
-            let vertices = [];
-            let faces = [];
-            let output = '# Конвертировано из STL в OBJ\n';
-            
-            for (let line of lines) {
-                line = line.trim();
-                if (line.startsWith('vertex ')) {
-                    const parts = line.split(/\s+/);
-                    vertices.push(`v ${parts[1]} ${parts[2]} ${parts[3]}`);
-                }
-            }
-            
-            // Собираем грани (по 3 вершины)
-            for (let i = 0; i < vertices.length; i += 3) {
-                if (i + 2 < vertices.length) {
-                    faces.push(`f ${i+1} ${i+2} ${i+3}`);
-                }
-            }
-            
-            output += vertices.join('\n') + '\n';
-            output += faces.join('\n');
-            
-            return new Blob([output], { type: 'text/plain' });
-        } catch (e) {
-            console.error('STL to OBJ error:', e);
-            return null;
-        }
-    },
-    
-    objToStl: function(buffer, fileName) {
-        try {
-            const text = new TextDecoder().decode(buffer);
-            const lines = text.split('\n');
-            
-            let vertices = [];
-            let output = 'solid converted\n';
-            
-            for (let line of lines) {
-                line = line.trim();
-                if (line.startsWith('v ')) {
-                    const parts = line.split(/\s+/);
-                    vertices.push([parseFloat(parts[1]), parseFloat(parts[2]), parseFloat(parts[3])]);
-                }
-            }
-            
-            // Создаем простую STL (все грани по 3 вершины)
-            for (let i = 0; i < vertices.length; i += 3) {
-                if (i + 2 < vertices.length) {
-                    output += 'facet normal 0 0 0\n';
-                    output += 'outer loop\n';
-                    output += `vertex ${vertices[i][0]} ${vertices[i][1]} ${vertices[i][2]}\n`;
-                    output += `vertex ${vertices[i+1][0]} ${vertices[i+1][1]} ${vertices[i+1][2]}\n`;
-                    output += `vertex ${vertices[i+2][0]} ${vertices[i+2][1]} ${vertices[i+2][2]}\n`;
-                    output += 'endloop\n';
-                    output += 'endfacet\n';
-                }
-            }
-            
-            output += 'endsolid converted';
-            
-            return new Blob([output], { type: 'text/plain' });
-        } catch (e) {
-            console.error('OBJ to STL error:', e);
-            return null;
-        }
-    },
-    
-    // Прямое копирование файла (для теста)
-    copyFile: function(buffer, fileName) {
-        return new Blob([buffer]);
-    }
 };
 
 class ModelViewerApp {
@@ -121,7 +41,10 @@ class ModelViewerApp {
         this.mainLightsInitialized = false;
         this.orbitingLight = null;
         
-        // КОНВЕРТЕР (теперь не нужны экспортеры)
+        // КОНВЕРТЕР
+        this.assimp = null;
+        this.converterLoaded = false;
+        
         this.init();
     }
 
@@ -781,7 +704,6 @@ class ModelViewerApp {
             this.mainControls = null;
         }
         
-        // СКРЫВАЕМ ПАНЕЛЬ КОНВЕРТЕРА ПРИ СБРОСЕ
         if (this.converterPanel) {
             this.converterPanel.style.display = 'none';
         }
@@ -826,22 +748,41 @@ class ModelViewerApp {
                 return;
             }
             
-            // Просто отдаем оригинальный файл
-            const blob = new Blob([await this.currentFile.arrayBuffer()]);
+            const arrayBuffer = await this.currentFile.arrayBuffer();
+            const blob = new Blob([arrayBuffer]);
+            const url = URL.createObjectURL(blob);
+            
             const baseName = this.currentFile.name.replace(`.${fromFormat}`, '').replace(`.${fromFormat.toUpperCase()}`, '');
             const fileName = `${baseName}.${toFormat}`;
             
-            this.saveFile(blob, fileName);
+            this.downloadLink.href = url;
+            this.downloadLink.download = fileName;
+            this.downloadLinkContainer.style.display = 'block';
+            
+            this.downloadLink.onclick = () => {
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            };
+            return;
+        }
+        
+        const supportedFormats = ['glb', 'gltf', 'obj', 'stl'];
+        if (!supportedFormats.includes(toFormat)) {
+            alert(`❌ Формат ${toFormat} не поддерживается для просмотра в приложении`);
             return;
         }
         
         this.showConvertProgress();
         
         try {
-            await this.convertWithSimpleConverter(this.currentFile, fromFormat, toFormat);
+            if (!this.assimp) {
+                await this.loadConverter();
+            }
+            
+            await this.convertWithAssimp(this.currentFile, fromFormat, toFormat);
+            
         } catch (error) {
             console.error('❌ Ошибка конвертации:', error);
-            alert('❌ Не удалось конвертировать файл: ' + error.message);
+            alert('❌ Не удалось загрузить модуль конвертации');
             this.convertProgressContainer.style.display = 'none';
         }
     }
@@ -861,113 +802,80 @@ class ModelViewerApp {
         }
     }
     
-    async convertWithSimpleConverter(file, fromFormat, toFormat) {
+    // ЗАГРУЗКА ЛОКАЛЬНОГО КОНВЕРТЕРА
+    async loadConverter() {
         return new Promise((resolve, reject) => {
-            this.updateConvertProgress(10);
+            console.log('📦 Загрузка локального конвертера...');
             
-            const reader = new FileReader();
+            // Пробуем загрузить с локального пути
+            const script = document.createElement('script');
+            script.src = 'wasm/assimpjs.js'; // Локальный файл в APK
             
-            reader.onload = (e) => {
+            script.onload = async () => {
                 try {
-                    this.updateConvertProgress(50);
-                    
-                    let resultBlob = null;
-                    
-                    // STL -> OBJ
-                    if (fromFormat === 'stl' && toFormat === 'obj') {
-                        resultBlob = SimpleConverter.stlToObj(e.target.result, file.name);
+                    if (window.createAssimp) {
+                        this.assimp = await window.createAssimp({
+                            locateFile: (path) => {
+                                if (path.endsWith('.wasm')) {
+                                    return 'wasm/assimpjs.wasm'; // Локальный WASM
+                                }
+                                return path;
+                            }
+                        });
+                        this.converterLoaded = true;
+                        console.log('✅ Локальный конвертер загружен');
+                        resolve();
+                    } else {
+                        reject(new Error('API конвертера не найдено'));
                     }
-                    // OBJ -> STL
-                    else if (fromFormat === 'obj' && toFormat === 'stl') {
-                        resultBlob = SimpleConverter.objToStl(e.target.result, file.name);
-                    }
-                    // Одинаковые форматы - просто копируем
-                    else if (fromFormat === toFormat) {
-                        resultBlob = SimpleConverter.copyFile(e.target.result, file.name);
-                    }
-                    // Остальное пока не поддерживаем
-                    else {
-                        throw new Error(`Конвертация ${fromFormat} → ${toFormat} пока не поддерживается`);
-                    }
-                    
-                    if (!resultBlob || resultBlob.size === 0) {
-                        throw new Error('Файл не создался');
-                    }
-                    
-                    console.log(`✅ Файл создан, размер: ${resultBlob.size} байт`);
-                    this.updateConvertProgress(100);
-                    
-                    // Сохраняем
-                    this.saveFile(resultBlob, file.name, fromFormat, toFormat);
-                    resolve();
-                    
-                } catch (error) {
-                    console.error('❌ Ошибка:', error);
-                    alert('Ошибка конвертации: ' + error.message);
-                    reject(error);
+                } catch (e) {
+                    console.error('Ошибка инициализации:', e);
+                    reject(e);
                 }
             };
             
-            reader.onerror = () => {
-                reject(new Error('Ошибка чтения файла'));
+            script.onerror = () => {
+                reject(new Error('Не удалось загрузить конвертер из локального хранилища'));
             };
             
-            reader.readAsArrayBuffer(file);
+            document.head.appendChild(script);
         });
     }
     
-    saveFile(data, originalName, fromFormat, toFormat) {
+    async convertWithAssimp(file, fromFormat, toFormat) {
+        this.updateConvertProgress(10);
+        
+        const arrayBuffer = await file.arrayBuffer();
+        this.updateConvertProgress(30);
+        
+        let result;
         try {
-            console.log('💾 Сохраняем файл...');
-            
-            // Создаем Blob
-            let blob;
-            if (typeof data === 'string') {
-                blob = new Blob([data], { type: 'text/plain' });
-            } else if (data instanceof Blob) {
-                blob = data;
-            } else {
-                blob = new Blob([data]);
-            }
-            
-            // Генерируем имя файла
-            let fileName;
-            if (typeof originalName === 'string' && fromFormat && toFormat) {
-                const baseName = originalName
-                    .replace(`.${fromFormat}`, '')
-                    .replace(`.${fromFormat.toUpperCase()}`, '')
-                    .replace(`.${fromFormat.toLowerCase()}`, '');
-                fileName = `${baseName}.${toFormat}`;
-            } else if (typeof originalName === 'string') {
-                fileName = originalName;
-            } else {
-                fileName = 'converted_file';
-            }
-            
-            console.log(`📄 Имя файла: ${fileName}`);
-            console.log(`📦 Размер: ${blob.size} байт`);
-            
-            // СОЗДАЕМ URL
-            const url = URL.createObjectURL(blob);
-            
-            // ПРОСТО ОТКРЫВАЕМ В НОВОЙ ВКЛАДКЕ
-            window.open(url, '_blank');
-            
-            // Показываем ссылку на всякий случай
-            this.downloadLink.href = url;
-            this.downloadLink.download = fileName;
-            this.downloadLinkContainer.style.display = 'block';
-            this.downloadLink.textContent = `📥 ${fileName} (если не открылось, нажми сюда)`;
-            
-            // Чистим через 5 секунд
-            setTimeout(() => URL.revokeObjectURL(url), 5000);
-            
-            this.convertProgressContainer.style.display = 'none';
-            
-        } catch (error) {
-            console.error('❌ Ошибка:', error);
-            alert('Не удалось создать файл');
+            // Assimp принимает буфер и возвращает результат
+            result = await this.assimp.convert(arrayBuffer, toFormat);
+        } catch (e) {
+            console.error('Ошибка конвертации Assimp:', e);
+            throw new Error(`Конвертация из ${fromFormat} в ${toFormat} не поддерживается`);
         }
+        
+        this.updateConvertProgress(100);
+        
+        // СОЗДАЕМ ССЫЛКУ НА СКАЧИВАНИЕ
+        const blob = new Blob([result]);
+        const url = URL.createObjectURL(blob);
+        
+        const baseName = file.name.replace(`.${fromFormat}`, '').replace(`.${fromFormat.toUpperCase()}`, '');
+        const fileName = `${baseName}.${toFormat}`;
+        
+        this.downloadLink.href = url;
+        this.downloadLink.download = fileName;
+        this.downloadLinkContainer.style.display = 'block';
+        
+        this.downloadLink.onclick = () => {
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        };
+        
+        console.log('✅ Файл готов к скачиванию');
+        return result;
     }
 }
 
