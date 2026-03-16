@@ -12,7 +12,7 @@
     <link rel="icon" href="icons/icon-app-192.png" type="image/png">
 </head>
 <body>
-    <!-- ГЛАВНЫЙ ЭКРАН (ПРОСМОТР 3D) -->
+    <!-- ГЛАВНЫЙ ЭКРАН -->
     <div id="main-screen" class="screen active">
         <div class="container">
             <div class="app-logo">
@@ -47,81 +47,17 @@
             <button id="select-file-btn" class="btn primary">Выбрать файл</button>
             <button id="open-3d-btn" class="btn secondary" disabled>Открыть в 3D</button>
             
-            <!-- КНОПКА ПЕРЕХОДА НА КОНВЕРТЕР -->
-            <button id="go-to-converter-btn" class="btn secondary" style="margin-top: 10px;">🔄 Конвертер форматов</button>
+            <!-- КНОПКА КОНВЕРТЕРА -->
+            <button id="go-to-converter-btn" class="btn secondary" style="margin-top: 10px;">🔄 Конвертер</button>
             
             <div id="file-name" class="file-name"></div>
-        </div>
-    </div>
-
-    <!-- ЭКРАН КОНВЕРТЕРА -->
-    <div id="converter-screen" class="screen">
-        <header class="header">
-            <button id="back-from-converter-btn" class="back-btn">← Назад</button>
-            <div class="header-logo">
-                <img src="icons/logo-header.png" alt="3D Model Viewer" class="logo-image-small">
-            </div>
-            <h2 class="viewer-title">Конвертер форматов</h2>
-        </header>
-        
-        <div class="converter-container">
-            <div class="converter-card">
-                <h3 style="color: white; margin-bottom: 20px;">🔄 Выберите файл и форматы</h3>
-                
-                <input type="file" id="converter-file-input" accept=".glb,.gltf,.obj,.stl" hidden>
-                <button id="converter-select-file-btn" class="btn primary" style="width: 100%; margin-bottom: 15px;">📁 Выбрать файл</button>
-                <div id="converter-file-name" class="file-name" style="margin-bottom: 20px;"></div>
-                
-                <div style="display: flex; gap: 10px; justify-content: space-between; margin-bottom: 20px;">
-                    <div style="flex: 1;">
-                        <label style="color: white; display: block; margin-bottom: 5px;">Из формата:</label>
-                        <select id="converter-format-from" class="converter-select">
-                            <option value="glb">GLB (Binary glTF)</option>
-                            <option value="gltf">GLTF (JSON glTF)</option>
-                            <option value="obj">OBJ (Wavefront)</option>
-                            <option value="stl">STL (Stereolithography)</option>
-                        </select>
-                    </div>
-                    <div style="flex: 1;">
-                        <label style="color: white; display: block; margin-bottom: 5px;">В формат:</label>
-                        <select id="converter-format-to" class="converter-select">
-                            <option value="glb">GLB (Binary glTF)</option>
-                            <option value="gltf">GLTF (JSON glTF)</option>
-                            <option value="obj">OBJ (Wavefront)</option>
-                            <option value="stl">STL (Stereolithography)</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <button id="converter-start-btn" class="btn primary" style="width: 100%; margin-bottom: 20px;" disabled>🔄 Начать конвертацию</button>
-                
-                <!-- Прогресс конвертации -->
-                <div id="converter-progress-container" style="display: none; margin-bottom: 20px;">
-                    <div style="color: white; margin-bottom: 5px;">Конвертация...</div>
-                    <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden;">
-                        <div id="converter-progress-bar" style="width: 0%; height: 100%; background: #007AFF; transition: width 0.3s;"></div>
-                    </div>
-                    <div id="converter-progress-text" style="color: white; text-align: right; margin-top: 5px;">0%</div>
-                </div>
-                
-                <!-- Результат конвертации -->
-                <div id="converter-result-container" style="display: none; text-align: center;">
-                    <a id="converter-download-link" href="#" style="color: #007AFF; text-decoration: underline; font-weight: bold; font-size: 18px;">📥 Скачать конвертированный файл</a>
-                </div>
-            </div>
-            
-            <div class="converter-info">
-                <p style="color: rgba(255,255,255,0.7); font-size: 14px; text-align: center;">
-                    ⚡ Конвертация происходит прямо на вашем устройстве<br>без отправки файлов в интернет
-                </p>
-            </div>
         </div>
     </div>
 
     <!-- ЭКРАН ПРОСМОТРА 3D -->
     <div id="viewer-screen" class="screen">
         <header class="header">
-            <button id="back-btn" class="back-btn">← Назад</button>
+            <button id="back-from-viewer-btn" class="back-btn">← Назад</button>
             <div class="header-logo">
                 <img src="icons/logo-header.png" alt="3D Model Viewer" class="logo-image-small">
             </div>
@@ -149,12 +85,79 @@
         </div>
     </div>
 
+    <!-- ЭКРАН КОНВЕРТЕРА (НОВЫЙ) -->
+    <div id="converter-screen" class="screen">
+        <header class="header">
+            <button id="back-from-converter-btn" class="back-btn">← Назад</button>
+            <div class="header-logo">
+                <img src="icons/logo-header.png" alt="3D Model Viewer" class="logo-image-small">
+            </div>
+            <h2 class="viewer-title">Конвертер форматов</h2>
+        </header>
+        
+        <div class="converter-container">
+            <div class="converter-content">
+                <!-- Информация о выбранном файле -->
+                <div id="converter-file-info" class="converter-file-info" style="display: none;">
+                    <div class="file-info-label">Выбран файл:</div>
+                    <div id="converter-file-name" class="converter-file-name"></div>
+                </div>
+                
+                <div id="converter-no-file" class="converter-no-file">
+                    <p>📁 Сначала выберите файл на главном экране</p>
+                    <button id="go-to-main-from-converter-btn" class="btn primary">На главный экран</button>
+                </div>
+                
+                <div id="converter-controls" style="display: none;">
+                    <div class="converter-form">
+                        <div class="converter-row">
+                            <div class="converter-col">
+                                <label class="converter-label">Из формата:</label>
+                                <select id="format-from" class="converter-select">
+                                    <option value="glb">GLB (Binary glTF)</option>
+                                    <option value="gltf">GLTF (JSON glTF)</option>
+                                    <option value="obj">OBJ (Wavefront)</option>
+                                    <option value="stl">STL (Stereolithography)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="converter-arrow">→</div>
+                            
+                            <div class="converter-col">
+                                <label class="converter-label">В формат:</label>
+                                <select id="format-to" class="converter-select">
+                                    <option value="glb">GLB (Binary glTF)</option>
+                                    <option value="gltf">GLTF (JSON glTF)</option>
+                                    <option value="obj">OBJ (Wavefront)</option>
+                                    <option value="stl">STL (Stereolithography)</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <button id="start-convert-btn" class="btn primary converter-start-btn">🔄 Конвертировать</button>
+                        
+                        <!-- Прогресс бар -->
+                        <div id="convert-progress-container" style="display: none; margin-top: 20px;">
+                            <div style="color: white; margin-bottom: 5px;">Конвертация...</div>
+                            <div class="progress-bar">
+                                <div id="convert-progress-bar" class="progress-fill" style="width: 0%;"></div>
+                            </div>
+                            <div id="convert-progress-text" style="color: white; text-align: right; margin-top: 5px;">0%</div>
+                        </div>
+                        
+                        <!-- Ссылка на скачивание -->
+                        <div id="download-link-container" style="display: none; margin-top: 20px; text-align: center;">
+                            <a id="download-link" href="#" class="download-link">📥 Скачать конвертированный файл</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Three.js и загрузчики -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/STLExporter.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/OBJExporter.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     
     <!-- Model Viewer -->
