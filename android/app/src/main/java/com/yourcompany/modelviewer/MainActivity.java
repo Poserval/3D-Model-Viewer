@@ -19,7 +19,7 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // ВКЛЮЧАЕМ ОТЛАДКУ ДО ВСЕГО (ДАЖЕ ДО НАХОЖДЕНИЯ WebView)
+        // ВКЛЮЧАЕМ ОТЛАДКУ ДО ВСЕГО
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             WebView.setWebContentsDebuggingEnabled(true);
             Log.d("3DViewer", "ОТЛАДКА ВКЛЮЧЕНА!");
@@ -45,6 +45,7 @@ public class MainActivity extends Activity {
         webSettings.setLoadWithOverviewMode(true);
         webSettings.setUseWideViewPort(true);
         
+        // Добавляем интерфейс для JavaScript
         webView.addJavascriptInterface(new WebAppInterface(), "Android");
         
         webView.setWebViewClient(new WebViewClient() {
@@ -77,9 +78,32 @@ public class MainActivity extends Activity {
                 Log.d("3DViewer", "saveFile вызван: " + fileName);
                 byte[] data = Base64.decode(base64Data, Base64.DEFAULT);
                 Log.d("3DViewer", "Данные декодированы: " + data.length + " байт");
-                // DownloadHelper.saveFile(MainActivity.this, data, fileName);
+                DownloadHelper.saveFile(MainActivity.this, data, fileName);
             } catch (Exception e) {
                 Log.e("3DViewer", "Ошибка в saveFile", e);
+            }
+        }
+        
+        @JavascriptInterface
+        public void openConverter(String url) {
+            try {
+                Log.d("3DViewer", "openConverter: " + url);
+                webView.loadUrl(url);
+            } catch (Exception e) {
+                Log.e("3DViewer", "Ошибка в openConverter", e);
+            }
+        }
+        
+        @JavascriptInterface
+        public void shareText(String text) {
+            try {
+                Log.d("3DViewer", "shareText: " + text);
+                android.content.Intent shareIntent = new android.content.Intent(android.content.Intent.ACTION_SEND);
+                shareIntent.setType("text/plain");
+                shareIntent.putExtra(android.content.Intent.EXTRA_TEXT, text);
+                startActivity(android.content.Intent.createChooser(shareIntent, "Поделиться"));
+            } catch (Exception e) {
+                Log.e("3DViewer", "Ошибка в shareText", e);
             }
         }
     }
