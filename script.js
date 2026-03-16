@@ -108,16 +108,26 @@ class ModelViewerApp {
         this.goToConverterBtn.addEventListener('click', () => this.showConverterScreen());
         
         // Экран просмотра
-        this.backFromViewerBtn.addEventListener('click', () => this.showMainScreen());
-        this.autoRotateBtn.addEventListener('click', () => this.toggleAutoRotate());
-        this.resetCameraBtn.addEventListener('click', () => this.resetCamera());
+        if (this.backFromViewerBtn) {
+            this.backFromViewerBtn.addEventListener('click', () => this.showMainScreen());
+        }
+        if (this.autoRotateBtn) {
+            this.autoRotateBtn.addEventListener('click', () => this.toggleAutoRotate());
+        }
+        if (this.resetCameraBtn) {
+            this.resetCameraBtn.addEventListener('click', () => this.resetCamera());
+        }
         
         // Экран конвертера
-        this.backFromConverterBtn.addEventListener('click', () => this.showMainScreen());
+        if (this.backFromConverterBtn) {
+            this.backFromConverterBtn.addEventListener('click', () => this.showMainScreen());
+        }
         if (this.goToMainFromConverterBtn) {
             this.goToMainFromConverterBtn.addEventListener('click', () => this.showMainScreen());
         }
-        this.startConvertBtn.addEventListener('click', () => this.startConversion());
+        if (this.startConvertBtn) {
+            this.startConvertBtn.addEventListener('click', () => this.startConversion());
+        }
         
         window.addEventListener('resize', () => this.handleResize());
     }
@@ -272,18 +282,24 @@ class ModelViewerApp {
     }
 
     hidePreviewPlaceholder() {
-        this.previewPlaceholder.style.display = 'none';
+        if (this.previewPlaceholder) {
+            this.previewPlaceholder.style.display = 'none';
+        }
     }
 
     showPreviewPlaceholder() {
-        this.previewPlaceholder.style.display = 'flex';
+        if (this.previewPlaceholder) {
+            this.previewPlaceholder.style.display = 'flex';
+        }
     }
 
     async loadModelViewerPreview() {
         return new Promise((resolve) => {
             this.clearThreeJSScene(this.previewScene);
-            this.previewModel.src = this.currentFileURL;
-            this.previewModel.hidden = false;
+            if (this.previewModel) {
+                this.previewModel.src = this.currentFileURL;
+                this.previewModel.hidden = false;
+            }
             this.hidePreviewPlaceholder();
             setTimeout(resolve, 1000);
         });
@@ -309,7 +325,9 @@ class ModelViewerApp {
                 this.setupPreviewLighting();
                 this.setupPreviewCamera(modelObject);
                 
-                this.previewThreejs.hidden = false;
+                if (this.previewThreejs) {
+                    this.previewThreejs.hidden = false;
+                }
                 this.hidePreviewPlaceholder();
                 resolve();
             }, 
@@ -420,10 +438,10 @@ class ModelViewerApp {
     }
 
     hideAllRenderers() {
-        this.previewModel.hidden = true;
-        this.previewThreejs.hidden = true;
-        this.mainModel.hidden = true;
-        this.mainThreejs.hidden = true;
+        if (this.previewModel) this.previewModel.hidden = true;
+        if (this.previewThreejs) this.previewThreejs.hidden = true;
+        if (this.mainModel) this.mainModel.hidden = true;
+        if (this.mainThreejs) this.mainThreejs.hidden = true;
     }
 
     updateProgress(percent) {
@@ -463,9 +481,11 @@ class ModelViewerApp {
                 this.mainControls.dispose();
                 this.mainControls = null;
             }
-            this.mainModel.src = this.currentFileURL;
-            this.mainModel.autoRotate = true;
-            this.mainModel.hidden = false;
+            if (this.mainModel) {
+                this.mainModel.src = this.currentFileURL;
+                this.mainModel.autoRotate = true;
+                this.mainModel.hidden = false;
+            }
             setTimeout(resolve, 500);
         });
     }
@@ -495,7 +515,9 @@ class ModelViewerApp {
                 this.mainControls.dampingFactor = 0.05;
                 
                 this.autoRotate = true;
-                this.mainThreejs.hidden = false;
+                if (this.mainThreejs) {
+                    this.mainThreejs.hidden = false;
+                }
                 this.updateMainThreeJSSize();
                 
                 resolve();
@@ -525,9 +547,9 @@ class ModelViewerApp {
 
     // НАВИГАЦИЯ МЕЖДУ ЭКРАНАМИ
     switchToViewer() {
-        this.mainScreen.classList.remove('active');
-        this.viewerScreen.classList.add('active');
-        this.converterScreen.classList.remove('active');
+        if (this.mainScreen) this.mainScreen.classList.remove('active');
+        if (this.viewerScreen) this.viewerScreen.classList.add('active');
+        if (this.converterScreen) this.converterScreen.classList.remove('active');
         this.currentState = APP_STATES.VIEWER;
         
         setTimeout(() => this.updateMainThreeJSSize(), 100);
@@ -535,19 +557,21 @@ class ModelViewerApp {
     }
 
     showMainScreen() {
-        this.mainScreen.classList.add('active');
-        this.viewerScreen.classList.remove('active');
-        this.converterScreen.classList.remove('active');
+        if (this.mainScreen) this.mainScreen.classList.add('active');
+        if (this.viewerScreen) this.viewerScreen.classList.remove('active');
+        if (this.converterScreen) this.converterScreen.classList.remove('active');
         this.currentState = APP_STATES.MAIN;
         
         this.autoRotate = false;
         if (this.mainModel) this.mainModel.autoRotate = false;
+        
+        this.updateConverterUI();
     }
 
     showConverterScreen() {
-        this.mainScreen.classList.remove('active');
-        this.viewerScreen.classList.remove('active');
-        this.converterScreen.classList.add('active');
+        if (this.mainScreen) this.mainScreen.classList.remove('active');
+        if (this.viewerScreen) this.viewerScreen.classList.remove('active');
+        if (this.converterScreen) this.converterScreen.classList.add('active');
         this.currentState = APP_STATES.CONVERTER;
         
         this.updateConverterUI();
@@ -568,8 +592,12 @@ class ModelViewerApp {
         }
         
         // Скрываем прогресс и ссылку при открытии
-        this.convertProgressContainer.style.display = 'none';
-        this.downloadLinkContainer.style.display = 'none';
+        if (this.convertProgressContainer) {
+            this.convertProgressContainer.style.display = 'none';
+        }
+        if (this.downloadLinkContainer) {
+            this.downloadLinkContainer.style.display = 'none';
+        }
     }
 
     // УПРАВЛЕНИЕ
@@ -582,13 +610,14 @@ class ModelViewerApp {
     }
 
     updateAutoRotateButton() {
+        if (!this.autoRotateBtn) return;
         const isActive = this.autoRotate;
         this.autoRotateBtn.setAttribute('data-active', isActive.toString());
         this.autoRotateBtn.innerHTML = isActive ? '⏸️ Автоповорот' : '▶️ Автоповорот';
     }
 
     resetCamera() {
-        if (this.currentRenderer === 'model-viewer') {
+        if (this.currentRenderer === 'model-viewer' && this.mainModel) {
             this.mainModel.cameraOrbit = '0deg 75deg 105%';
         } else if (this.currentRenderer === 'threejs' && this.mainModelObject) {
             this.setupMainCamera(this.mainModelObject);
@@ -599,8 +628,8 @@ class ModelViewerApp {
     resetPreview() {
         this.showPreviewPlaceholder();
         this.hideAllRenderers();
-        this.open3dBtn.disabled = true;
-        this.fileName.textContent = '';
+        if (this.open3dBtn) this.open3dBtn.disabled = true;
+        if (this.fileName) this.fileName.textContent = '';
         
         if (this.currentFileURL) {
             URL.revokeObjectURL(this.currentFileURL);
@@ -621,11 +650,15 @@ class ModelViewerApp {
     }
 
     showLoadingIndicator() {
-        this.loadingIndicator.classList.add('active');
+        if (this.loadingIndicator) {
+            this.loadingIndicator.classList.add('active');
+        }
     }
 
     hideLoadingIndicator() {
-        this.loadingIndicator.classList.remove('active');
+        if (this.loadingIndicator) {
+            this.loadingIndicator.classList.remove('active');
+        }
         this.updateProgress(0);
     }
     
@@ -642,4 +675,50 @@ class ModelViewerApp {
         const toFormat = this.formatTo.value;
         
         if (fromFormat === toFormat) {
-            if (!confirm(`⚠️ Конвер
+            alert(`⚠️ Форматы одинаковые. Конвертация не требуется.`);
+            return;
+        }
+        
+        // Показываем прогресс
+        this.convertProgressContainer.style.display = 'block';
+        this.downloadLinkContainer.style.display = 'none';
+        this.updateConvertProgress(0);
+        
+        // Эмулируем конвертацию с прогрессом (потом заменим на реальную)
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += 10;
+            this.updateConvertProgress(progress);
+            
+            if (progress >= 100) {
+                clearInterval(interval);
+                
+                // Создаем ссылку на скачивание (пока просто копия)
+                const blob = new Blob([this.currentFile], { type: 'application/octet-stream' });
+                const url = URL.createObjectURL(blob);
+                
+                this.downloadLink.href = url;
+                this.downloadLink.download = `converted.${toFormat}`;
+                this.downloadLinkContainer.style.display = 'block';
+                
+                this.downloadLink.onclick = () => {
+                    setTimeout(() => URL.revokeObjectURL(url), 1000);
+                };
+            }
+        }, 300);
+    }
+    
+    updateConvertProgress(percent) {
+        if (this.convertProgressBar) {
+            this.convertProgressBar.style.width = percent + '%';
+        }
+        if (this.convertProgressText) {
+            this.convertProgressText.textContent = percent + '%';
+        }
+    }
+}
+
+// Инициализация приложения
+document.addEventListener('DOMContentLoaded', () => {
+    new ModelViewerApp();
+});
