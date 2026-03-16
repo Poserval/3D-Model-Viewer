@@ -1,4 +1,4 @@
-// script.js - ТРИ СТРАНИЦЫ + ОФЛАЙН КОНВЕРТЕР
+// script.js - ТРИ СТРАНИЦЫ + WEB КОНВЕРТЕР
 
 // Состояния приложения
 const APP_STATES = {
@@ -48,7 +48,6 @@ class ModelViewerApp {
         this.initializeElements();
         this.bindEvents();
         this.initThreeJS();
-        this.updateConverterUI();
         
         console.log('🚀 3D Model Viewer запущен');
     }
@@ -77,19 +76,7 @@ class ModelViewerApp {
         // Экран конвертера
         this.converterScreen = document.getElementById('converter-screen');
         this.backFromConverterBtn = document.getElementById('back-from-converter-btn');
-        this.goToMainFromConverterBtn = document.getElementById('go-to-main-from-converter-btn');
-        this.converterFileInfo = document.getElementById('converter-file-info');
-        this.converterFileName = document.getElementById('converter-file-name');
-        this.converterNoFile = document.getElementById('converter-no-file');
-        this.converterControls = document.getElementById('converter-controls');
-        this.formatFrom = document.getElementById('format-from');
-        this.formatTo = document.getElementById('format-to');
-        this.startConvertBtn = document.getElementById('start-convert-btn');
-        this.convertProgressContainer = document.getElementById('convert-progress-container');
-        this.convertProgressBar = document.getElementById('convert-progress-bar');
-        this.convertProgressText = document.getElementById('convert-progress-text');
-        this.downloadLinkContainer = document.getElementById('download-link-container');
-        this.downloadLink = document.getElementById('download-link');
+        this.converterWebView = document.getElementById('converter-web-view');
         
         // Кнопка перехода в конвертер
         this.goToConverterBtn = document.getElementById('go-to-converter-btn');
@@ -121,12 +108,6 @@ class ModelViewerApp {
         // Экран конвертера
         if (this.backFromConverterBtn) {
             this.backFromConverterBtn.addEventListener('click', () => this.showMainScreen());
-        }
-        if (this.goToMainFromConverterBtn) {
-            this.goToMainFromConverterBtn.addEventListener('click', () => this.showMainScreen());
-        }
-        if (this.startConvertBtn) {
-            this.startConvertBtn.addEventListener('click', () => this.startConversion());
         }
         
         window.addEventListener('resize', () => this.handleResize());
@@ -238,7 +219,6 @@ class ModelViewerApp {
 
         this.currentFileURL = URL.createObjectURL(file);
         this.showPreview();
-        this.updateConverterUI();
     }
 
     validateFile(file) {
@@ -564,8 +544,6 @@ class ModelViewerApp {
         
         this.autoRotate = false;
         if (this.mainModel) this.mainModel.autoRotate = false;
-        
-        this.updateConverterUI();
     }
 
     showConverterScreen() {
@@ -574,30 +552,24 @@ class ModelViewerApp {
         if (this.converterScreen) this.converterScreen.classList.add('active');
         this.currentState = APP_STATES.CONVERTER;
         
-        this.updateConverterUI();
+        // Загружаем веб-версию конвертера
+        this.loadWebConverter();
     }
 
-    updateConverterUI() {
-        if (!this.converterFileInfo || !this.converterNoFile || !this.converterControls) return;
+    loadWebConverter() {
+        if (!this.converterWebView) return;
         
-        if (this.currentFile) {
-            this.converterFileInfo.style.display = 'block';
-            this.converterNoFile.style.display = 'none';
-            this.converterControls.style.display = 'block';
-            this.converterFileName.textContent = this.currentFile.name;
-        } else {
-            this.converterFileInfo.style.display = 'none';
-            this.converterNoFile.style.display = 'block';
-            this.converterControls.style.display = 'none';
-        }
+        // Очищаем контейнер
+        this.converterWebView.innerHTML = '';
         
-        // Скрываем прогресс и ссылку при открытии
-        if (this.convertProgressContainer) {
-            this.convertProgressContainer.style.display = 'none';
-        }
-        if (this.downloadLinkContainer) {
-            this.downloadLinkContainer.style.display = 'none';
-        }
+        // Создаем iframe с веб-версией
+        const iframe = document.createElement('iframe');
+        iframe.className = 'converter-web-frame';
+        iframe.src = 'https://your-converter-site.com'; // ЗАМЕНИТЬ НА РЕАЛЬНЫЙ URL
+        iframe.allow = 'downloads';
+        iframe.sandbox = 'allow-same-origin allow-scripts allow-forms allow-downloads allow-popups';
+        
+        this.converterWebView.appendChild(iframe);
     }
 
     // УПРАВЛЕНИЕ
@@ -660,61 +632,6 @@ class ModelViewerApp {
             this.loadingIndicator.classList.remove('active');
         }
         this.updateProgress(0);
-    }
-    
-    // МЕТОДЫ КОНВЕРТЕРА
-    
-    async startConversion() {
-        if (!this.currentFile) {
-            alert('❌ Сначала выберите файл на главном экране');
-            this.showMainScreen();
-            return;
-        }
-        
-        const fromFormat = this.formatFrom.value;
-        const toFormat = this.formatTo.value;
-        
-        if (fromFormat === toFormat) {
-            alert(`⚠️ Форматы одинаковые. Конвертация не требуется.`);
-            return;
-        }
-        
-        // Показываем прогресс
-        this.convertProgressContainer.style.display = 'block';
-        this.downloadLinkContainer.style.display = 'none';
-        this.updateConvertProgress(0);
-        
-        // Эмулируем конвертацию с прогрессом (потом заменим на реальную)
-        let progress = 0;
-        const interval = setInterval(() => {
-            progress += 10;
-            this.updateConvertProgress(progress);
-            
-            if (progress >= 100) {
-                clearInterval(interval);
-                
-                // Создаем ссылку на скачивание (пока просто копия)
-                const blob = new Blob([this.currentFile], { type: 'application/octet-stream' });
-                const url = URL.createObjectURL(blob);
-                
-                this.downloadLink.href = url;
-                this.downloadLink.download = `converted.${toFormat}`;
-                this.downloadLinkContainer.style.display = 'block';
-                
-                this.downloadLink.onclick = () => {
-                    setTimeout(() => URL.revokeObjectURL(url), 1000);
-                };
-            }
-        }, 300);
-    }
-    
-    updateConvertProgress(percent) {
-        if (this.convertProgressBar) {
-            this.convertProgressBar.style.width = percent + '%';
-        }
-        if (this.convertProgressText) {
-            this.convertProgressText.textContent = percent + '%';
-        }
     }
 }
 
