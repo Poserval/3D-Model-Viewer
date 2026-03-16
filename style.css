@@ -10,6 +10,7 @@
     --gradient-end: #764ba2;
     --border-radius: 12px;
     --transition: all 0.3s ease;
+    --header-height: 60px;
 }
 
 body {
@@ -17,11 +18,18 @@ body {
     background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
     min-height: 100vh;
     color: #333;
+    overflow: hidden;
 }
 
 .screen {
     display: none;
-    min-height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .screen.active {
@@ -245,17 +253,13 @@ canvas[hidden] {
     font-size: 12px;
 }
 
-/* ЭКРАН ПРОСМОТРА 3D */
-.viewer-screen {
-    background: #000;
-}
-
+/* ШАПКА ДЛЯ ВСЕХ ЭКРАНОВ */
 .header {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    height: 60px;
+    height: var(--header-height);
     background: rgba(0, 0, 0, 0.8);
     backdrop-filter: blur(10px);
     display: flex;
@@ -308,9 +312,14 @@ canvas[hidden] {
     text-overflow: ellipsis;
 }
 
+/* ЭКРАН ПРОСМОТРА 3D */
+.viewer-screen {
+    background: #000;
+}
+
 .viewer-container {
     position: fixed;
-    top: 60px;
+    top: var(--header-height);
     left: 0;
     right: 0;
     bottom: 80px;
@@ -363,134 +372,58 @@ canvas[hidden] {
 
 .converter-container {
     position: fixed;
-    top: 60px;
+    top: var(--header-height);
     left: 0;
     right: 0;
     bottom: 0;
-    overflow-y: auto;
+    overflow: hidden;
     padding: 20px;
     padding-bottom: max(20px, env(safe-area-inset-bottom));
 }
 
 .converter-content {
-    max-width: 500px;
+    width: 100%;
+    height: 100%;
+    max-width: 1200px;
     margin: 0 auto;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border-radius: 20px;
-    padding: 25px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    position: relative;
 }
 
-.converter-file-info {
-    text-align: center;
-    margin-bottom: 20px;
-    padding: 15px;
-    background: rgba(0, 122, 255, 0.2);
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-.file-info-label {
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 14px;
-    margin-bottom: 5px;
-}
-
-.converter-file-name {
-    color: white;
-    font-size: 16px;
-    font-weight: 600;
-    word-break: break-all;
-}
-
-.converter-no-file {
-    text-align: center;
-    padding: 40px 20px;
-    color: white;
-}
-
-.converter-no-file p {
-    margin-bottom: 20px;
-    font-size: 18px;
-    opacity: 0.9;
-}
-
-.converter-form {
+.converter-web-frame {
     width: 100%;
-}
-
-.converter-row {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    margin-bottom: 25px;
-}
-
-.converter-col {
-    flex: 1;
-}
-
-.converter-arrow {
-    color: white;
-    font-size: 24px;
-    font-weight: bold;
-    opacity: 0.7;
-}
-
-.converter-label {
+    height: 100%;
+    border: none;
+    background: white;
     display: block;
-    color: white;
-    margin-bottom: 8px;
+}
+
+/* Лоадер для конвертера */
+.converter-loader {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    z-index: 1;
+}
+
+.converter-loader .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 15px;
+}
+
+.converter-loader p {
+    color: #666;
     font-size: 14px;
-    opacity: 0.9;
-}
-
-.converter-select {
-    width: 100%;
-    padding: 12px;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    font-size: 14px;
-    cursor: pointer;
-    appearance: none;
-    -webkit-appearance: none;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    background-size: 16px;
-}
-
-.converter-select option {
-    background: #333;
-    color: white;
-}
-
-.converter-start-btn {
-    width: 100%;
-    margin-top: 10px;
-    padding: 15px;
-    font-size: 16px;
-}
-
-.download-link {
-    color: var(--primary-color);
-    text-decoration: underline;
-    font-weight: bold;
-    font-size: 16px;
-    padding: 10px 20px;
-    display: inline-block;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    transition: var(--transition);
-}
-
-.download-link:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-2px);
 }
 
 /* АДАПТИВНОСТЬ */
@@ -511,6 +444,8 @@ canvas[hidden] {
     
     .btn {
         width: 180px;
+        padding: 10px 20px;
+        font-size: 14px;
     }
     
     .viewer-title {
@@ -523,46 +458,50 @@ canvas[hidden] {
         font-size: 13px;
     }
     
-    .converter-row {
-        flex-direction: column;
-        gap: 10px;
-    }
-    
-    .converter-arrow {
-        transform: rotate(90deg);
-        margin: 5px 0;
+    .converter-container {
+        padding: 10px;
     }
     
     .converter-content {
-        padding: 15px;
+        border-radius: 8px;
     }
     
-    .converter-select {
+    .back-btn {
+        padding: 6px 12px;
         font-size: 13px;
-        padding: 10px;
+    }
+}
+
+/* ПОДДЕРЖКА ПЛАНШЕТОВ */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .converter-container {
+        padding: 30px;
+    }
+    
+    .viewer-title {
+        font-size: 18px;
     }
 }
 
 /* ПОДДЕРЖКА БОЛЬШИХ ЭКРАНОВ */
-@media (min-width: 768px) {
+@media (min-width: 1025px) {
+    .converter-container {
+        padding: 40px;
+    }
+    
     .converter-content {
-        max-width: 600px;
-        padding: 35px;
-    }
-    
-    .converter-row {
-        gap: 30px;
-    }
-    
-    .converter-arrow {
-        font-size: 28px;
+        border-radius: 16px;
     }
 }
 
 /* ТЕМНАЯ ТЕМА ДЛЯ СИСТЕМ */
 @media (prefers-color-scheme: dark) {
-    .converter-select option {
+    .converter-content {
         background: #1a1a1a;
+    }
+    
+    .converter-loader p {
+        color: #999;
     }
 }
 
@@ -576,9 +515,19 @@ canvas[hidden] {
     animation: fadeIn 0.3s ease;
 }
 
+@keyframes slideIn {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+}
+
+.screen.active .converter-content {
+    animation: slideIn 0.3s ease;
+}
+
 /* СКРОЛЛБАР */
 ::-webkit-scrollbar {
     width: 8px;
+    height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -592,4 +541,88 @@ canvas[hidden] {
 
 ::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.5);
+}
+
+/* УЛУЧШЕНИЯ ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ */
+@media (hover: none) and (pointer: coarse) {
+    .btn:hover,
+    .control-btn:hover,
+    .back-btn:hover {
+        transform: none;
+    }
+    
+    .btn.primary:hover {
+        box-shadow: none;
+    }
+}
+
+/* ЗАЩИТА ОТ ВЫХОДА ЗА ГРАНИЦЫ */
+img, video, canvas {
+    max-width: 100%;
+    height: auto;
+}
+
+/* ПОДДЕРЖКА LANDSCAPE ОРИЕНТАЦИИ */
+@media (orientation: landscape) and (max-height: 500px) {
+    .container {
+        justify-content: flex-start;
+        padding-top: 20px;
+    }
+    
+    .preview-area {
+        width: 150px;
+        height: 150px;
+    }
+    
+    .logo-image {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .btn {
+        width: 150px;
+        padding: 8px 16px;
+    }
+}
+
+/* СТИЛИ ДЛЯ ОШИБОК */
+.error-message {
+    color: #ff4444;
+    background: rgba(255, 68, 68, 0.1);
+    padding: 10px;
+    border-radius: 8px;
+    margin: 10px 0;
+    text-align: center;
+    border: 1px solid #ff4444;
+}
+
+.success-message {
+    color: #00C851;
+    background: rgba(0, 200, 81, 0.1);
+    padding: 10px;
+    border-radius: 8px;
+    margin: 10px 0;
+    text-align: center;
+    border: 1px solid #00C851;
+}
+
+/* ПОДСКАЗКИ */
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
 }
