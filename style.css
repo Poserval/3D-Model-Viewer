@@ -379,8 +379,8 @@ canvas[hidden] {
     }
     
     .preview-area {
-        width: 250px;  /* Увеличено с 180px до 250px */
-        height: 250px; /* Увеличено с 180px до 250px */
+        width: 300px;  /* Увеличено с 180px до 250px */
+        height: 300px; /* Увеличено с 180px до 250px */
     }
     
     .btn {
