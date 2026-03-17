@@ -61,9 +61,10 @@ body {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
+/* УВЕЛИЧЕННОЕ ОКНО ПРЕВЬЮ */
 .preview-area {
-    width: 200px;
-    height: 200px;
+    width: 300px;  /* Увеличено с 200px до 300px */
+    height: 300px; /* Увеличено с 200px до 300px */
     background: rgba(255, 255, 255, 0.1);
     border-radius: var(--border-radius);
     border: 2px dashed rgba(255, 255, 255, 0.3);
@@ -312,7 +313,7 @@ canvas[hidden] {
     text-overflow: ellipsis;
 }
 
-/* ЭКРАН ПРОСМОТРА 3D - УВЕЛИЧЕН НА 50% */
+/* ЭКРАН ПРОСМОТРА 3D */
 .viewer-screen {
     background: #000;
 }
@@ -322,7 +323,7 @@ canvas[hidden] {
     top: var(--header-height);
     left: 0;
     right: 0;
-    bottom: 60px; /* Уменьшена высота панели управления */
+    bottom: 60px;
     background: #000;
 }
 
@@ -331,7 +332,7 @@ canvas[hidden] {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 60px; /* Уменьшена высота с 80px до 60px */
+    height: 60px;
     background: rgba(0, 0, 0, 0.8);
     backdrop-filter: blur(10px);
     display: flex;
@@ -347,14 +348,14 @@ canvas[hidden] {
     background: rgba(255, 255, 255, 0.1);
     color: white;
     border: none;
-    padding: 10px 20px; /* Уменьшены отступы */
+    padding: 10px 20px;
     border-radius: var(--border-radius);
     cursor: pointer;
     font-size: 14px;
     font-weight: 600;
     transition: var(--transition);
     touch-action: manipulation;
-    min-width: 120px; /* Фиксированная ширина для одинакового размера */
+    min-width: 120px;
 }
 
 .control-btn:hover {
@@ -378,8 +379,8 @@ canvas[hidden] {
     }
     
     .preview-area {
-        width: 180px;
-        height: 180px;
+        width: 250px;  /* Увеличено с 180px до 250px */
+        height: 250px; /* Увеличено с 180px до 250px */
     }
     
     .btn {
@@ -398,23 +399,16 @@ canvas[hidden] {
     }
 }
 
-/* Дополнительные стили для улучшения UX */
+/* Дополнительные стили для больших экранов */
 @media (min-width: 768px) {
+    .preview-area {
+        width: 350px;
+        height: 350px;
+    }
+    
     .control-btn {
         padding: 12px 24px;
         font-size: 15px;
         min-width: 140px;
-    }
-}
-
-/* Улучшения для устройств с большими экранами */
-@media (min-width: 1024px) {
-    .viewer-container {
-        bottom: 70px;
-    }
-    
-    .control-btn {
-        padding: 14px 28px;
-        font-size: 16px;
     }
 }
