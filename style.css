@@ -5,6 +5,16 @@
     --border-radius: 12px;
     --transition: all 0.3s ease;
     --header-height: 60px;
+    
+    /* 🔥 НОВЫЕ ПЕРЕМЕННЫЕ ДЛЯ ЛОГОТИПА */
+    --logo-size: 120px;           /* базовый размер */
+    --logo-size-mobile: 100px;     /* размер на мобилках */
+    --logo-margin-top: 0px;        /* отступ сверху */
+    --logo-margin-bottom: 20px;    /* отступ снизу */
+    --logo-3d-rotate-x: 0deg;      /* 3D поворот по X */
+    --logo-3d-rotate-y: 0deg;      /* 3D поворот по Y */
+    --logo-shadow-intensity: 0.3;   /* интенсивность тени */
+    --logo-glow-color: 0, 122, 255; /* RGB цвета свечения */
 }
 
 * {
@@ -50,21 +60,38 @@ body {
     gap: 20px;
 }
 
+/* 🔥 ОБНОВЛЕННЫЙ ЛОГОТИП С ПЕРЕМЕННЫМИ */
 .app-logo {
-    margin-bottom: 20px;
+    margin-bottom: var(--logo-margin-bottom);
+    margin-top: var(--logo-margin-top);
+    width: 100%;
+    display: flex;
+    justify-content: center;
 }
 
 .logo-image {
-    width: 120px;
-    height: 120px;
-    border-radius: 20px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    width: var(--logo-size);
+    height: var(--logo-size);
+    object-fit: contain;
+    filter: drop-shadow(0 0 calc(var(--logo-shadow-intensity) * 50px) rgba(0, 0, 0, 0.5)) 
+            drop-shadow(0 10px calc(var(--logo-shadow-intensity) * 100px) rgba(var(--logo-glow-color), var(--logo-shadow-intensity)));
+    transform: perspective(1000px) rotateX(var(--logo-3d-rotate-x)) rotateY(var(--logo-3d-rotate-y));
+    transition: transform 0.5s ease, filter 0.3s ease;
+    background: transparent;
+    border-radius: 0; /* Убираем скругление если нужно */
+    box-shadow: none; /* Убираем box-shadow, оставляем drop-shadow */
+}
+
+.logo-image:hover {
+    transform: perspective(1000px) rotateX(calc(var(--logo-3d-rotate-x) * 2)) rotateY(calc(var(--logo-3d-rotate-y) * 2)) scale(1.05);
+    filter: drop-shadow(0 0 calc(var(--logo-shadow-intensity) * 60px) rgba(0, 0, 0, 0.6)) 
+            drop-shadow(0 15px calc(var(--logo-shadow-intensity) * 120px) rgba(var(--logo-glow-color), calc(var(--logo-shadow-intensity) * 1.2)));
 }
 
 /* УВЕЛИЧЕННОЕ ОКНО ПРЕВЬЮ */
 .preview-area {
-    width: 450px;  /* Увеличено с 200px до 300px */
-    height: 450px; /* Увеличено с 200px до 300px */
+    width: 450px;
+    height: 450px;
     background: rgba(255, 255, 255, 0.1);
     border-radius: var(--border-radius);
     border: 2px dashed rgba(255, 255, 255, 0.3);
@@ -374,13 +401,13 @@ canvas[hidden] {
     }
     
     .logo-image {
-        width: 100px;
-        height: 100px;
+        width: var(--logo-size-mobile);
+        height: var(--logo-size-mobile);
     }
     
     .preview-area {
-        width: 300px;  /* Увеличено с 180px до 250px */
-        height: 300px; /* Увеличено с 180px до 250px */
+        width: 300px;
+        height: 300px;
     }
     
     .btn {
