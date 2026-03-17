@@ -63,8 +63,8 @@ body {
 
 /* УВЕЛИЧЕННОЕ ОКНО ПРЕВЬЮ */
 .preview-area {
-    width: 400px;  /* Увеличено с 200px до 300px */
-    height: 400px; /* Увеличено с 200px до 300px */
+    width: 450px;  /* Увеличено с 200px до 300px */
+    height: 450px; /* Увеличено с 200px до 300px */
     background: rgba(255, 255, 255, 0.1);
     border-radius: var(--border-radius);
     border: 2px dashed rgba(255, 255, 255, 0.3);
