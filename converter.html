@@ -43,7 +43,6 @@
         }
         
         .file-area:hover { background: rgba(255, 255, 255, 0.25); }
-        .file-area.dragover { background: rgba(255, 255, 255, 0.3); border-color: #007AFF; }
         .file-icon { font-size: 48px; margin-bottom: 10px; }
         
         .selected-file {
@@ -135,50 +134,19 @@
             .format-row { flex-direction: column; gap: 10px; }
             .format-arrow { transform: rotate(90deg); }
         }
-        
-        /* Стили для загрузки WASM */
-        .loading-message {
-            text-align: center;
-            margin: 10px 0;
-            color: rgba(255, 255, 255, 0.8);
-        }
-        
-        .loading-message .spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-top: 3px solid white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-right: 10px;
-            vertical-align: middle;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
     </style>
 </head>
 <body>
     <div class="converter-card">
         <h1>🔄 Конвертер 3D форматов</h1>
         
-        <div id="loadingLibrary" style="display: none;">
-            <div class="loading-message">
-                <span class="spinner"></span>
-                Загрузка библиотеки конвертации...
-            </div>
-        </div>
-        
-        <input type="file" id="fileInput" accept=".glb,.gltf,.obj,.stl,.3ds" style="display: none;">
+        <input type="file" id="fileInput" accept=".glb,.gltf,.obj,.stl" style="display: none;">
         
         <div class="file-area" id="dropArea">
             <div class="file-icon">📁</div>
             <div>Нажмите для выбора файла</div>
             <div style="font-size: 12px; opacity: 0.7; margin-top: 10px;">
-                Поддерживаются: GLB, GLTF, OBJ, STL, 3DS
+                Поддерживаются: GLB, GLTF, OBJ, STL
             </div>
         </div>
         
@@ -188,26 +156,25 @@
             <div class="format-col">
                 <label>Из формата</label>
                 <select id="fromFormat">
-                    <option value="glb">GLB (Binary glTF)</option>
-                    <option value="gltf">GLTF (JSON glTF)</option>
-                    <option value="obj">OBJ (Wavefront)</option>
-                    <option value="stl">STL (Stereolithography)</option>
-                    <option value="3ds">3DS (3D Studio)</option>
+                    <option value="glb">GLB</option>
+                    <option value="gltf">GLTF</option>
+                    <option value="obj">OBJ</option>
+                    <option value="stl">STL</option>
                 </select>
             </div>
             <div class="format-arrow">→</div>
             <div class="format-col">
                 <label>В формат</label>
                 <select id="toFormat">
-                    <option value="glb">GLB (Binary glTF)</option>
-                    <option value="gltf">GLTF (JSON glTF)</option>
-                    <option value="obj">OBJ (Wavefront)</option>
-                    <option value="stl">STL (Stereolithography)</option>
+                    <option value="glb">GLB</option>
+                    <option value="gltf">GLTF</option>
+                    <option value="obj">OBJ</option>
+                    <option value="stl">STL</option>
                 </select>
             </div>
         </div>
         
-        <button id="convertBtn" disabled>🔄 Загрузка библиотеки...</button>
+        <button id="convertBtn">🔄 Конвертировать</button>
         
         <div id="progressArea" style="display: none;">
             <div class="progress-bar">
@@ -223,37 +190,30 @@
         <div id="debugInfo" style="margin-top: 10px; font-size: 12px; opacity: 0.7; display: none;"></div>
         
         <div class="footer-note">
-            Конвертация выполняется в браузере с помощью MeshFlow [citation:1]
+            Конвертация через Three.js (работает без интернета)
         </div>
     </div>
 
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.128.0/build/three.module.js"
-            }
-        }
-    </script>
+    <!-- Подключаем Three.js и загрузчики -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/STLExporter.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/OBJExporter.js"></script>
 
-    <script type="module">
-        // Импортируем MeshFlow
-        import createAssimp from 'https://cdn.jsdelivr.net/npm/@sruim/mesh-flow@0.5.0/dist/mesh-flow.min.js';
-        
+    <script>
         const urlParams = new URLSearchParams(window.location.search);
         const fileName = urlParams.get('file');
         
         let selectedFile = null;
-        let assimp = null;
-        let libraryLoaded = false;
         
         // Элементы
-        const loadingLibrary = document.getElementById('loadingLibrary');
-        const convertBtn = document.getElementById('convertBtn');
-        const dropArea = document.getElementById('dropArea');
         const fileInput = document.getElementById('fileInput');
+        const dropArea = document.getElementById('dropArea');
         const selectedFileInfo = document.getElementById('selectedFileInfo');
         const fromFormat = document.getElementById('fromFormat');
         const toFormat = document.getElementById('toFormat');
+        const convertBtn = document.getElementById('convertBtn');
         const progressArea = document.getElementById('progressArea');
         const progressFill = document.getElementById('progressFill');
         const progressText = document.getElementById('progressText');
@@ -261,36 +221,14 @@
         const downloadLink = document.getElementById('downloadLink');
         const debugInfo = document.getElementById('debugInfo');
         
-        // Загружаем MeshFlow
-        async function loadLibrary() {
-            loadingLibrary.style.display = 'block';
-            convertBtn.disabled = true;
-            convertBtn.textContent = '⏳ Загрузка библиотеки...';
-            
-            try {
-                // Пытаемся загрузить MeshFlow
-                assimp = await createAssimp();
-                libraryLoaded = true;
-                loadingLibrary.style.display = 'none';
-                convertBtn.disabled = false;
-                convertBtn.textContent = '🔄 Конвертировать';
-                console.log('✅ MeshFlow загружен');
-                
-                if (fileName) {
-                    selectedFileInfo.style.display = 'block';
-                    selectedFileInfo.innerHTML = `
-                        <strong>Файл из приложения:</strong><br>
-                        ${fileName}<br>
-                        <span style="color: #ffaa00;">⚠️ Файл нужно выбрать заново</span>
-                    `;
-                }
-            } catch (error) {
-                console.error('❌ Ошибка загрузки MeshFlow:', error);
-                loadingLibrary.style.display = 'none';
-                convertBtn.disabled = false;
-                convertBtn.textContent = '🔄 Конвертировать (без библиотеки)';
-                alert('Не удалось загрузить библиотеку конвертации. Будет использовано тестовое копирование.');
-            }
+        // Если есть имя файла из приложения
+        if (fileName) {
+            selectedFileInfo.style.display = 'block';
+            selectedFileInfo.innerHTML = `
+                <strong>Файл из приложения:</strong><br>
+                ${fileName}<br>
+                <span style="color: #ffaa00;">⚠️ Файл нужно выбрать заново</span>
+            `;
         }
         
         // Обработчики
@@ -350,36 +288,45 @@
             progressText.textContent = percent + '%';
         }
         
-        // Функция реальной конвертации через MeshFlow
-        async function convertWithMeshFlow(file, targetFormat) {
-            return new Promise(async (resolve, reject) => {
-                try {
-                    // Читаем файл как ArrayBuffer
-                    const arrayBuffer = await file.arrayBuffer();
-                    updateProgress(20);
-                    
-                    // Создаем объект с данными файла
-                    const fileData = {
-                        name: file.name,
-                        data: arrayBuffer
-                    };
-                    
-                    updateProgress(40);
-                    
-                    // Конвертируем
-                    console.log(`Конвертация в ${targetFormat}...`);
-                    const result = await assimp.convert(fileData, targetFormat);
-                    updateProgress(80);
-                    
-                    // Получаем результат
-                    const outputBuffer = result;
-                    updateProgress(100);
-                    
-                    resolve(outputBuffer);
-                } catch (error) {
-                    console.error('Ошибка конвертации:', error);
-                    reject(error);
-                }
+        // Функция конвертации через Three.js
+        async function convertWithThreeJS(file, targetFormat) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const buffer = e.target.result;
+                        
+                        // Загружаем файл в зависимости от формата
+                        let geometry = null;
+                        
+                        if (file.name.toLowerCase().endsWith('.stl')) {
+                            const loader = new THREE.STLLoader();
+                            geometry = loader.parse(buffer);
+                            
+                            // Создаем объект для экспорта
+                            const material = new THREE.MeshStandardMaterial();
+                            const mesh = new THREE.Mesh(geometry, material);
+                            
+                            // Экспортируем в нужный формат
+                            if (targetFormat === 'stl') {
+                                const exporter = new THREE.STLExporter();
+                                const result = exporter.parse(mesh);
+                                resolve(result);
+                            } else if (targetFormat === 'obj') {
+                                const exporter = new THREE.OBJExporter();
+                                const result = exporter.parse(mesh);
+                                resolve(result);
+                            } else {
+                                reject(new Error('Конвертация в ' + targetFormat + ' временно недоступна'));
+                            }
+                        } else {
+                            reject(new Error('Поддерживается только STL на данный момент'));
+                        }
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                reader.readAsArrayBuffer(file);
             });
         }
         
@@ -404,41 +351,26 @@
             updateProgress(0);
             
             try {
-                let resultBuffer;
+                // Показываем прогресс
+                updateProgress(30);
                 
-                if (libraryLoaded && assimp) {
-                    // Реальная конвертация через MeshFlow
-                    resultBuffer = await convertWithMeshFlow(selectedFile, to);
-                } else {
-                    // Тестовая конвертация (для отладки)
-                    console.warn('Используется тестовая конвертация');
-                    let progress = 0;
-                    const interval = setInterval(() => {
-                        progress += 10;
-                        updateProgress(progress);
-                        if (progress >= 100) {
-                            clearInterval(interval);
-                            setTimeout(() => {
-                                const blob = new Blob([selectedFile], {type: 'application/octet-stream'});
-                                resultBuffer = blob;
-                            }, 500);
-                        }
-                    }, 200);
-                    return;
-                }
+                // Конвертируем
+                const result = await convertWithThreeJS(selectedFile, to);
+                
+                updateProgress(80);
                 
                 // Создаем имя файла
                 let baseName = selectedFile.name;
-                // Удаляем расширение один раз
                 baseName = baseName.replace(/\.[^/.]+$/, '');
-                // Убираем возможные лишние расширения
-                baseName = baseName.replace(/\.(glb|gltf|obj|stl|3ds)$/i, '');
+                baseName = baseName.replace(/\.(glb|gltf|obj|stl)$/i, '');
                 
                 const newFileName = baseName + '.' + to;
                 
                 // Создаем blob и ссылку
-                const blob = new Blob([resultBuffer], {type: 'application/octet-stream'});
+                const blob = new Blob([result], {type: 'application/octet-stream'});
                 const url = URL.createObjectURL(blob);
+                
+                updateProgress(100);
                 
                 downloadLink.href = url;
                 downloadLink.download = newFileName;
@@ -460,9 +392,6 @@
                 progressArea.style.display = 'none';
             }
         };
-        
-        // Загружаем библиотеку при старте
-        loadLibrary();
     </script>
 </body>
 </html>
