@@ -1,4 +1,4 @@
-// script.js - ПОЛНАЯ РАБОЧАЯ ВЕРСИЯ С КОНВЕРТЕРОМ
+// script.js - ПОЛНАЯ ВЕРСИЯ С ПОДДЕРЖКОЙ OBJ
 
 // Состояния приложения
 const APP_STATES = {
@@ -9,8 +9,8 @@ const APP_STATES = {
 
 // Форматы для каждого рендерера
 const RENDERER_FORMATS = {
-    MODEL_VIEWER: ['.glb', '.gltf', '.obj'],
-    THREE_JS: ['.stl']
+    MODEL_VIEWER: ['.glb', '.gltf'],
+    THREE_JS: ['.stl', '.obj']
 };
 
 class ModelViewerApp {
@@ -40,6 +40,10 @@ class ModelViewerApp {
         this.previewLightsInitialized = false;
         this.mainLightsInitialized = false;
         this.orbitingLight = null;
+        
+        // Загрузчики
+        this.stlLoader = new THREE.STLLoader();
+        this.objLoader = new THREE.OBJLoader();
         
         // КНОПКА КОНВЕРТЕРА
         this.converterBtn = null;
@@ -341,44 +345,106 @@ class ModelViewerApp {
 
     async loadThreeJSPreview() {
         return new Promise((resolve, reject) => {
-            const loader = new THREE.STLLoader();
+            const ext = this.currentFileType;
+            
+            if (ext === '.stl') {
+                this.loadSTLPreview(this.currentFileURL, resolve, reject);
+            } else if (ext === '.obj') {
+                this.loadOBJPreview(this.currentFileURL, resolve, reject);
+            } else {
+                reject(new Error('Неподдерживаемый формат для Three.js'));
+            }
+        });
+    }
 
-            console.log('🎮 Загрузка Three.js превью...');
+    loadSTLPreview(url, resolve, reject) {
+        console.log('🎮 Загрузка STL превью...');
 
-            loader.load(this.currentFileURL, (geometry) => {
-                console.log('✅ Three.js превью загружено');
+        this.stlLoader.load(url, (geometry) => {
+            console.log('✅ STL превью загружено');
+            
+            this.clearThreeJSScene(this.previewScene);
+            
+            const material = new THREE.MeshStandardMaterial({ 
+                color: 0xCCCCCC,
+                roughness: 0.3,
+                metalness: 0.1
+            });
+            const modelObject = new THREE.Mesh(geometry, material);
+            
+            this.previewScene.add(modelObject);
+            this.previewModelObject = modelObject;
+            
+            this.setupPreviewLighting();
+            this.setupPreviewCamera(modelObject);
+            
+            this.previewThreejs.hidden = false;
+            this.hidePreviewPlaceholder();
+            
+            console.log('✅ STL превью отображен');
+            resolve();
+        }, 
+        (progress) => {
+            if (progress.lengthComputable) {
+                this.updateProgress((progress.loaded / progress.total) * 100);
+            }
+        },
+        (error) => {
+            console.error('❌ Ошибка загрузки STL превью:', error);
+            reject(new Error('Не удалось загрузить STL модель'));
+        });
+    }
+
+    loadOBJPreview(url, resolve, reject) {
+        console.log('🎮 Загрузка OBJ превью...');
+
+        fetch(url)
+            .then(response => response.text())
+            .then(text => {
+                const object = this.objLoader.parse(text);
                 
                 this.clearThreeJSScene(this.previewScene);
                 
-                const material = new THREE.MeshStandardMaterial({ 
-                    color: 0xCCCCCC,
-                    roughness: 0.3,
-                    metalness: 0.1
-                });
-                const modelObject = new THREE.Mesh(geometry, material);
+                // Собираем все меши в одну группу
+                const group = new THREE.Group();
+                let hasMesh = false;
                 
-                this.previewScene.add(modelObject);
-                this.previewModelObject = modelObject;
+                object.traverse((child) => {
+                    if (child.isMesh) {
+                        hasMesh = true;
+                        // Устанавливаем материал если его нет
+                        if (!child.material) {
+                            child.material = new THREE.MeshStandardMaterial({ 
+                                color: 0xCCCCCC,
+                                roughness: 0.3,
+                                metalness: 0.1
+                            });
+                        }
+                        group.add(child.clone());
+                    }
+                });
+                
+                if (!hasMesh) {
+                    reject(new Error('OBJ файл не содержит геометрии'));
+                    return;
+                }
+                
+                this.previewScene.add(group);
+                this.previewModelObject = group;
                 
                 this.setupPreviewLighting();
-                this.setupPreviewCamera(modelObject);
+                this.setupPreviewCamera(group);
                 
                 this.previewThreejs.hidden = false;
                 this.hidePreviewPlaceholder();
                 
-                console.log('✅ Three.js превью отображен');
+                console.log('✅ OBJ превью отображен');
                 resolve();
-            }, 
-            (progress) => {
-                if (progress.lengthComputable) {
-                    this.updateProgress((progress.loaded / progress.total) * 100);
-                }
-            },
-            (error) => {
-                console.error('❌ Ошибка загрузки Three.js превью:', error);
-                reject(new Error('Не удалось загрузить STL модель'));
+            })
+            .catch(error => {
+                console.error('❌ Ошибка загрузки OBJ превью:', error);
+                reject(new Error('Не удалось загрузить OBJ модель'));
             });
-        });
     }
 
     setupPreviewCamera(object) {
@@ -491,7 +557,7 @@ class ModelViewerApp {
         if (scene) {
             const objectsToRemove = [];
             scene.traverse((child) => {
-                if (child.isMesh) {
+                if (child.isMesh || child.isGroup) {
                     objectsToRemove.push(child);
                 }
             });
@@ -581,27 +647,102 @@ class ModelViewerApp {
 
     async openThreeJSViewer() {
         return new Promise((resolve, reject) => {
-            const loader = new THREE.STLLoader();
+            const ext = this.currentFileType;
+            
+            if (ext === '.stl') {
+                this.openSTLViewer(resolve, reject);
+            } else if (ext === '.obj') {
+                this.openOBJViewer(resolve, reject);
+            } else {
+                reject(new Error('Неподдерживаемый формат'));
+            }
+        });
+    }
 
-            console.log('🎮 Открытие Three.js просмотрщика...');
+    openSTLViewer(resolve, reject) {
+        console.log('🎮 Открытие STL просмотрщика...');
 
-            loader.load(this.currentFileURL, (geometry) => {
-                console.log('✅ Three.js модель загружена');
+        this.stlLoader.load(this.currentFileURL, (geometry) => {
+            console.log('✅ STL модель загружена');
+            
+            this.clearThreeJSScene(this.mainScene);
+            
+            const material = new THREE.MeshStandardMaterial({ 
+                color: 0xCCCCCC,
+                roughness: 0.3,
+                metalness: 0.1
+            });
+            const modelObject = new THREE.Mesh(geometry, material);
+            
+            this.mainScene.add(modelObject);
+            this.mainModelObject = modelObject;
+            
+            this.setupMainLighting();
+            this.setupMainCamera(modelObject);
+            
+            this.mainControls = new THREE.OrbitControls(this.mainCamera, this.mainThreejs);
+            this.mainControls.enableDamping = true;
+            this.mainControls.dampingFactor = 0.05;
+            
+            this.autoRotate = true;
+            
+            this.mainThreejs.hidden = false;
+            this.updateMainThreeJSSize();
+            
+            console.log('✅ STL настроен для отображения');
+            
+            this.updateProgress(100);
+            resolve();
+        }, 
+        (progress) => {
+            this.updateProgress((progress.loaded / progress.total) * 100);
+        },
+        (error) => {
+            console.error('❌ Ошибка загрузки STL:', error);
+            reject(new Error('Не удалось загрузить STL модель'));
+        });
+    }
+
+    openOBJViewer(resolve, reject) {
+        console.log('🎮 Открытие OBJ просмотрщика...');
+
+        fetch(this.currentFileURL)
+            .then(response => response.text())
+            .then(text => {
+                const object = this.objLoader.parse(text);
                 
                 this.clearThreeJSScene(this.mainScene);
                 
-                const material = new THREE.MeshStandardMaterial({ 
-                    color: 0xCCCCCC,
-                    roughness: 0.3,
-                    metalness: 0.1
-                });
-                const modelObject = new THREE.Mesh(geometry, material);
+                // Создаем группу для всех мешей
+                const group = new THREE.Group();
+                let hasMesh = false;
                 
-                this.mainScene.add(modelObject);
-                this.mainModelObject = modelObject;
+                object.traverse((child) => {
+                    if (child.isMesh) {
+                        hasMesh = true;
+                        // Клонируем и добавляем в группу
+                        const mesh = child.clone();
+                        if (!mesh.material) {
+                            mesh.material = new THREE.MeshStandardMaterial({ 
+                                color: 0xCCCCCC,
+                                roughness: 0.3,
+                                metalness: 0.1
+                            });
+                        }
+                        group.add(mesh);
+                    }
+                });
+                
+                if (!hasMesh) {
+                    reject(new Error('OBJ файл не содержит геометрии'));
+                    return;
+                }
+                
+                this.mainScene.add(group);
+                this.mainModelObject = group;
                 
                 this.setupMainLighting();
-                this.setupMainCamera(modelObject);
+                this.setupMainCamera(group);
                 
                 this.mainControls = new THREE.OrbitControls(this.mainCamera, this.mainThreejs);
                 this.mainControls.enableDamping = true;
@@ -612,19 +753,15 @@ class ModelViewerApp {
                 this.mainThreejs.hidden = false;
                 this.updateMainThreeJSSize();
                 
-                console.log('✅ Three.js настроен для отображения');
+                console.log('✅ OBJ настроен для отображения');
                 
                 this.updateProgress(100);
                 resolve();
-            }, 
-            (progress) => {
-                this.updateProgress((progress.loaded / progress.total) * 100);
-            },
-            (error) => {
-                console.error('❌ Ошибка загрузки:', error);
-                reject(new Error('Не удалось загрузить STL модель'));
+            })
+            .catch(error => {
+                console.error('❌ Ошибка загрузки OBJ:', error);
+                reject(new Error('Не удалось загрузить OBJ модель'));
             });
-        });
     }
 
     updateMainThreeJSSize() {
