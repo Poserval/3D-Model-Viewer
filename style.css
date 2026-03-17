@@ -8,7 +8,7 @@
     
     /* 🔥 НОВЫЕ ПЕРЕМЕННЫЕ ДЛЯ ЛОГОТИПА */
     --logo-size: 300px;           /* увеличен размер */
-    --logo-size-mobile: 250px;    /* размер на мобилках */
+    --logo-size-mobile: 400px;    /* размер на мобилках */
     --logo-margin-top: 20px;       /* отступ сверху */
     --logo-margin-bottom: 30px;    /* отступ снизу */
     --logo-3d-rotate-x: 2deg;      /* 3D поворот по X */
