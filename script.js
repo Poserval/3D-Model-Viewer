@@ -1,4 +1,4 @@
-// script.js - ПОЛНАЯ РАБОЧАЯ ВЕРСИЯ С ОТКРЫТИЕМ КОНВЕРТЕРА В БРАУЗЕРЕ
+// script.js - ПОЛНАЯ ВЕРСИЯ С ПОДДЕРЖКОЙ GLB
 
 // Состояния приложения
 const APP_STATES = {
@@ -40,6 +40,9 @@ class ModelViewerApp {
         this.mainLightsInitialized = false;
         this.orbitingLight = null;
         
+        // GLTFLoader для поддержки GLB
+        this.gltfLoader = null;
+        
         this.init();
     }
 
@@ -47,6 +50,7 @@ class ModelViewerApp {
         this.initializeElements();
         this.bindEvents();
         this.initThreeJS();
+        this.initGLTFLoader();
         
         console.log('🚀 3D Model Viewer запущен');
     }
@@ -87,18 +91,15 @@ class ModelViewerApp {
         this.fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
         this.open3dBtn.addEventListener('click', () => this.openViewer());
         
-        // ⭐ ГЛАВНОЕ - КОНВЕРТЕР ОТКРЫВАЕТСЯ В БРАУЗЕРЕ
+        // ⭐ Конвертер в браузере
         this.goToConverterBtn.addEventListener('click', () => {
             const converterUrl = 'https://poserval.github.io/3D-Model-Viewer/converter.html';
             const fileParam = this.currentFile ? '?file=' + encodeURIComponent(this.currentFile.name) : '';
             const fullUrl = converterUrl + fileParam;
             
-            // Пытаемся открыть в браузере
             if (window.Capacitor) {
-                // Для APK на Android - открываем как внешнее приложение
                 window.open(fullUrl, '_system');
             } else {
-                // Для веб-версии - открываем в новой вкладке
                 window.open(fullUrl, '_blank');
             }
             
@@ -149,6 +150,16 @@ class ModelViewerApp {
 
         console.log('Three.js инициализирован');
         this.animate();
+    }
+
+    initGLTFLoader() {
+        // Проверяем доступность GLTFLoader
+        if (THREE.GLTFLoader) {
+            this.gltfLoader = new THREE.GLTFLoader();
+            console.log('✅ GLTFLoader инициализирован');
+        } else {
+            console.warn('⚠️ GLTFLoader не найден, GLB не будут загружаться через Three.js');
+        }
     }
 
     // ОСВЕЩЕНИЕ
@@ -293,49 +304,94 @@ class ModelViewerApp {
 
     async loadThreeJSPreview() {
         return new Promise((resolve, reject) => {
-            const loader = new THREE.STLLoader();
+            // Определяем загрузчик по формату
+            if (this.currentFileType === '.stl') {
+                this.loadSTLPreview(this.currentFileURL, resolve, reject);
+            } else if (this.currentFileType === '.glb' || this.currentFileType === '.gltf') {
+                this.loadGLBPreview(this.currentFileURL, resolve, reject);
+            } else {
+                reject(new Error('Неподдерживаемый формат для Three.js превью'));
+            }
+        });
+    }
 
-            loader.load(this.currentFileURL, (geometry) => {
-                this.clearThreeJSScene(this.previewScene);
-                
-                const material = new THREE.MeshStandardMaterial({ 
-                    color: 0xCCCCCC,
-                    roughness: 0.3,
-                    metalness: 0.1
-                });
-                const modelObject = new THREE.Mesh(geometry, material);
-                
-                this.previewScene.add(modelObject);
-                this.previewModelObject = modelObject;
-                
-                this.setupPreviewLighting();
-                this.setupPreviewCamera(modelObject);
-                
-                if (this.previewThreejs) {
-                    this.previewThreejs.hidden = false;
-                }
-                this.hidePreviewPlaceholder();
-                resolve();
-            }, 
-            (progress) => {
-                if (progress.lengthComputable) {
-                    this.updateProgress((progress.loaded / progress.total) * 100);
-                }
-            },
-            reject);
+    loadSTLPreview(url, resolve, reject) {
+        const loader = new THREE.STLLoader();
+        loader.load(url, (geometry) => {
+            this.clearThreeJSScene(this.previewScene);
+            
+            const material = new THREE.MeshStandardMaterial({ 
+                color: 0xCCCCCC,
+                roughness: 0.3,
+                metalness: 0.1
+            });
+            const modelObject = new THREE.Mesh(geometry, material);
+            
+            this.previewScene.add(modelObject);
+            this.previewModelObject = modelObject;
+            
+            this.setupPreviewLighting();
+            this.setupPreviewCamera(modelObject);
+            
+            if (this.previewThreejs) {
+                this.previewThreejs.hidden = false;
+            }
+            this.hidePreviewPlaceholder();
+            resolve();
+        }, 
+        (progress) => {
+            if (progress.lengthComputable) {
+                this.updateProgress((progress.loaded / progress.total) * 100);
+            }
+        },
+        reject);
+    }
+
+    loadGLBPreview(url, resolve, reject) {
+        if (!this.gltfLoader) {
+            reject(new Error('GLTFLoader не инициализирован'));
+            return;
+        }
+
+        this.gltfLoader.load(url, (gltf) => {
+            this.clearThreeJSScene(this.previewScene);
+            
+            const model = gltf.scene;
+            
+            // Добавляем освещение если модель темная
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            model.add(ambientLight);
+            
+            this.previewScene.add(model);
+            this.previewModelObject = model;
+            
+            // Центрируем модель
+            const box = new THREE.Box3().setFromObject(model);
+            const center = box.getCenter(new THREE.Vector3());
+            model.position.set(-center.x, -center.y, -center.z);
+            
+            this.setupPreviewCamera(model);
+            
+            if (this.previewThreejs) {
+                this.previewThreejs.hidden = false;
+            }
+            this.hidePreviewPlaceholder();
+            resolve();
+        }, 
+        (progress) => {
+            if (progress.lengthComputable) {
+                this.updateProgress((progress.loaded / progress.total) * 100);
+            }
+        },
+        (error) => {
+            console.error('Ошибка загрузки GLB:', error);
+            reject(error);
         });
     }
 
     setupPreviewCamera(object) {
         const box = new THREE.Box3().setFromObject(object);
-        const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
-        
-        object.position.x = -center.x;
-        object.position.y = -center.y;
-        object.position.z = -center.z;
-        
-        this.autoAlignModel(object, size);
         
         const maxDim = Math.max(size.x, size.y, size.z);
         const fov = this.previewCamera.fov * (Math.PI / 180);
@@ -356,8 +412,6 @@ class ModelViewerApp {
         object.position.y = -center.y;
         object.position.z = -center.z;
         
-        this.autoAlignModel(object, size);
-        
         const maxDim = Math.max(size.x, size.y, size.z);
         const fov = this.mainCamera.fov * (Math.PI / 180);
         let cameraDistance = maxDim / (2 * Math.tan(fov / 2));
@@ -372,20 +426,6 @@ class ModelViewerApp {
             this.mainControls.minDistance = cameraDistance * 0.5;
             this.mainControls.maxDistance = cameraDistance * 3;
             this.mainControls.target.set(0, 0, 0);
-        }
-    }
-
-    autoAlignModel(object, size) {
-        const maxDim = Math.max(size.x, size.y, size.z);
-        
-        if (size.y === maxDim) {
-            object.rotation.x = 0;
-            object.rotation.y = 0;
-            object.rotation.z = 0;
-        } else if (size.z === maxDim) {
-            object.rotation.x = -Math.PI / 2;
-        } else if (size.x === maxDim) {
-            object.rotation.z = -Math.PI / 2;
         }
     }
 
@@ -424,7 +464,9 @@ class ModelViewerApp {
         if (!scene) return;
         const objectsToRemove = [];
         scene.traverse((child) => {
-            if (child.isMesh) objectsToRemove.push(child);
+            if (child.isMesh || child.isGroup) {
+                objectsToRemove.push(child);
+            }
         });
         objectsToRemove.forEach(obj => {
             if (obj.geometry) obj.geometry.dispose();
@@ -494,43 +536,92 @@ class ModelViewerApp {
 
     async openThreeJSViewer() {
         return new Promise((resolve, reject) => {
-            const loader = new THREE.STLLoader();
+            if (this.currentFileType === '.stl') {
+                this.openSTLViewer(resolve, reject);
+            } else if (this.currentFileType === '.glb' || this.currentFileType === '.gltf') {
+                this.openGLBViewer(resolve, reject);
+            } else {
+                reject(new Error('Неподдерживаемый формат'));
+            }
+        });
+    }
 
-            loader.load(this.currentFileURL, (geometry) => {
-                this.clearThreeJSScene(this.mainScene);
-                
-                const material = new THREE.MeshStandardMaterial({ 
-                    color: 0xCCCCCC,
-                    roughness: 0.3,
-                    metalness: 0.1
-                });
-                const modelObject = new THREE.Mesh(geometry, material);
-                
-                this.mainScene.add(modelObject);
-                this.mainModelObject = modelObject;
-                
-                this.setupMainLighting();
-                this.setupMainCamera(modelObject);
-                
-                this.mainControls = new THREE.OrbitControls(this.mainCamera, this.mainThreejs);
-                this.mainControls.enableDamping = true;
-                this.mainControls.dampingFactor = 0.05;
-                
-                this.autoRotate = true;
-                if (this.mainThreejs) {
-                    this.mainThreejs.hidden = false;
-                }
-                this.updateMainThreeJSSize();
-                
-                resolve();
-            }, 
-            (progress) => {
-                this.updateProgress((progress.loaded / progress.total) * 100);
-            },
-            (error) => {
-                console.error('Ошибка загрузки STL:', error);
-                reject(error);
+    openSTLViewer(resolve, reject) {
+        const loader = new THREE.STLLoader();
+        loader.load(this.currentFileURL, (geometry) => {
+            this.clearThreeJSScene(this.mainScene);
+            
+            const material = new THREE.MeshStandardMaterial({ 
+                color: 0xCCCCCC,
+                roughness: 0.3,
+                metalness: 0.1
             });
+            const modelObject = new THREE.Mesh(geometry, material);
+            
+            this.mainScene.add(modelObject);
+            this.mainModelObject = modelObject;
+            
+            this.setupMainLighting();
+            this.setupMainCamera(modelObject);
+            
+            this.mainControls = new THREE.OrbitControls(this.mainCamera, this.mainThreejs);
+            this.mainControls.enableDamping = true;
+            this.mainControls.dampingFactor = 0.05;
+            
+            this.autoRotate = true;
+            if (this.mainThreejs) {
+                this.mainThreejs.hidden = false;
+            }
+            this.updateMainThreeJSSize();
+            
+            resolve();
+        }, 
+        (progress) => {
+            this.updateProgress((progress.loaded / progress.total) * 100);
+        },
+        reject);
+    }
+
+    openGLBViewer(resolve, reject) {
+        if (!this.gltfLoader) {
+            reject(new Error('GLTFLoader не инициализирован'));
+            return;
+        }
+
+        this.gltfLoader.load(this.currentFileURL, (gltf) => {
+            this.clearThreeJSScene(this.mainScene);
+            
+            const model = gltf.scene;
+            
+            // Добавляем базовое освещение
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            model.add(ambientLight);
+            
+            this.mainScene.add(model);
+            this.mainModelObject = model;
+            
+            this.setupMainLighting();
+            this.setupMainCamera(model);
+            
+            this.mainControls = new THREE.OrbitControls(this.mainCamera, this.mainThreejs);
+            this.mainControls.enableDamping = true;
+            this.mainControls.dampingFactor = 0.05;
+            
+            this.autoRotate = true;
+            if (this.mainThreejs) {
+                this.mainThreejs.hidden = false;
+            }
+            this.updateMainThreeJSSize();
+            
+            console.log('✅ GLB модель загружена в просмотрщик');
+            resolve();
+        }, 
+        (progress) => {
+            this.updateProgress((progress.loaded / progress.total) * 100);
+        },
+        (error) => {
+            console.error('❌ Ошибка загрузки GLB:', error);
+            reject(error);
         });
     }
 
@@ -641,5 +732,10 @@ class ModelViewerApp {
 
 // Инициализация приложения
 document.addEventListener('DOMContentLoaded', () => {
+    // Загружаем GLTFLoader если его нет
+    if (!THREE.GLTFLoader && typeof GLTFLoader !== 'undefined') {
+        THREE.GLTFLoader = GLTFLoader;
+    }
+    
     new ModelViewerApp();
 });
