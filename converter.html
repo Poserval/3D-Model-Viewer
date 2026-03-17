@@ -135,11 +135,42 @@
             .format-row { flex-direction: column; gap: 10px; }
             .format-arrow { transform: rotate(90deg); }
         }
+        
+        /* Стили для загрузки WASM */
+        .loading-message {
+            text-align: center;
+            margin: 10px 0;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .loading-message .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
     <div class="converter-card">
         <h1>🔄 Конвертер 3D форматов</h1>
+        
+        <div id="loadingLibrary" style="display: none;">
+            <div class="loading-message">
+                <span class="spinner"></span>
+                Загрузка библиотеки конвертации...
+            </div>
+        </div>
         
         <input type="file" id="fileInput" accept=".glb,.gltf,.obj,.stl,.3ds" style="display: none;">
         
@@ -176,7 +207,7 @@
             </div>
         </div>
         
-        <button id="convertBtn">🔄 Конвертировать</button>
+        <button id="convertBtn" disabled>🔄 Загрузка библиотеки...</button>
         
         <div id="progressArea" style="display: none;">
             <div class="progress-bar">
@@ -192,102 +223,246 @@
         <div id="debugInfo" style="margin-top: 10px; font-size: 12px; opacity: 0.7; display: none;"></div>
         
         <div class="footer-note">
-            Конвертация выполняется в браузере
+            Конвертация выполняется в браузере с помощью MeshFlow [citation:1]
         </div>
     </div>
 
-    <script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js"
+            }
+        }
+    </script>
+
+    <script type="module">
+        // Импортируем MeshFlow
+        import createAssimp from 'https://cdn.jsdelivr.net/npm/@sruim/mesh-flow@0.5.0/dist/mesh-flow.min.js';
+        
         const urlParams = new URLSearchParams(window.location.search);
         const fileName = urlParams.get('file');
         
         let selectedFile = null;
+        let assimp = null;
+        let libraryLoaded = false;
         
-        if (fileName) {
-            document.getElementById('selectedFileInfo').style.display = 'block';
-            document.getElementById('selectedFileInfo').innerHTML = `
-                <strong>Файл из приложения:</strong><br>
-                ${fileName}
-            `;
+        // Элементы
+        const loadingLibrary = document.getElementById('loadingLibrary');
+        const convertBtn = document.getElementById('convertBtn');
+        const dropArea = document.getElementById('dropArea');
+        const fileInput = document.getElementById('fileInput');
+        const selectedFileInfo = document.getElementById('selectedFileInfo');
+        const fromFormat = document.getElementById('fromFormat');
+        const toFormat = document.getElementById('toFormat');
+        const progressArea = document.getElementById('progressArea');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const downloadArea = document.getElementById('downloadArea');
+        const downloadLink = document.getElementById('downloadLink');
+        const debugInfo = document.getElementById('debugInfo');
+        
+        // Загружаем MeshFlow
+        async function loadLibrary() {
+            loadingLibrary.style.display = 'block';
+            convertBtn.disabled = true;
+            convertBtn.textContent = '⏳ Загрузка библиотеки...';
+            
+            try {
+                // Пытаемся загрузить MeshFlow
+                assimp = await createAssimp();
+                libraryLoaded = true;
+                loadingLibrary.style.display = 'none';
+                convertBtn.disabled = false;
+                convertBtn.textContent = '🔄 Конвертировать';
+                console.log('✅ MeshFlow загружен');
+                
+                if (fileName) {
+                    selectedFileInfo.style.display = 'block';
+                    selectedFileInfo.innerHTML = `
+                        <strong>Файл из приложения:</strong><br>
+                        ${fileName}<br>
+                        <span style="color: #ffaa00;">⚠️ Файл нужно выбрать заново</span>
+                    `;
+                }
+            } catch (error) {
+                console.error('❌ Ошибка загрузки MeshFlow:', error);
+                loadingLibrary.style.display = 'none';
+                convertBtn.disabled = false;
+                convertBtn.textContent = '🔄 Конвертировать (без библиотеки)';
+                alert('Не удалось загрузить библиотеку конвертации. Будет использовано тестовое копирование.');
+            }
         }
         
-        document.getElementById('dropArea').onclick = () => {
-            document.getElementById('fileInput').click();
-        };
+        // Обработчики
+        dropArea.onclick = () => fileInput.click();
         
-        document.getElementById('fileInput').onchange = (e) => {
+        fileInput.onchange = (e) => {
             selectedFile = e.target.files[0];
             if (selectedFile) {
-                document.getElementById('selectedFileInfo').style.display = 'block';
-                document.getElementById('selectedFileInfo').innerHTML = `
+                const ext = selectedFile.name.split('.').pop().toLowerCase();
+                selectedFileInfo.style.display = 'block';
+                selectedFileInfo.innerHTML = `
                     <strong>Выбран:</strong> ${selectedFile.name}<br>
                     <strong>Размер:</strong> ${(selectedFile.size / 1024 / 1024).toFixed(2)} MB<br>
-                    <strong>Реальный формат:</strong> ${selectedFile.name.split('.').pop().toLowerCase()}
+                    <strong>Формат:</strong> ${ext}
                 `;
+                
+                // Автоматически выбираем формат в select
+                if (fromFormat.querySelector(`option[value="${ext}"]`)) {
+                    fromFormat.value = ext;
+                }
             }
         };
         
-        document.getElementById('convertBtn').onclick = () => {
-            if (!selectedFile && !fileName) {
+        // Поддержка drag & drop
+        dropArea.ondragover = (e) => {
+            e.preventDefault();
+            dropArea.classList.add('dragover');
+        };
+        
+        dropArea.ondragleave = () => {
+            dropArea.classList.remove('dragover');
+        };
+        
+        dropArea.ondrop = (e) => {
+            e.preventDefault();
+            dropArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                fileInput.files = e.dataTransfer.files;
+                selectedFile = file;
+                const ext = file.name.split('.').pop().toLowerCase();
+                selectedFileInfo.style.display = 'block';
+                selectedFileInfo.innerHTML = `
+                    <strong>Выбран:</strong> ${file.name}<br>
+                    <strong>Размер:</strong> ${(file.size / 1024 / 1024).toFixed(2)} MB<br>
+                    <strong>Формат:</strong> ${ext}
+                `;
+                if (fromFormat.querySelector(`option[value="${ext}"]`)) {
+                    fromFormat.value = ext;
+                }
+            }
+        };
+        
+        // Функция обновления прогресса
+        function updateProgress(percent) {
+            progressFill.style.width = percent + '%';
+            progressText.textContent = percent + '%';
+        }
+        
+        // Функция реальной конвертации через MeshFlow
+        async function convertWithMeshFlow(file, targetFormat) {
+            return new Promise(async (resolve, reject) => {
+                try {
+                    // Читаем файл как ArrayBuffer
+                    const arrayBuffer = await file.arrayBuffer();
+                    updateProgress(20);
+                    
+                    // Создаем объект с данными файла
+                    const fileData = {
+                        name: file.name,
+                        data: arrayBuffer
+                    };
+                    
+                    updateProgress(40);
+                    
+                    // Конвертируем
+                    console.log(`Конвертация в ${targetFormat}...`);
+                    const result = await assimp.convert(fileData, targetFormat);
+                    updateProgress(80);
+                    
+                    // Получаем результат
+                    const outputBuffer = result;
+                    updateProgress(100);
+                    
+                    resolve(outputBuffer);
+                } catch (error) {
+                    console.error('Ошибка конвертации:', error);
+                    reject(error);
+                }
+            });
+        }
+        
+        // Обработчик кнопки конвертации
+        convertBtn.onclick = async () => {
+            if (!selectedFile) {
                 alert('Сначала выберите файл');
                 return;
             }
             
-            const from = document.getElementById('fromFormat').value;
-            const to = document.getElementById('toFormat').value;
+            const from = fromFormat.value;
+            const to = toFormat.value;
             
             if (from === to) {
                 alert('Форматы одинаковые, конвертация не нужна');
                 return;
             }
             
-            document.getElementById('progressArea').style.display = 'block';
-            document.getElementById('downloadArea').style.display = 'none';
+            // Показываем прогресс
+            progressArea.style.display = 'block';
+            downloadArea.style.display = 'none';
+            updateProgress(0);
             
-            let progress = 0;
-            const interval = setInterval(() => {
-                progress += 10;
-                document.getElementById('progressFill').style.width = progress + '%';
-                document.getElementById('progressText').textContent = progress + '%';
+            try {
+                let resultBuffer;
                 
-                if (progress >= 100) {
-                    clearInterval(interval);
-                    
-                    setTimeout(() => {
-                        document.getElementById('downloadArea').style.display = 'block';
-                        
-                        if (selectedFile) {
-                            // Убираем расширение один раз!
-                            let baseName = selectedFile.name;
-                            // Удаляем ВСЕ расширения в конце
-                            baseName = baseName.replace(/\.[^/.]+$/, '');
-                            // Убираем возможный .stl в конце
-                            baseName = baseName.replace(/\.stl$/i, '');
-                            baseName = baseName.replace(/\.glb$/i, '');
-                            baseName = baseName.replace(/\.gltf$/i, '');
-                            baseName = baseName.replace(/\.obj$/i, '');
-                            
-                            const newFileName = baseName + '.' + to;
-                            
-                            // Создаем тестовый бинарный файл
-                            const blob = new Blob(['TEST'], {type: 'application/octet-stream'});
-                            document.getElementById('downloadLink').href = URL.createObjectURL(blob);
-                            document.getElementById('downloadLink').download = newFileName;
-                            
-                            // Показываем отладочную информацию
-                            document.getElementById('debugInfo').style.display = 'block';
-                            document.getElementById('debugInfo').innerHTML = `
-                                <strong>Отладка:</strong><br>
-                                Оригинал: ${selectedFile.name}<br>
-                            `;
-                        } else {
-                            const blob = new Blob(['TEST'], {type: 'application/octet-stream'});
-                            document.getElementById('downloadLink').href = URL.createObjectURL(blob);
-                            document.getElementById('downloadLink').download = 'converted.' + to;
+                if (libraryLoaded && assimp) {
+                    // Реальная конвертация через MeshFlow
+                    resultBuffer = await convertWithMeshFlow(selectedFile, to);
+                } else {
+                    // Тестовая конвертация (для отладки)
+                    console.warn('Используется тестовая конвертация');
+                    let progress = 0;
+                    const interval = setInterval(() => {
+                        progress += 10;
+                        updateProgress(progress);
+                        if (progress >= 100) {
+                            clearInterval(interval);
+                            setTimeout(() => {
+                                const blob = new Blob([selectedFile], {type: 'application/octet-stream'});
+                                resultBuffer = blob;
+                            }, 500);
                         }
-                    }, 500);
+                    }, 200);
+                    return;
                 }
-            }, 200);
+                
+                // Создаем имя файла
+                let baseName = selectedFile.name;
+                // Удаляем расширение один раз
+                baseName = baseName.replace(/\.[^/.]+$/, '');
+                // Убираем возможные лишние расширения
+                baseName = baseName.replace(/\.(glb|gltf|obj|stl|3ds)$/i, '');
+                
+                const newFileName = baseName + '.' + to;
+                
+                // Создаем blob и ссылку
+                const blob = new Blob([resultBuffer], {type: 'application/octet-stream'});
+                const url = URL.createObjectURL(blob);
+                
+                downloadLink.href = url;
+                downloadLink.download = newFileName;
+                downloadArea.style.display = 'block';
+                
+                // Отладочная информация
+                debugInfo.style.display = 'block';
+                debugInfo.innerHTML = `
+                    <strong>Конвертация выполнена:</strong><br>
+                    ${selectedFile.name} → ${newFileName}<br>
+                    Размер результата: ${(blob.size / 1024 / 1024).toFixed(2)} MB
+                `;
+                
+                console.log('✅ Конвертация завершена:', newFileName);
+                
+            } catch (error) {
+                console.error('❌ Ошибка конвертации:', error);
+                alert('Ошибка конвертации: ' + error.message);
+                progressArea.style.display = 'none';
+            }
         };
+        
+        // Загружаем библиотеку при старте
+        loadLibrary();
     </script>
 </body>
 </html>
