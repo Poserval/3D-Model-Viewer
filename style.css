@@ -74,7 +74,7 @@ body::before {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 20px;
+    gap: 15px;
     position: relative;
     z-index: 2;
 }
@@ -111,7 +111,7 @@ body::before {
 .preview-area {
     width: 450px;
     height: 450px;
-    margin-top: -120px;  /* отрицательное значение поднимает окно вверх */
+    margin-top: -100px;  /* отрицательное значение поднимает окно вверх */
     background: rgba(255, 255, 255, 0.15);
     border-radius: var(--border-radius);
     border: 2px solid rgba(255, 255, 255, 0.25);
@@ -176,26 +176,30 @@ canvas[hidden] {
     width: 100%;
     max-width: 450px; /* ширина как у preview-area */
     justify-content: center;
-    margin-top: -40px; /* поднимаем кнопки ближе к окну */
+}
+
+/* Отдельный ряд для конвертера */
+.converter-row {
+    margin-top: 5px;
 }
 
 /* КНОПКИ - обновленные размеры */
 .btn {
-    padding: 15px 0; /* вертикальный отступ, горизонтальный убираем */
+    padding: 15px 0;
     border: none;
     border-radius: var(--border-radius);
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
     transition: var(--transition);
-    width: 200px; /* фиксированная ширина */
+    width: 200px;
     max-width: 200px;
     text-align: center;
     position: relative;
     overflow: hidden;
     touch-action: manipulation;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-    flex: 1; /* кнопки будут одинаковой ширины */
+    flex: 1;
 }
 
 .btn:focus-visible {
@@ -214,45 +218,34 @@ canvas[hidden] {
     box-shadow: 0 8px 25px rgba(0, 122, 255, 0.5);
 }
 
-.btn.secondary {
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-    border: 2px solid rgba(255, 255, 255, 0.4);
-    backdrop-filter: blur(5px);
-}
-
-.btn.secondary:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.3);
-    transform: translateY(-2px);
-    border-color: rgba(255, 255, 255, 0.6);
-}
-
-.btn:disabled {
+.btn.primary:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     transform: none !important;
+    background: linear-gradient(145deg, #007AFF, #0055BB);
 }
 
-/* 🔥 КНОПКА КОНВЕРТЕРА - без значка */
+/* КНОПКА КОНВЕРТЕРА - такая же как остальные */
 .btn.converter {
-    background: rgba(255, 255, 255, 0.2);
+    background: linear-gradient(145deg, #007AFF, #0055BB);
     color: white;
-    border: 2px solid rgba(255, 255, 255, 0.4);
-    backdrop-filter: blur(5px);
-    font-size: 15px; /* чуть меньше шрифт чтобы поместилось */
+    font-size: 15px;
+    border: none;
+    width: 100%;
+    max-width: none;
 }
 
-.btn.converter:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.3);
+.btn.converter:hover {
+    background: linear-gradient(145deg, #0055BB, #003B80);
     transform: translateY(-2px);
-    border-color: rgba(255, 255, 255, 0.6);
+    box-shadow: 0 8px 25px rgba(0, 122, 255, 0.5);
 }
 
 .file-name {
     color: white;
     font-size: 14px;
     text-align: center;
-    margin-top: 10px;
+    margin-top: 5px;
     word-break: break-all;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -468,7 +461,6 @@ canvas[hidden] {
     .button-row {
         max-width: 300px; /* как у preview-area на мобилках */
         gap: 10px;
-        margin-top: -20px;
     }
     
     .btn {
@@ -480,6 +472,7 @@ canvas[hidden] {
     
     .btn.converter {
         font-size: 13px; /* еще меньше на мобилках */
+        max-width: none;
     }
     
     .viewer-title {
