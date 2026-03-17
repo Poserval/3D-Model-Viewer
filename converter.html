@@ -5,11 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3DViewer - Конвертер</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -33,11 +29,7 @@
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         }
         
-        h1 {
-            text-align: center;
-            margin-bottom: 20px;
-            font-size: 24px;
-        }
+        h1 { text-align: center; margin-bottom: 20px; font-size: 24px; }
         
         .file-area {
             background: rgba(255, 255, 255, 0.2);
@@ -50,19 +42,9 @@
             transition: all 0.3s;
         }
         
-        .file-area:hover {
-            background: rgba(255, 255, 255, 0.25);
-        }
-        
-        .file-area.dragover {
-            background: rgba(255, 255, 255, 0.3);
-            border-color: #007AFF;
-        }
-        
-        .file-icon {
-            font-size: 48px;
-            margin-bottom: 10px;
-        }
+        .file-area:hover { background: rgba(255, 255, 255, 0.25); }
+        .file-area.dragover { background: rgba(255, 255, 255, 0.3); border-color: #007AFF; }
+        .file-icon { font-size: 48px; margin-bottom: 10px; }
         
         .selected-file {
             background: rgba(255, 255, 255, 0.1);
@@ -79,21 +61,10 @@
             margin-bottom: 20px;
         }
         
-        .format-col {
-            flex: 1;
-        }
+        .format-col { flex: 1; }
+        .format-arrow { font-size: 24px; opacity: 0.7; }
         
-        .format-arrow {
-            font-size: 24px;
-            opacity: 0.7;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 14px;
-            opacity: 0.9;
-        }
+        label { display: block; margin-bottom: 8px; font-size: 14px; opacity: 0.9; }
         
         select {
             width: 100%;
@@ -106,9 +77,7 @@
             cursor: pointer;
         }
         
-        select option {
-            background: #333;
-        }
+        select option { background: #333; }
         
         button {
             width: 100%;
@@ -158,26 +127,13 @@
             transition: all 0.3s;
         }
         
-        .download-link:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
+        .download-link:hover { background: rgba(255, 255, 255, 0.2); }
         
-        .footer-note {
-            text-align: center;
-            font-size: 12px;
-            opacity: 0.6;
-            margin-top: 20px;
-        }
+        .footer-note { text-align: center; font-size: 12px; opacity: 0.6; margin-top: 20px; }
         
         @media (max-width: 480px) {
-            .format-row {
-                flex-direction: column;
-                gap: 10px;
-            }
-            
-            .format-arrow {
-                transform: rotate(90deg);
-            }
+            .format-row { flex-direction: column; gap: 10px; }
+            .format-arrow { transform: rotate(90deg); }
         }
     </style>
 </head>
@@ -233,19 +189,19 @@
             <a id="downloadLink" class="download-link">📥 Скачать готовый файл</a>
         </div>
         
+        <div id="debugInfo" style="margin-top: 10px; font-size: 12px; opacity: 0.7; display: none;"></div>
+        
         <div class="footer-note">
             Конвертация выполняется в браузере
         </div>
     </div>
 
     <script>
-        // Получаем параметры из URL
         const urlParams = new URLSearchParams(window.location.search);
         const fileName = urlParams.get('file');
         
         let selectedFile = null;
         
-        // Если есть имя файла из приложения
         if (fileName) {
             document.getElementById('selectedFileInfo').style.display = 'block';
             document.getElementById('selectedFileInfo').innerHTML = `
@@ -264,7 +220,8 @@
                 document.getElementById('selectedFileInfo').style.display = 'block';
                 document.getElementById('selectedFileInfo').innerHTML = `
                     <strong>Выбран:</strong> ${selectedFile.name}<br>
-                    <strong>Размер:</strong> ${(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                    <strong>Размер:</strong> ${(selectedFile.size / 1024 / 1024).toFixed(2)} MB<br>
+                    <strong>Реальный формат:</strong> ${selectedFile.name.split('.').pop().toLowerCase()}
                 `;
             }
         };
@@ -298,14 +255,32 @@
                     setTimeout(() => {
                         document.getElementById('downloadArea').style.display = 'block';
                         
-                        // Создаем тестовый файл для скачивания
                         if (selectedFile) {
-                            const fileName = selectedFile.name.replace(/\.[^/.]+$/, '') + '.' + to;
-                            document.getElementById('downloadLink').href = URL.createObjectURL(selectedFile);
-                            document.getElementById('downloadLink').download = fileName;
+                            // Убираем расширение один раз!
+                            let baseName = selectedFile.name;
+                            // Удаляем ВСЕ расширения в конце
+                            baseName = baseName.replace(/\.[^/.]+$/, '');
+                            // Убираем возможный .stl в конце
+                            baseName = baseName.replace(/\.stl$/i, '');
+                            baseName = baseName.replace(/\.glb$/i, '');
+                            baseName = baseName.replace(/\.gltf$/i, '');
+                            baseName = baseName.replace(/\.obj$/i, '');
+                            
+                            const newFileName = baseName + '.' + to;
+                            
+                            // Создаем тестовый бинарный файл
+                            const blob = new Blob(['TEST'], {type: 'application/octet-stream'});
+                            document.getElementById('downloadLink').href = URL.createObjectURL(blob);
+                            document.getElementById('downloadLink').download = newFileName;
+                            
+                            // Показываем отладочную информацию
+                            document.getElementById('debugInfo').style.display = 'block';
+                            document.getElementById('debugInfo').innerHTML = `
+                                <strong>Отладка:</strong><br>
+                                Оригинал: ${selectedFile.name}<br>
+                            `;
                         } else {
-                            // Если нет файла, создаем тестовый
-                            const blob = new Blob(['Test file content'], {type: 'text/plain'});
+                            const blob = new Blob(['TEST'], {type: 'application/octet-stream'});
                             document.getElementById('downloadLink').href = URL.createObjectURL(blob);
                             document.getElementById('downloadLink').download = 'converted.' + to;
                         }
