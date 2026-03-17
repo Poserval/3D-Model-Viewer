@@ -1,4 +1,4 @@
-// script.js - ПОЛНАЯ ВЕРСИЯ С ПОДДЕРЖКОЙ OBJ
+// script.js - ПОЛНАЯ РАБОЧАЯ ВЕРСИЯ С ИСПРАВЛЕННЫМ ПРЕВЬЮ ДЛЯ STL
 
 // Состояния приложения
 const APP_STATES = {
@@ -152,7 +152,7 @@ class ModelViewerApp {
             antialias: true,
             alpha: true
         });
-        this.previewRenderer.setSize(200, 200);
+        this.previewRenderer.setSize(300, 300);
         this.previewRenderer.setClearColor(0x000000, 0);
         
         // Базовое освещение для превью
@@ -447,27 +447,40 @@ class ModelViewerApp {
             });
     }
 
+    // 🔧 ИСПРАВЛЕННЫЙ МЕТОД - КАМЕРА БЛИЖЕ И ПО ЦЕНТРУ
     setupPreviewCamera(object) {
+        // Сначала центрируем объект
         const box = new THREE.Box3().setFromObject(object);
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
         
         console.log('📐 Размер модели для превью:', size);
         
+        // Смещаем объект так, чтобы его центр оказался в начале координат
         object.position.x = -center.x;
         object.position.y = -center.y;
         object.position.z = -center.z;
         
+        // Применяем автоматическое выравнивание (поворот)
         this.autoAlignModel(object, size);
         
+        // Вычисляем максимальный размер модели
         const maxDim = Math.max(size.x, size.y, size.z);
         const fov = this.previewCamera.fov * (Math.PI / 180);
-        let cameraDistance = Math.abs(maxDim / Math.sin(fov / 2)) * 1.2;
         
-        cameraDistance = Math.max(cameraDistance, 1);
+        // 🔥 УМЕНЬШАЕМ КОЭФФИЦИЕНТ ДЛЯ ПРИБЛИЖЕНИЯ
+        // Чем меньше коэффициент, тем ближе камера
+        const distanceFactor = 0.7; // Было 1.2, теперь 0.7 - ближе
+        
+        // Рассчитываем дистанцию камеры
+        let cameraDistance = Math.abs(maxDim / Math.sin(fov / 2)) * distanceFactor;
+        
+        // Ограничиваем минимальную дистанцию, чтобы камера не была слишком близко
+        cameraDistance = Math.max(cameraDistance, 2);
         
         console.log('📷 Дистанция камеры превью:', cameraDistance);
         
+        // Устанавливаем камеру строго по центру
         this.previewCamera.position.set(0, 0, cameraDistance);
         this.previewCamera.lookAt(0, 0, 0);
         this.previewCamera.updateProjectionMatrix();
