@@ -45,15 +45,17 @@
                 </div>
             </div>
             
-            <!-- КНОПКИ В РЯД -->
+            <!-- КНОПКИ В РЯД (ОСНОВНЫЕ) -->
             <div class="button-row">
                 <input type="file" id="file-input" accept=".glb,.gltf,.obj,.stl" hidden>
                 <button id="select-file-btn" class="btn primary">ВЫБРАТЬ ФАЙЛ</button>
-                <button id="open-3d-btn" class="btn secondary" disabled>ОТКРЫТЬ В 3D</button>
+                <button id="open-3d-btn" class="btn primary" disabled>ОТКРЫТЬ В 3D</button>
             </div>
             
-            <!-- КНОПКА КОНВЕРТЕРА (отдельно под рядом) -->
-            <button id="go-to-converter-btn" class="btn converter">КОНВЕРТЕР (ОНЛАЙН)</button>
+            <!-- КНОПКА КОНВЕРТЕРА (второй ряд) -->
+            <div class="button-row converter-row">
+                <button id="go-to-converter-btn" class="btn primary converter">КОНВЕРТЕР (ОНЛАЙН)</button>
+            </div>
             
             <!-- НАЗВАНИЕ ФАЙЛА -->
             <div id="file-name" class="file-name"></div>
