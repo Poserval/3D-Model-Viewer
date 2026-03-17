@@ -24,10 +24,10 @@
                     <span>ВЫБЕРИТЕ 3D МОДЕЛЬ</span>
                 </div>
                 
-                <!-- Model Viewer для GLB/GLTF/OBJ -->
+                <!-- Model Viewer для GLB/GLTF -->
                 <model-viewer id="preview-model" class="preview-model" hidden></model-viewer>
                 
-                <!-- Three.js Canvas для STL -->
+                <!-- Three.js Canvas для STL и OBJ -->
                 <canvas id="preview-threejs" class="preview-threejs" hidden></canvas>
                 
                 <!-- Индикатор загрузки -->
@@ -64,7 +64,7 @@
             <h2 id="viewer-title" class="viewer-title"></h2>
         </header>
         <div class="viewer-container">
-            <!-- Model Viewer для GLB/GLTF/OBJ -->
+            <!-- Model Viewer для GLB/GLTF -->
             <model-viewer id="main-model" class="main-model" 
                 camera-controls 
                 auto-rotate
@@ -72,7 +72,7 @@
                 hidden>
             </model-viewer>
             
-            <!-- Three.js Canvas для STL -->
+            <!-- Three.js Canvas для STL и OBJ -->
             <canvas id="main-threejs" class="main-threejs" hidden></canvas>
         </div>
         <div class="viewer-controls">
@@ -88,6 +88,7 @@
     <!-- Three.js и загрузчики -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     
     <!-- Model Viewer -->
