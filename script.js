@@ -1,10 +1,12 @@
-// script.js - ОСНОВНАЯ ЛОГИКА ПРИЛОЖЕНИЯ
+// script.js - ПОЛНАЯ РАБОЧАЯ ВЕРСИЯ С ОТКРЫТИЕМ КОНВЕРТЕРА В БРАУЗЕРЕ
 
+// Состояния приложения
 const APP_STATES = {
     MAIN: 'main',
     VIEWER: 'viewer'
 };
 
+// Форматы для каждого рендерера
 const RENDERER_FORMATS = {
     MODEL_VIEWER: ['.glb', '.gltf', '.obj'],
     THREE_JS: ['.stl']
@@ -21,6 +23,7 @@ class ModelViewerApp {
         this.autoRotate = true;
         this.currentFileURL = null;
         
+        // Three.js переменные
         this.previewScene = null;
         this.previewCamera = null;
         this.previewRenderer = null;
@@ -32,6 +35,7 @@ class ModelViewerApp {
         this.mainModelObject = null;
         this.mainControls = null;
         
+        // ФЛАГИ ОСВЕЩЕНИЯ
         this.previewLightsInitialized = false;
         this.mainLightsInitialized = false;
         this.orbitingLight = null;
@@ -48,58 +52,77 @@ class ModelViewerApp {
     }
 
     initializeElements() {
+        // Главный экран
         this.mainScreen = document.getElementById('main-screen');
-        this.viewerScreen = document.getElementById('viewer-screen');
         this.fileInput = document.getElementById('file-input');
         this.selectFileBtn = document.getElementById('select-file-btn');
         this.open3dBtn = document.getElementById('open-3d-btn');
-        this.backBtn = document.getElementById('back-from-viewer-btn');
         this.fileName = document.getElementById('file-name');
+        this.previewPlaceholder = document.getElementById('preview-placeholder');
+        this.previewArea = document.getElementById('preview-area');
+        this.previewModel = document.getElementById('preview-model');
+        this.previewThreejs = document.getElementById('preview-threejs');
+        
+        // Экран просмотра
+        this.viewerScreen = document.getElementById('viewer-screen');
+        this.backFromViewerBtn = document.getElementById('back-from-viewer-btn');
         this.viewerTitle = document.getElementById('viewer-title');
         this.autoRotateBtn = document.getElementById('auto-rotate-btn');
         this.resetCameraBtn = document.getElementById('reset-camera-btn');
-        this.previewPlaceholder = document.getElementById('preview-placeholder');
-        this.previewArea = document.getElementById('preview-area');
-
-        this.previewModel = document.getElementById('preview-model');
         this.mainModel = document.getElementById('main-model');
-        this.previewThreejs = document.getElementById('preview-threejs');
         this.mainThreejs = document.getElementById('main-threejs');
+        
+        // Кнопка перехода в конвертер
+        this.goToConverterBtn = document.getElementById('go-to-converter-btn');
 
+        // Индикатор загрузки
         this.loadingIndicator = document.getElementById('loading-indicator');
         this.progressFill = document.querySelector('.progress-fill');
         this.progressText = document.querySelector('.progress-text');
-        
-        this.goToConverterBtn = document.getElementById('go-to-converter-btn');
     }
 
     bindEvents() {
+        // Главный экран
         this.selectFileBtn.addEventListener('click', () => this.fileInput.click());
         this.fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
         this.open3dBtn.addEventListener('click', () => this.openViewer());
-        this.backBtn.addEventListener('click', () => this.showMainScreen());
-        this.autoRotateBtn.addEventListener('click', () => this.toggleAutoRotate());
-        this.resetCameraBtn.addEventListener('click', () => this.resetCamera());
-        this.goToConverterBtn.addEventListener('click', () => this.showConverterScreen());
+        
+        // ⭐ ГЛАВНОЕ - КОНВЕРТЕР ОТКРЫВАЕТСЯ В БРАУЗЕРЕ
+        this.goToConverterBtn.addEventListener('click', () => {
+            const converterUrl = 'https://poserval.github.io/3D-Model-Viewer/converter.html';
+            const fileParam = this.currentFile ? '?file=' + encodeURIComponent(this.currentFile.name) : '';
+            const fullUrl = converterUrl + fileParam;
+            
+            // Пытаемся открыть в браузере
+            if (window.Capacitor) {
+                // Для APK на Android - открываем как внешнее приложение
+                window.open(fullUrl, '_system');
+            } else {
+                // Для веб-версии - открываем в новой вкладке
+                window.open(fullUrl, '_blank');
+            }
+            
+            console.log('🌐 Открываем конвертер в браузере:', fullUrl);
+        });
+        
+        // Экран просмотра
+        if (this.backFromViewerBtn) {
+            this.backFromViewerBtn.addEventListener('click', () => this.showMainScreen());
+        }
+        if (this.autoRotateBtn) {
+            this.autoRotateBtn.addEventListener('click', () => this.toggleAutoRotate());
+        }
+        if (this.resetCameraBtn) {
+            this.resetCameraBtn.addEventListener('click', () => this.resetCamera());
+        }
         
         window.addEventListener('resize', () => this.handleResize());
-    }
-
-    // ⭐ ВАЖНО: КОНВЕРТЕР ОТКРЫВАЕТСЯ В БРАУЗЕРЕ
-    showConverterScreen() {
-        const converterUrl = 'https://poserval.github.io/3D-Model-Viewer/converter.html';
-        const fileParam = this.currentFile ? '?file=' + encodeURIComponent(this.currentFile.name) : '';
-        const fullUrl = converterUrl + fileParam;
-        
-        // Просто открываем в браузере
-        window.open(fullUrl, '_blank');
-        
-        console.log('🌐 Конвертер открыт в браузере:', fullUrl);
     }
 
     initThreeJS() {
         console.log('Инициализация Three.js...');
         
+        // Для превью
         this.previewScene = new THREE.Scene();
         this.previewCamera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
         this.previewRenderer = new THREE.WebGLRenderer({ 
@@ -110,11 +133,9 @@ class ModelViewerApp {
         this.previewRenderer.setSize(200, 200);
         this.previewRenderer.setClearColor(0x000000, 0);
         
-        const previewAmbient = new THREE.AmbientLight(0xffffff, 1.0);
-        this.previewScene.add(previewAmbient);
-        
+        // Для основного просмотрщика
         this.mainScene = new THREE.Scene();
-        this.mainCamera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        this.mainCamera = new THREE.PerspectiveCamera(75, window.innerWidth / (window.innerHeight - 140), 0.1, 1000);
         this.mainRenderer = new THREE.WebGLRenderer({ 
             canvas: this.mainThreejs,
             antialias: true,
@@ -122,6 +143,7 @@ class ModelViewerApp {
         });
         this.mainRenderer.setClearColor(0x222222, 1);
         
+        // Камеры
         this.previewCamera.position.set(0, 0, 5);
         this.mainCamera.position.set(0, 0, 5);
 
@@ -129,6 +151,7 @@ class ModelViewerApp {
         this.animate();
     }
 
+    // ОСВЕЩЕНИЕ
     setupPreviewLighting() {
         if (this.previewLightsInitialized) return;
         
@@ -156,8 +179,8 @@ class ModelViewerApp {
         const ambientLight = new THREE.AmbientLight(0x404080, 0.4);
         this.mainScene.add(ambientLight);
         
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
-        directionalLight.position.set(10, 10, 5);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(5, 10, 5);
         this.mainScene.add(directionalLight);
         
         this.orbitingLight = new THREE.PointLight(0xffffff, 1.2, 100);
@@ -175,6 +198,7 @@ class ModelViewerApp {
         lightsToRemove.forEach(light => scene.remove(light));
     }
 
+    // РЕНДЕРЕРЫ
     getRendererForFormat(extension) {
         if (RENDERER_FORMATS.MODEL_VIEWER.includes(extension)) return 'model-viewer';
         if (RENDERER_FORMATS.THREE_JS.includes(extension)) return 'threejs';
@@ -244,11 +268,15 @@ class ModelViewerApp {
     }
 
     hidePreviewPlaceholder() {
-        if (this.previewPlaceholder) this.previewPlaceholder.style.display = 'none';
+        if (this.previewPlaceholder) {
+            this.previewPlaceholder.style.display = 'none';
+        }
     }
 
     showPreviewPlaceholder() {
-        if (this.previewPlaceholder) this.previewPlaceholder.style.display = 'flex';
+        if (this.previewPlaceholder) {
+            this.previewPlaceholder.style.display = 'flex';
+        }
     }
 
     async loadModelViewerPreview() {
@@ -283,7 +311,9 @@ class ModelViewerApp {
                 this.setupPreviewLighting();
                 this.setupPreviewCamera(modelObject);
                 
-                if (this.previewThreejs) this.previewThreejs.hidden = false;
+                if (this.previewThreejs) {
+                    this.previewThreejs.hidden = false;
+                }
                 this.hidePreviewPlaceholder();
                 resolve();
             }, 
@@ -341,7 +371,7 @@ class ModelViewerApp {
         if (this.mainControls) {
             this.mainControls.minDistance = cameraDistance * 0.5;
             this.mainControls.maxDistance = cameraDistance * 3;
-            this.mainControls.reset();
+            this.mainControls.target.set(0, 0, 0);
         }
     }
 
@@ -362,11 +392,14 @@ class ModelViewerApp {
     animate() {
         requestAnimationFrame(() => this.animate());
         
+        // Рендер превью
         if (this.previewRenderer && this.previewScene && this.previewCamera) {
             this.previewRenderer.render(this.previewScene, this.previewCamera);
         }
         
+        // Рендер основного просмотрщика
         if (this.mainRenderer && this.mainScene && this.mainCamera) {
+            // Анимация движущегося света
             if (this.orbitingLight && this.autoRotate) {
                 const time = Date.now() * 0.001;
                 this.orbitingLight.position.x = Math.cos(time * 0.5) * 8;
@@ -374,12 +407,16 @@ class ModelViewerApp {
                 this.orbitingLight.position.y = 4 + Math.sin(time * 0.3) * 2;
             }
             
-            if (this.autoRotate && this.mainModelObject && this.currentRenderer === 'threejs') {
+            // Автоповорот модели для Three.js
+            if (this.autoRotate && this.mainModelObject && this.currentRenderer === 'threejs' && !this.mainModel) {
                 this.mainModelObject.rotation.y += 0.01;
             }
             
             this.mainRenderer.render(this.mainScene, this.mainCamera);
-            if (this.mainControls) this.mainControls.update();
+            
+            if (this.mainControls) {
+                this.mainControls.update();
+            }
         }
     }
 
@@ -389,7 +426,17 @@ class ModelViewerApp {
         scene.traverse((child) => {
             if (child.isMesh) objectsToRemove.push(child);
         });
-        objectsToRemove.forEach(obj => scene.remove(obj));
+        objectsToRemove.forEach(obj => {
+            if (obj.geometry) obj.geometry.dispose();
+            if (obj.material) {
+                if (Array.isArray(obj.material)) {
+                    obj.material.forEach(m => m.dispose());
+                } else {
+                    obj.material.dispose();
+                }
+            }
+            scene.remove(obj);
+        });
     }
 
     hideAllRenderers() {
@@ -438,7 +485,7 @@ class ModelViewerApp {
             }
             if (this.mainModel) {
                 this.mainModel.src = this.currentFileURL;
-                this.mainModel.autoRotate = true;
+                this.mainModel.autoRotate = this.autoRotate;
                 this.mainModel.hidden = false;
             }
             setTimeout(resolve, 500);
@@ -470,7 +517,9 @@ class ModelViewerApp {
                 this.mainControls.dampingFactor = 0.05;
                 
                 this.autoRotate = true;
-                if (this.mainThreejs) this.mainThreejs.hidden = false;
+                if (this.mainThreejs) {
+                    this.mainThreejs.hidden = false;
+                }
                 this.updateMainThreeJSSize();
                 
                 resolve();
@@ -478,7 +527,10 @@ class ModelViewerApp {
             (progress) => {
                 this.updateProgress((progress.loaded / progress.total) * 100);
             },
-            reject);
+            (error) => {
+                console.error('Ошибка загрузки STL:', error);
+                reject(error);
+            });
         });
     }
 
@@ -491,6 +543,7 @@ class ModelViewerApp {
             this.mainRenderer.setSize(width, height);
             this.mainCamera.aspect = width / height;
             this.mainCamera.updateProjectionMatrix();
+            this.mainRenderer.render(this.mainScene, this.mainCamera);
         }
     }
 
@@ -518,9 +571,11 @@ class ModelViewerApp {
 
     toggleAutoRotate() {
         this.autoRotate = !this.autoRotate;
+        
         if (this.currentRenderer === 'model-viewer' && this.mainModel) {
             this.mainModel.autoRotate = this.autoRotate;
         }
+        
         this.updateAutoRotateButton();
     }
 
@@ -536,7 +591,11 @@ class ModelViewerApp {
             this.mainModel.cameraOrbit = '0deg 75deg 105%';
         } else if (this.currentRenderer === 'threejs' && this.mainModelObject) {
             this.setupMainCamera(this.mainModelObject);
-            if (this.mainControls) this.mainControls.reset();
+            if (this.mainControls) {
+                this.mainControls.target.set(0, 0, 0);
+                this.mainControls.update();
+            }
+            console.log('🎯 Камера сброшена');
         }
     }
 
@@ -562,18 +621,25 @@ class ModelViewerApp {
             this.mainControls.dispose();
             this.mainControls = null;
         }
+        
+        console.log('✅ Превью сброшено');
     }
 
     showLoadingIndicator() {
-        if (this.loadingIndicator) this.loadingIndicator.classList.add('active');
+        if (this.loadingIndicator) {
+            this.loadingIndicator.classList.add('active');
+        }
     }
 
     hideLoadingIndicator() {
-        if (this.loadingIndicator) this.loadingIndicator.classList.remove('active');
+        if (this.loadingIndicator) {
+            this.loadingIndicator.classList.remove('active');
+        }
         this.updateProgress(0);
     }
 }
 
+// Инициализация приложения
 document.addEventListener('DOMContentLoaded', () => {
     new ModelViewerApp();
 });
