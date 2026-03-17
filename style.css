@@ -63,8 +63,8 @@ body {
 
 /* УВЕЛИЧЕННОЕ ОКНО ПРЕВЬЮ */
 .preview-area {
-    width: 300px;  /* Увеличено с 200px до 300px */
-    height: 300px; /* Увеличено с 200px до 300px */
+    width: 500px;  /* Увеличено с 200px до 300px */
+    height: 500px; /* Увеличено с 200px до 300px */
     background: rgba(255, 255, 255, 0.1);
     border-radius: var(--border-radius);
     border: 2px dashed rgba(255, 255, 255, 0.3);
@@ -379,8 +379,8 @@ canvas[hidden] {
     }
     
     .preview-area {
-        width: 250px;  /* Увеличено с 180px до 250px */
-        height: 250px; /* Увеличено с 180px до 250px */
+        width: 400px;  /* Увеличено с 180px до 250px */
+        height: 400px; /* Увеличено с 180px до 250px */
     }
     
     .btn {
