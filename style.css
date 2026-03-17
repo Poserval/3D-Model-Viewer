@@ -169,21 +169,33 @@ canvas[hidden] {
     opacity: 0 !important;
 }
 
-/* КНОПКИ */
+/* 🔥 КОНТЕЙНЕР ДЛЯ КНОПОК В РЯД */
+.button-row {
+    display: flex;
+    gap: 15px;
+    width: 100%;
+    max-width: 450px; /* ширина как у preview-area */
+    justify-content: center;
+    margin-top: -40px; /* поднимаем кнопки ближе к окну */
+}
+
+/* КНОПКИ - обновленные размеры */
 .btn {
-    padding: 12px 24px;
+    padding: 15px 0; /* вертикальный отступ, горизонтальный убираем */
     border: none;
     border-radius: var(--border-radius);
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
     transition: var(--transition);
-    width: 200px;
+    width: 200px; /* фиксированная ширина */
+    max-width: 200px;
     text-align: center;
     position: relative;
     overflow: hidden;
     touch-action: manipulation;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    flex: 1; /* кнопки будут одинаковой ширины */
 }
 
 .btn:focus-visible {
@@ -438,8 +450,17 @@ canvas[hidden] {
         height: 300px;
     }
     
+    .button-row {
+        max-width: 300px; /* как у preview-area на мобилках */
+        gap: 10px;
+        margin-top: -20px;
+    }
+    
     .btn {
-        width: 180px;
+        width: 140px; /* чуть меньше на мобилках */
+        max-width: 140px;
+        padding: 12px 0;
+        font-size: 14px;
     }
     
     .viewer-title {
@@ -459,6 +480,10 @@ canvas[hidden] {
     .preview-area {
         width: 350px;
         height: 350px;
+    }
+    
+    .button-row {
+        max-width: 350px;
     }
     
     .control-btn {
