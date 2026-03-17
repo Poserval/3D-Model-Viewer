@@ -1,513 +1,109 @@
-:root {
-    --primary-color: #007AFF;
-    --gradient-start: #4158D0;
-    --gradient-end: #C850C0;
-    --border-radius: 12px;
-    --transition: all 0.3s ease;
-    --header-height: 60px;
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3DViewer</title>
+    <meta name="theme-color" content="#007AFF">
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
     
-    /* 🔥 НОВЫЕ ПЕРЕМЕННЫЕ ДЛЯ ЛОГОТИПА */
-    --logo-size: 300px;           /* увеличен размер */
-    --logo-size-mobile: 350px;    /* размер на мобилках */
-    --logo-margin-top: -120px;       /* отступ сверху */
-    --logo-margin-bottom: 10px;    /* отступ снизу */
-    --logo-3d-rotate-x: 2deg;      /* 3D поворот по X */
-    --logo-3d-rotate-y: 1deg;      /* 3D поворот по Y */
-    --logo-shadow-intensity: 0.5;   /* интенсивность тени */
-    --logo-glow-color: 200, 80, 192; /* RGB цвета свечения (розовый) */
-}
+    <!-- Favicon -->
+    <link rel="icon" href="icons/icon-app-192.png" type="image/png">
+</head>
+<body>
+    <!-- Главный экран -->
+    <div id="main-screen" class="screen active">
+        <div class="container">
+            <!-- ЛОГОТИП -->
+            <div class="app-logo">
+                <img src="icons/logo-header.png" alt="3D Model Viewer Logo" class="logo-image">
+            </div>
+            
+            <!-- ОКНО ПРЕДВАРИТЕЛЬНОГО ПРОСМОТРА -->
+            <div id="preview-area" class="preview-area">
+                <div id="preview-placeholder" class="preview-placeholder">
+                    <span>ВЫБЕРИТЕ 3D МОДЕЛЬ</span>
+                </div>
+                
+                <!-- Model Viewer для GLB/GLTF -->
+                <model-viewer id="preview-model" class="preview-model" hidden></model-viewer>
+                
+                <!-- Three.js Canvas для STL и OBJ -->
+                <canvas id="preview-threejs" class="preview-threejs" hidden></canvas>
+                
+                <!-- Индикатор загрузки -->
+                <div id="loading-indicator" class="loading-indicator">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text">Загрузка модели...</div>
+                    <div class="loading-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill"></div>
+                        </div>
+                        <div class="progress-text">0%</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- КНОПКИ В РЯД -->
+            <div class="button-row">
+                <input type="file" id="file-input" accept=".glb,.gltf,.obj,.stl" hidden>
+                <button id="select-file-btn" class="btn primary">ВЫБРАТЬ ФАЙЛ</button>
+                <button id="open-3d-btn" class="btn secondary" disabled>ОТКРЫТЬ В 3D</button>
+            </div>
+            
+            <!-- КНОПКА КОНВЕРТЕРА (отдельно под рядом) -->
+            <button id="go-to-converter-btn" class="btn converter">КОНВЕРТЕР (ОНЛАЙН)</button>
+            
+            <!-- НАЗВАНИЕ ФАЙЛА -->
+            <div id="file-name" class="file-name"></div>
+        </div>
+    </div>
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+    <!-- Экран просмотра 3D -->
+    <div id="viewer-screen" class="screen">
+        <header class="header">
+            <button id="back-btn" class="back-btn">← Назад</button>
+            <div class="header-logo">
+                <img src="icons/logo-header.png" alt="3D Model Viewer" class="logo-image-small">
+            </div>
+            <h2 id="viewer-title" class="viewer-title"></h2>
+        </header>
+        <div class="viewer-container">
+            <!-- Model Viewer для GLB/GLTF -->
+            <model-viewer id="main-model" class="main-model" 
+                camera-controls 
+                auto-rotate
+                shadow-intensity="1"
+                hidden>
+            </model-viewer>
+            
+            <!-- Three.js Canvas для STL и OBJ -->
+            <canvas id="main-threejs" class="main-threejs" hidden></canvas>
+        </div>
+        <div class="viewer-controls">
+            <button id="auto-rotate-btn" class="control-btn" data-active="true">
+                ⏸️ Автоповорот
+            </button>
+            <button id="reset-camera-btn" class="control-btn">
+                🎯 Сброс камеры
+            </button>
+        </div>
+    </div>
 
-/* 🔥 НОВЫЙ ФОН КАК НА КАРТИНКЕ */
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background: linear-gradient(145deg, #4158D0 0%, #C850C0 46%, #FFCC70 100%);
-    min-height: 100vh;
-    color: #333;
-    overflow: hidden;
-    position: relative;
-}
+    <!-- Третья страница для конвертера (пустая, открывается в браузере) -->
+    <div id="converter-screen" class="screen" style="display: none;"></div>
 
-/* 🔥 ДОПОЛНИТЕЛЬНОЕ СВЕЧЕНИЕ ДЛЯ ЭФФЕКТА */
-body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(circle at 20% 30%, rgba(255,255,255,0.3) 0%, transparent 50%),
-                radial-gradient(circle at 80% 70%, rgba(255,204,112,0.2) 0%, transparent 50%);
-    pointer-events: none;
-    z-index: 0;
-}
-
-.screen {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    z-index: 1;
-}
-
-.screen.active {
-    display: block;
-}
-
-/* Главный экран */
-.container {
-    max-width: 400px;
-    margin: 0 auto;
-    padding: 20px;
-    padding-bottom: max(20px, env(safe-area-inset-bottom));
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 20px;
-    position: relative;
-    z-index: 2;
-}
-
-/* 🔥 ОБНОВЛЕННЫЙ ЛОГОТИП С ПЕРЕМЕННЫМИ */
-.app-logo {
-    margin-bottom: var(--logo-margin-bottom);
-    margin-top: var(--logo-margin-top);
-    width: 100%;
-    display: flex;
-    justify-content: center;
-}
-
-.logo-image {
-    width: var(--logo-size);
-    height: var(--logo-size);
-    object-fit: contain;
-    filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.4)) 
-            drop-shadow(0 0 50px rgba(200, 80, 192, 0.6));
-    transform: perspective(1000px) rotateX(var(--logo-3d-rotate-x)) rotateY(var(--logo-3d-rotate-y));
-    transition: transform 0.5s ease, filter 0.3s ease;
-    background: transparent;
-    border-radius: 0;
-    box-shadow: none;
-}
-
-.logo-image:hover {
-    transform: perspective(1000px) rotateX(calc(var(--logo-3d-rotate-x) * 2)) rotateY(calc(var(--logo-3d-rotate-y) * 2)) scale(1.05);
-    filter: drop-shadow(0 25px 35px rgba(0, 0, 0, 0.5)) 
-            drop-shadow(0 0 70px rgba(200, 80, 192, 0.8));
-}
-
-/* УВЕЛИЧЕННОЕ ОКНО ПРЕВЬЮ */
-.preview-area {
-    width: 450px;
-    height: 450px;
-    margin-top: -100px;  /* отрицательное значение поднимает окно вверх */
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: var(--border-radius);
-    border: 2px solid rgba(255, 255, 255, 0.25);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    overflow: hidden;
-    backdrop-filter: blur(15px);
-    box-shadow: 
-        0 20px 40px rgba(0, 0, 0, 0.3),
-        inset 0 1px 2px rgba(255, 255, 255, 0.3);
-}
-
-.preview-placeholder {
-    color: white;
-    font-size: 14px;
-    font-weight: 600;
-    text-align: center;
-    padding: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-}
-
-.preview-placeholder[hidden] {
-    display: none !important;
-}
-
-/* СТИЛИ ДЛЯ РЕНДЕРЕРОВ */
-.preview-model, .preview-threejs {
-    width: 100%;
-    height: 100%;
-    border-radius: calc(var(--border-radius) - 2px);
-    position: absolute;
-    top: 0;
-    left: 0;
-    transform: translateZ(0);
-}
-
-.main-model, .main-threejs {
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    top: 0;
-    left: 0;
-    transform: translateZ(0);
-}
-
-model-viewer[hidden],
-canvas[hidden] {
-    display: none !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
-}
-
-/* 🔥 КОНТЕЙНЕР ДЛЯ КНОПОК В РЯД */
-.button-row {
-    display: flex;
-    gap: 15px;
-    width: 100%;
-    max-width: 450px; /* ширина как у preview-area */
-    justify-content: center;
-    margin-top: -40px; /* поднимаем кнопки ближе к окну */
-}
-
-/* КНОПКИ - обновленные размеры */
-.btn {
-    padding: 15px 0; /* вертикальный отступ, горизонтальный убираем */
-    border: none;
-    border-radius: var(--border-radius);
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: var(--transition);
-    width: 200px; /* фиксированная ширина */
-    max-width: 200px;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-    touch-action: manipulation;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-    flex: 1; /* кнопки будут одинаковой ширины */
-}
-
-.btn:focus-visible {
-    outline: 3px solid rgba(255, 255, 255, 0.8);
-    outline-offset: 2px;
-}
-
-.btn.primary {
-    background: linear-gradient(145deg, #007AFF, #0055BB);
-    color: white;
-}
-
-.btn.primary:hover {
-    background: linear-gradient(145deg, #0055BB, #003B80);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 122, 255, 0.5);
-}
-
-.btn.secondary {
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-    border: 2px solid rgba(255, 255, 255, 0.4);
-    backdrop-filter: blur(5px);
-}
-
-.btn.secondary:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.3);
-    transform: translateY(-2px);
-    border-color: rgba(255, 255, 255, 0.6);
-}
-
-.btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none !important;
-}
-
-/* 🔥 КНОПКА КОНВЕРТЕРА - без значка */
-.btn.converter {
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-    border: 2px solid rgba(255, 255, 255, 0.4);
-    backdrop-filter: blur(5px);
-    font-size: 15px; /* чуть меньше шрифт чтобы поместилось */
-}
-
-.btn.converter:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.3);
-    transform: translateY(-2px);
-    border-color: rgba(255, 255, 255, 0.6);
-}
-
-.file-name {
-    color: white;
-    font-size: 14px;
-    text-align: center;
-    margin-top: 10px;
-    word-break: break-all;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    max-height: 2.8em;
-    line-height: 1.4em;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-}
-
-/* Индикатор загрузки */
-.loading-indicator {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 15px;
-    border-radius: calc(var(--border-radius) - 2px);
-    z-index: 10;
-    backdrop-filter: blur(5px);
-}
-
-.loading-indicator.active {
-    display: flex;
-}
-
-.loading-spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid rgba(255, 255, 255, 0.2);
-    border-top: 4px solid white;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    will-change: transform;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-.loading-text {
-    color: white;
-    font-size: 14px;
-    font-weight: 600;
-}
-
-.loading-progress {
-    width: 80%;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    align-items: center;
-}
-
-.progress-bar {
-    width: 100%;
-    height: 6px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 3px;
-    overflow: hidden;
-}
-
-.progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--primary-color), #C850C0);
-    width: 0%;
-    transition: width 0.3s ease;
-}
-
-.progress-text {
-    color: white;
-    font-size: 12px;
-}
-
-/* ШАПКА ДЛЯ ВСЕХ ЭКРАНОВ */
-.header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: var(--header-height);
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(10px);
-    display: flex;
-    align-items: center;
-    padding: 0 max(20px, env(safe-area-inset-left));
-    padding-top: env(safe-area-inset-top);
-    padding-right: max(20px, env(safe-area-inset-right));
-    z-index: 100;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
-}
-
-.back-btn {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    margin-right: 15px;
-    touch-action: manipulation;
-    transition: var(--transition);
-}
-
-.back-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-2px);
-}
-
-.header-logo {
-    margin-right: 15px;
-}
-
-.logo-image-small {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    filter: drop-shadow(0 2px 5px rgba(0,0,0,0.3));
-}
-
-.viewer-title {
-    color: white;
-    font-size: 16px;
-    font-weight: 600;
-    flex: 1;
-    text-align: center;
-    margin-right: 80px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* ЭКРАН ПРОСМОТРА 3D */
-.viewer-screen {
-    background: #000;
-}
-
-.viewer-container {
-    position: fixed;
-    top: var(--header-height);
-    left: 0;
-    right: 0;
-    bottom: 60px;
-    background: #000;
-}
-
-.viewer-controls {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 60px;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(10px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding-bottom: env(safe-area-inset-bottom);
-    box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.3);
-}
-
-.control-btn {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: var(--border-radius);
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    transition: var(--transition);
-    touch-action: manipulation;
-    min-width: 120px;
-    backdrop-filter: blur(5px);
-}
-
-.control-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-2px);
-}
-
-.control-btn[data-active="true"] {
-    background: linear-gradient(145deg, var(--primary-color), #C850C0);
-}
-
-/* Адаптивность */
-@media (max-width: 480px) {
-    .container {
-        padding: 15px;
-    }
+    <!-- Three.js и загрузчики -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     
-    .logo-image {
-        width: var(--logo-size-mobile);
-        height: var(--logo-size-mobile);
-    }
+    <!-- Model Viewer -->
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
     
-    .preview-area {
-        width: 300px;
-        height: 300px;
-    }
-    
-    .button-row {
-        max-width: 300px; /* как у preview-area на мобилках */
-        gap: 10px;
-        margin-top: -20px;
-    }
-    
-    .btn {
-        width: 140px; /* чуть меньше на мобилках */
-        max-width: 140px;
-        padding: 12px 0;
-        font-size: 14px;
-    }
-    
-    .btn.converter {
-        font-size: 13px; /* еще меньше на мобилках */
-    }
-    
-    .viewer-title {
-        font-size: 14px;
-        margin-right: 60px;
-    }
-    
-    .control-btn {
-        padding: 8px 16px;
-        font-size: 13px;
-        min-width: 100px;
-    }
-}
-
-/* Дополнительные стили для больших экранов */
-@media (min-width: 768px) {
-    .preview-area {
-        width: 350px;
-        height: 350px;
-    }
-    
-    .button-row {
-        max-width: 350px;
-    }
-    
-    .control-btn {
-        padding: 12px 24px;
-        font-size: 15px;
-        min-width: 140px;
-    }
-}
+    <!-- Основной скрипт -->
+    <script src="script.js"></script>
+</body>
+</html>
