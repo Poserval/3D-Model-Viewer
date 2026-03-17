@@ -4,424 +4,91 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3DViewer</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        :root {
-            --primary: #007AFF;
-            --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-        
-        .screen {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: var(--gradient);
-            overflow-y: auto;
-        }
-        
-        .screen.active { display: block; }
-        
-        .container {
-            max-width: 400px;
-            margin: 0 auto;
-            padding: 20px;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            gap: 20px;
-        }
-        
-        .logo-image {
-            width: 120px; height: 120px;
-            border-radius: 20px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-        }
-        
-        .preview-area {
-            width: 200px; height: 200px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 12px;
-            border: 2px dashed rgba(255,255,255,0.3);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .preview-placeholder {
-            color: rgba(255,255,255,0.7);
-            font-size: 14px;
-            font-weight: 600;
-            text-align: center;
-            padding: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-        }
-        
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            width: 200px;
-            text-align: center;
-            background: var(--primary);
-            color: white;
-        }
-        
-        .btn.secondary {
-            background: rgba(255,255,255,0.2);
-            border: 2px solid rgba(255,255,255,0.3);
-        }
-        
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        
-        .file-name {
-            color: white;
-            font-size: 14px;
-            text-align: center;
-            word-break: break-all;
-        }
-        
-        .header {
-            position: fixed;
-            top: 0; left: 0; right: 0;
-            height: 60px;
-            background: rgba(0,0,0,0.8);
-            backdrop-filter: blur(10px);
-            display: flex;
-            align-items: center;
-            padding: 0 20px;
-            z-index: 100;
-            color: white;
-        }
-        
-        .back-btn {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-            margin-right: 20px;
-        }
-        
-        .viewer-container {
-            position: fixed;
-            top: 60px; left: 0; right: 0; bottom: 80px;
-            background: #000;
-        }
-        
-        .viewer-controls {
-            position: fixed;
-            bottom: 0; left: 0; right: 0;
-            height: 80px;
-            background: rgba(0,0,0,0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
-        }
-        
-        .control-btn {
-            padding: 12px 24px;
-            background: rgba(255,255,255,0.1);
-            border: none;
-            border-radius: 12px;
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-        }
-        
-        .control-btn[data-active="true"] {
-            background: var(--primary);
-        }
-    </style>
+    <meta name="theme-color" content="#007AFF">
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="icons/icon-app-192.png" type="image/png">
 </head>
 <body>
     <!-- Главный экран -->
     <div id="main-screen" class="screen active">
         <div class="container">
-            <img src="icons/logo-header.png" alt="Logo" class="logo-image">
+            <div class="app-logo">
+                <img src="icons/logo-header.png" alt="3D Model Viewer Logo" class="logo-image">
+            </div>
             
-            <div class="preview-area">
+            <div id="preview-area" class="preview-area">
                 <div id="preview-placeholder" class="preview-placeholder">
-                    ВЫБЕРИТЕ 3D МОДЕЛЬ
+                    <span>ВЫБЕРИТЕ 3D МОДЕЛЬ</span>
                 </div>
-                <model-viewer id="preview-model" hidden style="width:100%;height:100%;"></model-viewer>
-                <canvas id="preview-threejs" hidden style="width:100%;height:100%;"></canvas>
+                
+                <!-- Model Viewer для GLB/GLTF/OBJ -->
+                <model-viewer id="preview-model" class="preview-model" hidden></model-viewer>
+                
+                <!-- Three.js Canvas для STL -->
+                <canvas id="preview-threejs" class="preview-threejs" hidden></canvas>
+                
+                <!-- Индикатор загрузки -->
+                <div id="loading-indicator" class="loading-indicator">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text">Загрузка модели...</div>
+                    <div class="loading-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill"></div>
+                        </div>
+                        <div class="progress-text">0%</div>
+                    </div>
+                </div>
             </div>
             
             <input type="file" id="file-input" accept=".glb,.gltf,.obj,.stl" hidden>
-            <button id="select-file-btn" class="btn">Выбрать файл</button>
+            <button id="select-file-btn" class="btn primary">Выбрать файл</button>
             <button id="open-3d-btn" class="btn secondary" disabled>Открыть в 3D</button>
-            <button id="go-to-converter-btn" class="btn secondary" style="margin-top:10px;">🌐 Конвертер (в браузере)</button>
             <div id="file-name" class="file-name"></div>
         </div>
     </div>
 
-    <!-- Экран 3D просмотра -->
+    <!-- Экран просмотра -->
     <div id="viewer-screen" class="screen">
-        <div class="header">
-            <button id="back-from-viewer-btn" class="back-btn">←</button>
-            <span id="viewer-title" style="flex:1; text-align:center;">3D Просмотр</span>
-        </div>
+        <header class="header">
+            <button id="back-btn" class="back-btn">← Назад</button>
+            <div class="header-logo">
+                <img src="icons/logo-header.png" alt="3D Model Viewer" class="logo-image-small">
+            </div>
+            <h2 id="viewer-title" class="viewer-title"></h2>
+        </header>
         <div class="viewer-container">
-            <model-viewer id="main-model" style="width:100%;height:100%;" camera-controls auto-rotate hidden></model-viewer>
-            <canvas id="main-threejs" style="width:100%;height:100%;display:none;"></canvas>
+            <!-- Model Viewer для GLB/GLTF/OBJ -->
+            <model-viewer id="main-model" class="main-model" 
+                camera-controls 
+                auto-rotate
+                shadow-intensity="1"
+                hidden>
+            </model-viewer>
+            
+            <!-- Three.js Canvas для STL -->
+            <canvas id="main-threejs" class="main-threejs" hidden></canvas>
         </div>
         <div class="viewer-controls">
-            <button id="auto-rotate-btn" class="control-btn" data-active="true">⏸️ Автоповорот</button>
-            <button id="reset-camera-btn" class="control-btn">🎯 Сброс</button>
+            <button id="auto-rotate-btn" class="control-btn" data-active="true">
+                ⏸️ Автоповорот
+            </button>
+            <button id="reset-camera-btn" class="control-btn">
+                🎯 Сброс камеры
+            </button>
         </div>
     </div>
 
+    <!-- Three.js и загрузчики -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <!-- Model Viewer -->
     <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
     
-    <script>
-        class ModelViewerApp {
-            constructor() {
-                this.currentFile = null;
-                this.currentFileURL = null;
-                
-                // Для Three.js
-                this.mainScene = null;
-                this.mainCamera = null;
-                this.mainRenderer = null;
-                this.mainModelObject = null;
-                this.mainControls = null;
-                this.autoRotate = true;
-                
-                this.init();
-            }
-            
-            init() {
-                this.elements = {
-                    mainScreen: document.getElementById('main-screen'),
-                    viewerScreen: document.getElementById('viewer-screen'),
-                    fileInput: document.getElementById('file-input'),
-                    selectFileBtn: document.getElementById('select-file-btn'),
-                    open3dBtn: document.getElementById('open-3d-btn'),
-                    backBtn: document.getElementById('back-from-viewer-btn'),
-                    fileName: document.getElementById('file-name'),
-                    viewerTitle: document.getElementById('viewer-title'),
-                    autoRotateBtn: document.getElementById('auto-rotate-btn'),
-                    resetCameraBtn: document.getElementById('reset-camera-btn'),
-                    previewPlaceholder: document.getElementById('preview-placeholder'),
-                    previewModel: document.getElementById('preview-model'),
-                    previewThreejs: document.getElementById('preview-threejs'),
-                    mainModel: document.getElementById('main-model'),
-                    mainThreejs: document.getElementById('main-threejs'),
-                    goToConverterBtn: document.getElementById('go-to-converter-btn')
-                };
-                
-                this.bindEvents();
-                this.initThreeJS();
-            }
-            
-            bindEvents() {
-                this.elements.selectFileBtn.onclick = () => this.elements.fileInput.click();
-                this.elements.fileInput.onchange = (e) => this.handleFileSelect(e);
-                this.elements.open3dBtn.onclick = () => this.openViewer();
-                this.elements.backBtn.onclick = () => this.showMainScreen();
-                this.elements.autoRotateBtn.onclick = () => this.toggleAutoRotate();
-                this.elements.resetCameraBtn.onclick = () => this.resetCamera();
-                
-                // ⭐ ВАЖНО: КОНВЕРТЕР В БРАУЗЕРЕ
-                this.elements.goToConverterBtn.onclick = () => {
-                    const url = 'https://poserval.github.io/3D-Model-Viewer/converter.html';
-                    const fileParam = this.currentFile ? '?file=' + encodeURIComponent(this.currentFile.name) : '';
-                    
-                    // Открываем в отдельном браузере
-                    window.open(url + fileParam, '_system');
-                    
-                    // Если _system не работает, пробуем _blank
-                    setTimeout(() => {
-                        window.open(url + fileParam, '_blank');
-                    }, 100);
-                };
-                
-                window.onresize = () => this.updateMainSize();
-            }
-            
-            initThreeJS() {
-                this.mainScene = new THREE.Scene();
-                this.mainCamera = new THREE.PerspectiveCamera(75, window.innerWidth / (window.innerHeight - 140), 0.1, 1000);
-                this.mainRenderer = new THREE.WebGLRenderer({ canvas: this.elements.mainThreejs, antialias: true });
-                this.mainRenderer.setSize(window.innerWidth, window.innerHeight - 140);
-                
-                // Освещение
-                const ambient = new THREE.AmbientLight(0x404080, 0.5);
-                this.mainScene.add(ambient);
-                
-                const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-                dirLight.position.set(1, 2, 1);
-                this.mainScene.add(dirLight);
-            }
-            
-            handleFileSelect(e) {
-                const file = e.target.files[0];
-                if (!file) return;
-                
-                this.currentFile = file;
-                this.elements.fileName.textContent = file.name;
-                this.elements.open3dBtn.disabled = false;
-                this.elements.previewPlaceholder.style.display = 'none';
-                
-                if (this.currentFileURL) URL.revokeObjectURL(this.currentFileURL);
-                this.currentFileURL = URL.createObjectURL(file);
-                
-                const ext = '.' + file.name.split('.').pop().toLowerCase();
-                if (['.glb', '.gltf', '.obj'].includes(ext)) {
-                    this.elements.previewModel.src = this.currentFileURL;
-                    this.elements.previewModel.hidden = false;
-                    this.elements.previewThreejs.hidden = true;
-                } else if (ext === '.stl') {
-                    this.loadSTLPreview(this.currentFileURL);
-                }
-            }
-            
-            loadSTLPreview(url) {
-                const loader = new THREE.STLLoader();
-                loader.load(url, (geo) => {
-                    const mat = new THREE.MeshStandardMaterial({ color: 0xCCCCCC });
-                    const mesh = new THREE.Mesh(geo, mat);
-                    
-                    const scene = new THREE.Scene();
-                    scene.add(mesh);
-                    
-                    const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
-                    const box = new THREE.Box3().setFromObject(mesh);
-                    const size = box.getSize(new THREE.Vector3());
-                    camera.position.set(0, 0, Math.max(size.x, size.y, size.z) * 1.5);
-                    
-                    const renderer = new THREE.WebGLRenderer({ canvas: this.elements.previewThreejs });
-                    renderer.setSize(200, 200);
-                    renderer.render(scene, camera);
-                    
-                    this.elements.previewThreejs.hidden = false;
-                    this.elements.previewModel.hidden = true;
-                });
-            }
-            
-            openViewer() {
-                this.elements.mainScreen.classList.remove('active');
-                this.elements.viewerScreen.classList.add('active');
-                this.elements.viewerTitle.textContent = this.currentFile.name;
-                
-                this.elements.mainModel.hidden = true;
-                this.elements.mainThreejs.hidden = true;
-                
-                const ext = '.' + this.currentFile.name.split('.').pop().toLowerCase();
-                if (['.glb', '.gltf', '.obj'].includes(ext)) {
-                    this.elements.mainModel.src = this.currentFileURL;
-                    this.elements.mainModel.autoRotate = this.autoRotate;
-                    this.elements.mainModel.hidden = false;
-                } else if (ext === '.stl') {
-                    this.loadSTLViewer(this.currentFileURL);
-                }
-            }
-            
-            loadSTLViewer(url) {
-                const loader = new THREE.STLLoader();
-                loader.load(url, (geo) => {
-                    this.clearScene();
-                    
-                    const mat = new THREE.MeshStandardMaterial({ color: 0xCCCCCC, roughness: 0.3, metalness: 0.1 });
-                    this.mainModelObject = new THREE.Mesh(geo, mat);
-                    
-                    const box = new THREE.Box3().setFromObject(this.mainModelObject);
-                    const center = box.getCenter(new THREE.Vector3());
-                    this.mainModelObject.position.set(-center.x, -center.y, -center.z);
-                    this.mainScene.add(this.mainModelObject);
-                    
-                    const size = box.getSize(new THREE.Vector3());
-                    const maxDim = Math.max(size.x, size.y, size.z);
-                    this.mainCamera.position.set(0, 0, maxDim * 1.5);
-                    
-                    this.mainControls = new THREE.OrbitControls(this.mainCamera, this.elements.mainThreejs);
-                    this.mainControls.enableDamping = true;
-                    
-                    this.elements.mainThreejs.hidden = false;
-                    this.updateMainSize();
-                });
-            }
-            
-            clearScene() {
-                while(this.mainScene.children.length > 0) {
-                    this.mainScene.remove(this.mainScene.children[0]);
-                }
-                this.setupMainLighting();
-            }
-            
-            setupMainLighting() {
-                const ambient = new THREE.AmbientLight(0x404080, 0.4);
-                this.mainScene.add(ambient);
-                
-                const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-                dirLight.position.set(5, 10, 5);
-                this.mainScene.add(dirLight);
-            }
-            
-            updateMainSize() {
-                if (!this.mainRenderer) return;
-                const w = window.innerWidth;
-                const h = window.innerHeight - 140;
-                this.mainRenderer.setSize(w, h);
-                this.mainCamera.aspect = w / h;
-                this.mainCamera.updateProjectionMatrix();
-            }
-            
-            showMainScreen() {
-                this.elements.mainScreen.classList.add('active');
-                this.elements.viewerScreen.classList.remove('active');
-                this.autoRotate = false;
-                if (this.mainControls) this.mainControls.dispose();
-            }
-            
-            toggleAutoRotate() {
-                this.autoRotate = !this.autoRotate;
-                if (this.elements.mainModel) this.elements.mainModel.autoRotate = this.autoRotate;
-                this.elements.autoRotateBtn.setAttribute('data-active', this.autoRotate);
-                this.elements.autoRotateBtn.innerHTML = this.autoRotate ? '⏸️ Автоповорот' : '▶️ Автоповорот';
-            }
-            
-            resetCamera() {
-                if (this.mainControls && this.mainModelObject) {
-                    const box = new THREE.Box3().setFromObject(this.mainModelObject);
-                    const size = box.getSize(new THREE.Vector3());
-                    this.mainCamera.position.set(0, 0, Math.max(size.x, size.y, size.z) * 1.5);
-                    this.mainControls.target.set(0, 0, 0);
-                    this.mainControls.update();
-                }
-            }
-            
-            animate() {
-                requestAnimationFrame(() => this.animate());
-                
-                if (this.mainRenderer && this.mainScene && this.mainCamera) {
-                    if (this.autoRotate && this.mainModelObject && !this.elements.mainModel.hidden) {
-                        this.mainModelObject.rotation.y += 0.005;
-                    }
-                    this.mainRenderer.render(this.mainScene, this.mainCamera);
-                    if (this.mainControls) this.mainControls.update();
-                }
-            }
-        }
-        
-        document.addEventListener('DOMContentLoaded', () => {
-            const app = new ModelViewerApp();
-            app.animate();
-        });
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
