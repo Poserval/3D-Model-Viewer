@@ -1,4 +1,4 @@
-// script.js - РАБОЧАЯ ВЕРСИЯ С КОНВЕРТЕРОМ В БРАУЗЕРЕ
+// script.js - ПОЛНАЯ РАБОЧАЯ ВЕРСИЯ С КОНВЕРТЕРОМ
 
 // Состояния приложения
 const APP_STATES = {
@@ -36,12 +36,12 @@ class ModelViewerApp {
         this.mainModelObject = null;
         this.mainControls = null;
         
-        // 🔧 ФЛАГИ ОСВЕЩЕНИЯ
+        // ФЛАГИ ОСВЕЩЕНИЯ
         this.previewLightsInitialized = false;
         this.mainLightsInitialized = false;
         this.orbitingLight = null;
         
-        // 🔧 КНОПКА КОНВЕРТЕРА
+        // КНОПКА КОНВЕРТЕРА
         this.converterBtn = null;
         
         this.init();
@@ -81,7 +81,7 @@ class ModelViewerApp {
         this.progressFill = document.querySelector('.progress-fill');
         this.progressText = document.querySelector('.progress-text');
         
-        // 🔧 КНОПКА КОНВЕРТЕРА (добавляем если есть)
+        // КНОПКА КОНВЕРТЕРА
         this.converterBtn = document.getElementById('go-to-converter-btn');
     }
 
@@ -114,7 +114,7 @@ class ModelViewerApp {
             this.handleResize();
         });
         
-        // 🔧 КОНВЕРТЕР - ОТКРЫВАЕМ В БРАУЗЕРЕ
+        // КОНВЕРТЕР - ОТКРЫВАЕМ В БРАУЗЕРЕ
         if (this.converterBtn) {
             this.converterBtn.addEventListener('click', () => {
                 this.openConverterInBrowser();
@@ -122,11 +122,10 @@ class ModelViewerApp {
         }
     }
     
-    // 🔧 НОВЫЙ МЕТОД - ОТКРЫТИЕ КОНВЕРТЕРА В БРАУЗЕРЕ
+    // ОТКРЫТИЕ КОНВЕРТЕРА В БРАУЗЕРЕ
     openConverterInBrowser() {
         const converterUrl = 'https://poserval.github.io/3D-Model-Viewer/converter.html';
         
-        // Добавляем имя файла в URL если есть
         let fullUrl = converterUrl;
         if (this.currentFile) {
             fullUrl += '?file=' + encodeURIComponent(this.currentFile.name);
@@ -134,14 +133,8 @@ class ModelViewerApp {
         
         console.log('🌐 Открываем конвертер в браузере:', fullUrl);
         
-        // Пробуем открыть в браузере
-        if (window.Capacitor && window.Capacitor.isNative) {
-            // Для нативного Android
-            window.open(fullUrl, '_system');
-        } else {
-            // Для веб-версии
-            window.open(fullUrl, '_blank');
-        }
+        // Открываем в браузере
+        window.open(fullUrl, '_blank');
     }
 
     initThreeJS() {
@@ -157,6 +150,10 @@ class ModelViewerApp {
         });
         this.previewRenderer.setSize(200, 200);
         this.previewRenderer.setClearColor(0x000000, 0);
+        
+        // Базовое освещение для превью
+        const previewAmbient = new THREE.AmbientLight(0xffffff, 1.0);
+        this.previewScene.add(previewAmbient);
         
         // Для основного просмотрщика
         this.mainScene = new THREE.Scene();
@@ -176,7 +173,7 @@ class ModelViewerApp {
         this.animate();
     }
 
-    // 🔧 ОСВЕЩЕНИЕ ДЛЯ ПРЕВЬЮ
+    // ОСВЕЩЕНИЕ ДЛЯ ПРЕВЬЮ
     setupPreviewLighting() {
         if (this.previewLightsInitialized) {
             return;
@@ -200,7 +197,7 @@ class ModelViewerApp {
         this.previewLightsInitialized = true;
     }
 
-    // 🔧 ОСВЕЩЕНИЕ ДЛЯ ОСНОВНОГО ПРОСМОТРА
+    // ОСВЕЩЕНИЕ ДЛЯ ОСНОВНОГО ПРОСМОТРА
     setupMainLighting() {
         if (this.mainLightsInitialized) {
             return;
@@ -224,7 +221,6 @@ class ModelViewerApp {
         this.mainLightsInitialized = true;
     }
 
-    // 🔧 УДАЛЕНИЕ СВЕТА
     removeAllLights(scene) {
         const lightsToRemove = [];
         scene.traverse((child) => {
@@ -463,11 +459,14 @@ class ModelViewerApp {
     animate() {
         requestAnimationFrame(() => this.animate());
         
+        // Рендер превью
         if (this.previewRenderer && this.previewScene && this.previewCamera) {
             this.previewRenderer.render(this.previewScene, this.previewCamera);
         }
         
+        // Рендер основного просмотрщика
         if (this.mainRenderer && this.mainScene && this.mainCamera) {
+            // Анимация движущегося света
             if (this.orbitingLight && this.autoRotate) {
                 const time = Date.now() * 0.001;
                 this.orbitingLight.position.x = Math.cos(time * 0.5) * 8;
@@ -475,6 +474,7 @@ class ModelViewerApp {
                 this.orbitingLight.position.y = 4 + Math.sin(time * 0.3) * 2;
             }
             
+            // Автоповорот модели
             if (this.autoRotate && this.mainModelObject && this.currentRenderer === 'threejs') {
                 this.mainModelObject.rotation.y += 0.01;
             }
