@@ -10,9 +10,37 @@
     
     <!-- Favicon -->
     <link rel="icon" href="icons/icon-app-192.png" type="image/png">
+    
+    <style>
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .nav-btn {
+            flex: 1;
+            padding: 15px;
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .web-frame {
+            width: 100%;
+            height: calc(100vh - 60px);
+            border: none;
+            background: white;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+        }
+    </style>
 </head>
 <body>
-    <!-- ГЛАВНЫЙ ЭКРАН -->
+    <!-- Главный экран -->
     <div id="main-screen" class="screen active">
         <div class="container">
             <div class="app-logo">
@@ -23,93 +51,100 @@
                 <div id="preview-placeholder" class="preview-placeholder">
                     <span>ВЫБЕРИТЕ 3D МОДЕЛЬ</span>
                 </div>
-                
-                <!-- Model Viewer для GLB/GLTF/OBJ -->
                 <model-viewer id="preview-model" class="preview-model" hidden></model-viewer>
-                
-                <!-- Three.js Canvas для STL -->
                 <canvas id="preview-threejs" class="preview-threejs" hidden></canvas>
                 
-                <!-- Индикатор загрузки -->
                 <div id="loading-indicator" class="loading-indicator">
                     <div class="loading-spinner"></div>
                     <div class="loading-text">Загрузка модели...</div>
-                    <div class="loading-progress">
-                        <div class="progress-bar">
-                            <div class="progress-fill"></div>
-                        </div>
-                        <div class="progress-text">0%</div>
-                    </div>
                 </div>
             </div>
             
             <input type="file" id="file-input" accept=".glb,.gltf,.obj,.stl" hidden>
             <button id="select-file-btn" class="btn primary">Выбрать файл</button>
             <button id="open-3d-btn" class="btn secondary" disabled>Открыть в 3D</button>
-            
-            <!-- КНОПКА КОНВЕРТЕРА -->
-            <button id="go-to-converter-btn" class="btn secondary" style="margin-top: 10px;">🔄 Конвертер (Web)</button>
-            
             <div id="file-name" class="file-name"></div>
-        </div>
-    </div>
-
-    <!-- ЭКРАН ПРОСМОТРА 3D -->
-    <div id="viewer-screen" class="screen">
-        <header class="header">
-            <button id="back-from-viewer-btn" class="back-btn">← Назад</button>
-            <div class="header-logo">
-                <img src="icons/logo-header.png" alt="3D Model Viewer" class="logo-image-small">
-            </div>
-            <h2 id="viewer-title" class="viewer-title"></h2>
-        </header>
-        <div class="viewer-container">
-            <!-- Model Viewer для GLB/GLTF/OBJ -->
-            <model-viewer id="main-model" class="main-model" 
-                camera-controls 
-                auto-rotate
-                shadow-intensity="1"
-                hidden>
-            </model-viewer>
             
-            <!-- Three.js Canvas для STL -->
-            <canvas id="main-threejs" class="main-threejs" hidden></canvas>
-        </div>
-        <div class="viewer-controls">
-            <button id="auto-rotate-btn" class="control-btn" data-active="true">
-                ⏸️ Автоповорот
-            </button>
-            <button id="reset-camera-btn" class="control-btn">
-                🎯 Сброс камеры
-            </button>
+            <div class="nav-buttons">
+                <button id="show-converter-btn" class="nav-btn">🌐 Конвертер</button>
+            </div>
         </div>
     </div>
 
-    <!-- ЭКРАН КОНВЕРТЕРА (ВЕБ-ВЕРСИЯ В IFRAME) -->
+    <!-- Экран просмотра 3D -->
+    <div id="viewer-screen" class="screen">
+        <div style="position: fixed; top: 0; left: 0; right: 0; height: 50px; background: rgba(0,0,0,0.9); display: flex; align-items: center; padding: 0 20px; z-index: 100;">
+            <button id="back-from-viewer" style="background: none; border: none; color: white; font-size: 24px; cursor: pointer;">←</button>
+            <span style="color: white; margin-left: 20px; flex: 1;" id="viewer-title"></span>
+        </div>
+        <div style="position: fixed; top: 50px; left: 0; right: 0; bottom: 0;">
+            <model-viewer id="main-model" style="width: 100%; height: 100%;" camera-controls auto-rotate shadow-intensity="1" hidden></model-viewer>
+            <canvas id="main-threejs" style="width: 100%; height: 100%; display: none;"></canvas>
+        </div>
+        <div style="position: fixed; bottom: 20px; left: 0; right: 0; display: flex; justify-content: center; gap: 20px;">
+            <button id="auto-rotate-btn" style="padding: 15px 30px; background: rgba(255,255,255,0.2); border: none; border-radius: 12px; color: white; font-weight: 600;">⏸️ Автоповорот</button>
+            <button id="reset-camera-btn" style="padding: 15px 30px; background: rgba(255,255,255,0.2); border: none; border-radius: 12px; color: white; font-weight: 600;">🎯 Сброс</button>
+        </div>
+    </div>
+
+    <!-- Экран конвертера (iframe) -->
     <div id="converter-screen" class="screen">
-        <header class="header">
-            <button id="back-from-converter-btn" class="back-btn">← Назад</button>
-            <div class="header-logo">
-                <img src="icons/logo-header.png" alt="3D Model Viewer" class="logo-image-small">
-            </div>
-            <h2 class="viewer-title">Web Конвертер</h2>
-        </header>
-        
-        <div class="converter-container">
-            <div id="converter-web-view" class="converter-content">
-                <!-- Сюда будет вставлен iframe -->
-            </div>
+        <div style="position: fixed; top: 0; left: 0; right: 0; height: 50px; background: rgba(0,0,0,0.9); display: flex; align-items: center; padding: 0 20px; z-index: 100;">
+            <button id="back-from-converter" style="background: none; border: none; color: white; font-size: 24px; cursor: pointer;">←</button>
+            <span style="color: white; margin-left: 20px;">Web Конвертер</span>
         </div>
+        <iframe id="converter-iframe" class="web-frame" src="https://poserval.github.io/3D-Model-Viewer/converter.html" sandbox="allow-same-origin allow-scripts allow-forms allow-downloads allow-popups"></iframe>
     </div>
 
-    <!-- Three.js и загрузчики -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    
-    <!-- Model Viewer -->
     <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
     
-    <script src="script.js"></script>
+    <script>
+        // Простая навигация между экранами
+        const screens = {
+            main: document.getElementById('main-screen'),
+            viewer: document.getElementById('viewer-screen'),
+            converter: document.getElementById('converter-screen')
+        };
+        
+        // Навигация
+        document.getElementById('show-converter-btn').onclick = () => {
+            screens.main.classList.remove('active');
+            screens.converter.classList.add('active');
+        };
+        
+        document.getElementById('back-from-viewer').onclick = () => {
+            screens.viewer.classList.remove('active');
+            screens.main.classList.add('active');
+        };
+        
+        document.getElementById('back-from-converter').onclick = () => {
+            screens.converter.classList.remove('active');
+            screens.main.classList.add('active');
+        };
+        
+        // Обработка файлов
+        const fileInput = document.getElementById('file-input');
+        const selectFileBtn = document.getElementById('select-file-btn');
+        const open3dBtn = document.getElementById('open-3d-btn');
+        const fileName = document.getElementById('file-name');
+        
+        selectFileBtn.onclick = () => fileInput.click();
+        
+        fileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                fileName.textContent = file.name;
+                open3dBtn.disabled = false;
+            }
+        };
+        
+        open3dBtn.onclick = () => {
+            screens.main.classList.remove('active');
+            screens.viewer.classList.add('active');
+        };
+    </script>
 </body>
 </html>
