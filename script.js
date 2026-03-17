@@ -470,7 +470,7 @@ class ModelViewerApp {
         
         // 🔥 УМЕНЬШАЕМ КОЭФФИЦИЕНТ ДЛЯ ПРИБЛИЖЕНИЯ
         // Чем меньше коэффициент, тем ближе камера
-        const distanceFactor = 0.7; // Было 1.2, теперь 0.7 - ближе
+        const distanceFactor = 0.3; // Было 1.2, теперь 0.7 - ближе
         
         // Рассчитываем дистанцию камеры
         let cameraDistance = Math.abs(maxDim / Math.sin(fov / 2)) * distanceFactor;
