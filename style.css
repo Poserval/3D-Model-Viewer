@@ -2,20 +2,14 @@
     --primary-color: #007AFF;
     --gradient-start: #4158D0;
     --gradient-end: #C850C0;
-    --border-radius: 20px;
+    --border-radius: 16px;
     --transition: all 0.3s ease;
     --header-height: 60px;
     
-    /* 🔥 РАЗМЕРЫ */
-    --logo-size: 260px;
-    --logo-size-mobile: 220px;
-    --preview-size: 340px;
-    --preview-size-mobile: 300px;
-    
-    /* 🔥 ОТСТУПЫ */
-    --logo-top-margin: 30px;
-    --preview-margin: 15px;
-    --button-gap: 12px;
+    /* 🔥 ПАРАМЕТРЫ ДВИЖЕНИЯ */
+    --logo-offset: -80px;        /* двигает логотип */
+    --content-offset: -250px;     /* двигает ВСЁ, что под логотипом */
+    --vertical-spacing: 0px;      /* зазор */
 }
 
 * {
@@ -24,80 +18,248 @@
     box-sizing: border-box;
 }
 
+/* 🔥 ФОН */
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background: linear-gradient(145deg, #4158D0 0%, #C850C0 50%, #FFB347 100%);
+    background: linear-gradient(145deg, #4158D0 0%, #C850C0 46%, #FFCC70 100%);
     min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    color: #333;
+    overflow: hidden;
+    position: relative;
+}
+
+/* 🔥 ДОПОЛНИТЕЛЬНОЕ СВЕЧЕНИЕ */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 20% 30%, rgba(255,255,255,0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(255,204,112,0.2) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
 }
 
 .screen {
     display: none;
-    width: 100%;
-    min-height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    z-index: 1;
 }
 
 .screen.active {
     display: block;
 }
 
+/* ГЛАВНЫЙ ЭКРАН */
 .container {
     max-width: 400px;
     margin: 0 auto;
-    padding: 20px;
+    padding: 0 20px;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    position: relative;
+    z-index: 2;
+    /* 🔥 МОЩНЫЙ ПОДТЯГ ВСЕГО СОДЕРЖИМОГО */
+    transform: translateY(calc(var(--logo-offset) + var(--content-offset)));
 }
 
-/* 🔥 ЛОГОТИП */
+/* 🔥 ЛОГОТИП - ОСТАЁТСЯ НА МЕСТЕ */
 .app-logo {
+    position: relative;
     width: 100%;
     display: flex;
     justify-content: center;
-    margin-bottom: 10px;
+    margin: 0;
+    padding: 0;
+    z-index: 10;
+    /* 🔥 КОМПЕНСИРУЕМ ДВИЖЕНИЕ КОНТЕЙНЕРА */
+    transform: translateY(calc(-1 * var(--logo-offset)));
 }
 
 .logo-image {
-    width: var(--logo-size);
-    height: auto;
+    width: 280px;
+    height: 280px;
     object-fit: contain;
+    filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.4)) 
+            drop-shadow(0 0 50px rgba(200, 80, 192, 0.6));
+    transform: perspective(1000px) rotateX(2deg) rotateY(1deg);
+    transition: transform 0.5s ease, filter 0.3s ease;
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
 }
 
-/* 🔥 ОКНО ПРЕВЬЮ - БОЛЬШОЕ */
-.preview-area {
+/* 🔥 КОНТЕЙНЕР НИЖНИХ ЭЛЕМЕНТОВ */
+.content-wrapper {
     width: 100%;
-    max-width: var(--preview-size);
-    aspect-ratio: 1/1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 5;
+}
+
+/* 🔥 ОКНО ПРЕВЬЮ */
+.preview-area {
+    width: 450px;
+    height: 450px;
     background: rgba(255, 255, 255, 0.15);
     border-radius: var(--border-radius);
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.25);
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
     overflow: hidden;
-    backdrop-filter: blur(8px);
-    margin: 15px 0;
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(15px);
+    box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.3),
+        inset 0 1px 2px rgba(255, 255, 255, 0.3);
 }
 
 .preview-placeholder {
     color: white;
-    font-size: 20px;
+    font-size: 14px;
     font-weight: 600;
     text-align: center;
     padding: 20px;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
 .preview-placeholder[hidden] {
     display: none !important;
+}
+
+/* СТИЛИ ДЛЯ РЕНДЕРЕРОВ */
+.preview-model, .preview-threejs {
+    width: 100%;
+    height: 100%;
+    border-radius: calc(var(--border-radius) - 2px);
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: translateZ(0);
+}
+
+.main-model, .main-threejs {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: translateZ(0);
+}
+
+model-viewer[hidden],
+canvas[hidden] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+}
+
+/* 🔥 ТОНКАЯ ПОЛОСКА */
+.file-name-container {
+    width: 100%;
+    max-width: 450px;
+    margin: 10px 0;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 30px;
+}
+
+.file-name-container::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: rgba(0, 0, 0, 0.6);
+    transform: translateY(-50%);
+    z-index: 1;
+}
+
+.file-name {
+    position: relative;
+    color: white;
+    font-size: 15px;
+    font-weight: 600;
+    text-align: center;
+    word-break: break-all;
+    display: inline-block;
+    max-width: 90%;
+    background: transparent;
+    padding: 0 10px;
+    z-index: 2;
+    text-shadow: 
+        -1px -1px 0 #000,  
+         1px -1px 0 #000,
+        -1px  1px 0 #000,
+         1px  1px 0 #000;
+    letter-spacing: 0.5px;
+    line-height: 30px;
+}
+
+/* 🔥 КОНТЕЙНЕРЫ ДЛЯ КНОПОК */
+.button-row {
+    display: flex;
+    flex-direction: row;
+    gap: 15px;
+    width: 100%;
+    max-width: 450px;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+/* 🔥 ВСЕ КНОПКИ */
+.btn {
+    padding: 16px 0;
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    width: 200px;
+    max-width: 200px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    touch-action: manipulation;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    flex: 1;
+    background: linear-gradient(145deg, #007AFF, #0055BB);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn:hover:not(:disabled) {
+    background: linear-gradient(145deg, #0055BB, #003B80);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px rgba(0, 122, 255, 0.5);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+    background: linear-gradient(145deg, #4a4a4a, #2a2a2a);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 /* ИНДИКАТОР ЗАГРУЗКИ */
@@ -107,14 +269,15 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.8);
     display: none;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 15px;
+    border-radius: calc(var(--border-radius) - 2px);
     z-index: 10;
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(5px);
 }
 
 .loading-indicator.active {
@@ -128,6 +291,7 @@ body {
     border-top: 4px solid white;
     border-radius: 50%;
     animation: spin 1s linear infinite;
+    will-change: transform;
 }
 
 @keyframes spin {
@@ -137,8 +301,8 @@ body {
 
 .loading-text {
     color: white;
-    font-size: 16px;
-    font-weight: 500;
+    font-size: 14px;
+    font-weight: 600;
 }
 
 .loading-progress {
@@ -166,95 +330,164 @@ body {
 
 .progress-text {
     color: white;
-    font-size: 14px;
+    font-size: 12px;
 }
 
-/* СТИЛИ ДЛЯ РЕНДЕРЕРОВ */
-.preview-model, .preview-threejs {
-    width: 100%;
-    height: 100%;
-    position: absolute;
+/* ШАПКА ДЛЯ ЭКРАНА ПРОСМОТРА */
+.header {
+    position: fixed;
     top: 0;
     left: 0;
-}
-
-model-viewer[hidden],
-canvas[hidden] {
-    display: none !important;
-}
-
-/* 🔥 КНОПКИ - НА ВСЮ ШИРИНУ */
-.button-row {
+    right: 0;
+    height: var(--header-height);
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
     display: flex;
-    gap: var(--button-gap);
-    width: 100%;
-    max-width: var(--preview-size);
-    justify-content: center;
-    margin: 8px 0;
+    align-items: center;
+    padding: 0 max(20px, env(safe-area-inset-left));
+    padding-top: env(safe-area-inset-top);
+    padding-right: max(20px, env(safe-area-inset-right));
+    z-index: 100;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
 }
 
-.btn {
-    padding: 16px 0;
+.back-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
     border: none;
-    border-radius: var(--border-radius);
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-right: 15px;
+    touch-action: manipulation;
+    transition: var(--transition);
+}
+
+.back-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.header-logo {
+    margin-right: 15px;
+}
+
+.logo-image-small {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    filter: drop-shadow(0 2px 5px rgba(0,0,0,0.3));
+}
+
+.viewer-title {
+    color: white;
     font-size: 16px;
     font-weight: 600;
-    cursor: pointer;
-    transition: var(--transition);
     flex: 1;
     text-align: center;
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    backdrop-filter: blur(4px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+    margin-right: 80px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.btn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.3);
-    transform: translateY(-2px);
-    border-color: rgba(255, 255, 255, 0.5);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+/* ЭКРАН ПРОСМОТРА 3D */
+.viewer-screen {
+    background: #000;
 }
 
-.btn:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
+.viewer-container {
+    position: fixed;
+    top: var(--header-height);
+    left: 0;
+    right: 0;
+    bottom: 60px;
+    background: #000;
+}
+
+.viewer-controls {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: env(safe-area-inset-bottom);
+    box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.3);
+}
+
+.control-btn {
     background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.15);
-    transform: none;
-}
-
-/* НАЗВАНИЕ ФАЙЛА */
-.file-name {
     color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: var(--border-radius);
+    cursor: pointer;
     font-size: 14px;
-    text-align: center;
-    margin: 10px 0 5px 0;
-    word-break: break-all;
-    max-width: var(--preview-size);
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    font-weight: 600;
+    transition: var(--transition);
+    touch-action: manipulation;
+    min-width: 120px;
+    backdrop-filter: blur(5px);
 }
 
-/* АДАПТИВНОСТЬ */
+.control-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.control-btn[data-active="true"] {
+    background: linear-gradient(145deg, var(--primary-color), #C850C0);
+}
+
+/* 🔥 АДАПТИВНОСТЬ */
 @media (max-width: 480px) {
     :root {
-        --logo-size: 220px;
-        --preview-size: 300px;
-        --button-gap: 10px;
-        --logo-top-margin: 20px;
+        --logo-offset: -60px;
+        --content-offset: -200px;
     }
     
-    .preview-placeholder {
-        font-size: 18px;
+    .container {
+        padding: 0 15px;
     }
     
-    .btn {
-        padding: 14px 0;
+    .logo-image {
+        width: 320px;
+        height: 320px;
+    }
+    
+    .preview-area {
+        width: 300px;
+        height: 300px;
+    }
+    
+    .file-name-container {
+        max-width: 300px;
+        height: 25px;
+    }
+    
+    .file-name {
+        line-height: 25px;
         font-size: 14px;
     }
     
-    .loading-text {
+    .button-row {
+        max-width: 300px;
+        gap: 10px;
+    }
+    
+    .btn {
+        width: 140px;
+        max-width: 140px;
+        padding: 14px 0;
         font-size: 14px;
     }
 }
