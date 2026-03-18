@@ -8,7 +8,7 @@
     
     /* 🔥 ПАРАМЕТРЫ ДВИЖЕНИЯ */
     --logo-offset: -80px;        /* двигает логотип */
-    --content-offset: -300px;     /* увеличил с -200px до -300px (ещё на 20% вниз) */
+    --content-offset: -100px;     /* МЕНЬШЕ МИНУС = НИЖЕ */
     --vertical-spacing: 0px;      /* зазор */
 }
 
@@ -442,7 +442,7 @@ canvas[hidden] {
 @media (max-width: 480px) {
     :root {
         --logo-offset: -60px;
-        --content-offset: -250px; /* увеличил с -150px до -250px на мобилках */
+        --content-offset: -50px; /* МЕНЬШЕ МИНУС = НИЖЕ */
     }
     
     .container {
@@ -481,3 +481,4 @@ canvas[hidden] {
         font-size: 14px;
     }
 }
+ 
