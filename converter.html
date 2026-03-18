@@ -1,4 +1,4 @@
-<!-- 🔥 converter.html - ИСПРАВЛЕННАЯ ВЕРСИЯ 🔥 -->
+<!-- 🔥 converter.html - ПОЛНЫЙ КОД СТРАНИЦЫ КОНВЕРТЕРА С LOGO-HEADER2.PNG 🔥 -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -175,12 +175,23 @@
             font-size: 15px;
         }
 
-        /* ФОРМАТЫ */
+        /* 🔥 ЗАГОЛОВОК ФОРМАТЫ */
+        .formats-title {
+            text-align: center;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            letter-spacing: 1px;
+        }
+
+        /* ФОРМАТЫ - обновленное расположение */
         .format-row {
             display: flex;
             align-items: center;
             gap: 15px;
-            margin-bottom: 20px;
+            margin-bottom: 25px; /* Увеличено расстояние до кнопки */
         }
 
         .format-col {
@@ -192,15 +203,6 @@
             font-size: 24px;
             font-weight: bold;
             text-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        }
-
-        label {
-            display: block;
-            color: white;
-            margin-bottom: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
         }
 
         select {
@@ -220,7 +222,7 @@
             color: white;
         }
 
-        /* КНОПКА */
+        /* КНОПКА КОНВЕРТИРОВАТЬ */
         .convert-btn {
             width: 100%;
             padding: 16px 0;
@@ -306,7 +308,7 @@
         @media (max-width: 480px) {
             .app-logo {
                 top: -70px;
-                margin-bottom: -50px;
+                margin-bottom: -80px;
             }
             
             .logo-image {
@@ -315,7 +317,7 @@
             }
             
             .content-wrapper {
-                margin-top: -80px;
+                margin-top: -50px;
             }
             
             .converter-content {
@@ -325,6 +327,7 @@
             .format-row {
                 flex-direction: column;
                 gap: 10px;
+                margin-bottom: 20px;
             }
             
             .format-arrow {
@@ -363,14 +366,17 @@
                     <div class="upload-hint">Поддерживаются: STL, OBJ, GLB, GLTF</div>
                 </div>
 
-                <!-- 🔥 ЕДИНСТВЕННОЕ ОКНО ИНФОРМАЦИИ О ФАЙЛЕ -->
+                <!-- ЕДИНСТВЕННОЕ ОКНО ИНФОРМАЦИИ О ФАЙЛЕ -->
                 <div id="fileInfo" class="file-info">
                     <div id="fileInfoContent" class="placeholder-text">Ничего не выбрано</div>
                 </div>
 
+                <!-- 🔥 ЗАГОЛОВОК ФОРМАТЫ -->
+                <div class="formats-title">ФОРМАТЫ</div>
+
+                <!-- ВЫБОР ФОРМАТОВ -->
                 <div class="format-row">
                     <div class="format-col">
-                        <label>Из формата</label>
                         <select id="fromFormat">
                             <option value="stl">STL</option>
                             <option value="obj">OBJ</option>
@@ -380,7 +386,6 @@
                     </div>
                     <div class="format-arrow">→</div>
                     <div class="format-col">
-                        <label>В формат</label>
                         <select id="toFormat">
                             <option value="stl">STL</option>
                             <option value="obj">OBJ</option>
@@ -390,8 +395,10 @@
                     </div>
                 </div>
 
+                <!-- КНОПКА КОНВЕРТИРОВАТЬ -->
                 <button class="convert-btn" id="convertBtn">🔄 Конвертировать</button>
 
+                <!-- ПРОГРЕСС (появляется после нажатия) -->
                 <div id="progressArea" class="progress-area" style="display: none;">
                     <div class="progress-bar">
                         <div id="progressFill" class="progress-fill"></div>
@@ -399,10 +406,12 @@
                     <div id="progressText" class="progress-text">0%</div>
                 </div>
 
+                <!-- СКАЧИВАНИЕ (появляется после конвертации) -->
                 <div id="downloadArea" class="download-area" style="display: none;">
                     <a id="downloadLink" class="download-link" href="#">📥 Скачать готовый файл</a>
                 </div>
 
+                <!-- ДЕБАГ ИНФО -->
                 <div id="debugInfo" class="debug-info" style="display: none;"></div>
             </div>
         </div>
