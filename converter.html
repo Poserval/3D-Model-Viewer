@@ -104,16 +104,16 @@
         .upload-text { color: white; font-size: 16px; font-weight: 600; }
         .upload-hint { color: rgba(255, 255, 255, 0.7); font-size: 12px; margin-top: 5px; }
 
-        /* 🔥 ОКНО ИНФОРМАЦИИ О ФАЙЛЕ - УМЕНЬШЕНО НА 20% */
+        /* ОКНО ИНФОРМАЦИИ О ФАЙЛЕ */
         .file-info {
             width: 100%;
             background: rgba(255, 255, 255, 0.1);
             border-radius: 8px;
-            padding: 12px;  /* Уменьшено с 15px до 12px (20%) */
-            margin-bottom: 20px;
+            padding: 12px;
+            margin-bottom: 25px; /* Увеличено для единого отступа */
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: white;
-            min-height: 70px;  /* Уменьшено с 80px до 70px */
+            min-height: 70px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -121,12 +121,11 @@
             backdrop-filter: blur(5px);
         }
 
-        /* 🔥 АДАПТИВНЫЙ ШРИФТ */
         .file-info .file-name {
             font-weight: 600;
             margin-bottom: 5px;
             color: rgba(255, 255, 255, 0.95);
-            font-size: clamp(12px, 4vw, 16px);  /* Минимум 12px, максимум 16px, адаптируется */
+            font-size: clamp(12px, 4vw, 16px);
             word-break: break-word;
             line-height: 1.3;
             max-width: 100%;
@@ -134,7 +133,7 @@
         }
 
         .file-info .file-details {
-            font-size: clamp(11px, 3.5vw, 14px);  /* Адаптивный размер */
+            font-size: clamp(11px, 3.5vw, 14px);
             color: rgba(255, 255, 255, 0.8);
             display: flex;
             gap: 15px;
@@ -150,46 +149,67 @@
             word-break: break-word;
         }
 
-        /* 🔥 ЗАГОЛОВОК ФОРМАТЫ */
+        /* ЗАГОЛОВОК ФОРМАТЫ */
         .formats-title {
             text-align: center;
             color: white;
             font-size: 18px;
             font-weight: 600;
-            margin-bottom: 15px;
+            margin-bottom: 25px; /* Одинаковый отступ как у других элементов */
             text-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
-
-        /* ПОДПИСИ ИЗ и В */
-        .format-labels {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 5px;
-            padding: 0 5px;
-        }
-
-        .format-label {
-            color: white;
-            font-size: 14px;
-            font-weight: 600;
-            opacity: 0.9;
-            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
-        }
-
-        .format-label.left { text-align: left; width: 45%; }
-        .format-label.right { text-align: right; width: 45%; }
-        .format-label.center { width: 10%; text-align: center; }
 
         /* ГОРИЗОНТАЛЬНЫЙ РЯД С ЯЧЕЙКАМИ */
         .format-row {
             display: flex;
             align-items: center;
             gap: 15px;
-            margin-bottom: 25px;
+            margin-bottom: 25px; /* Одинаковый отступ как у других элементов */
         }
 
         .format-col {
             flex: 1;
+        }
+
+        /* 🔥 НОВЫЙ СТИЛЬ ДЛЯ КОНТЕЙНЕРА ВЫБОРА */
+        .select-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        /* 🔥 СТИЛИ ДЛЯ SELECT */
+        .format-select {
+            width: 100%;
+            padding: 12px 12px 12px 40px; /* Увеличен отступ слева для "ИЗ" и "В" */
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            font-size: 16px;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            text-align: center; /* Текст по центру */
+        }
+
+        .format-select option {
+            background: #333;
+            color: white;
+            text-align: left;
+        }
+
+        /* 🔥 ПОДПИСИ "ИЗ" и "В" ВНУТРИ ЯЧЕЕК */
+        .select-label {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+            font-weight: 600;
+            pointer-events: none; /* Чтобы не мешало нажатию */
+            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            z-index: 5;
         }
 
         .format-arrow {
@@ -198,19 +218,6 @@
             font-weight: bold;
             text-align: center;
         }
-
-        select {
-            width: 100%;
-            padding: 12px;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            font-size: 16px;
-            cursor: pointer;
-        }
-
-        select option { background: #333; color: white; }
 
         /* КНОПКА */
         .convert-btn {
@@ -225,7 +232,7 @@
             color: white;
             border: 1px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-            margin-bottom: 20px;
+            margin-bottom: 25px; /* Одинаковый отступ */
         }
 
         .convert-btn:hover {
@@ -234,7 +241,9 @@
         }
 
         /* ПРОГРЕСС */
-        .progress-area { margin: 20px 0; }
+        .progress-area { 
+            margin-bottom: 25px; /* Одинаковый отступ */
+        }
         .progress-bar {
             width: 100%;
             height: 8px;
@@ -251,7 +260,10 @@
         .progress-text { color: white; text-align: center; margin-top: 5px; font-size: 14px; }
 
         /* СКАЧИВАНИЕ */
-        .download-area { text-align: center; margin-top: 20px; }
+        .download-area { 
+            margin-bottom: 25px; /* Одинаковый отступ */
+            text-align: center; 
+        }
         .download-link {
             display: inline-block;
             padding: 12px 24px;
@@ -263,13 +275,20 @@
             border: 1px solid rgba(255, 255, 255, 0.3);
         }
 
+        /* ДЕБАГ */
+        .debug-info {
+            color: white;
+            font-size: 12px;
+            opacity: 0.7;
+            text-align: center;
+        }
+
         /* АДАПТИВНОСТЬ */
         @media (max-width: 480px) {
             .logo-image { width: 320px; height: 320px; }
             .format-row { flex-direction: row; }
             .format-arrow { transform: none; }
             
-            /* 🔥 ДОПОЛНИТЕЛЬНАЯ АДАПТАЦИЯ ДЛЯ МАЛЕНЬКИХ ЭКРАНОВ */
             .file-info {
                 padding: 10px;
                 min-height: 60px;
@@ -282,6 +301,16 @@
             .file-info .file-details {
                 font-size: clamp(10px, 3.2vw, 12px);
                 gap: 10px;
+            }
+            
+            .format-select {
+                padding: 10px 10px 10px 35px;
+                font-size: 14px;
+            }
+            
+            .select-label {
+                font-size: 12px;
+                left: 10px;
             }
         }
     </style>
@@ -302,36 +331,36 @@
                     <div class="upload-hint">Поддерживаются: STL, OBJ, GLB, GLTF</div>
                 </div>
 
-                <!-- 🔥 УМЕНЬШЕННОЕ ОКНО ИНФОРМАЦИИ -->
                 <div id="fileInfo" class="file-info">
                     <div id="fileInfoContent" class="placeholder-text">Ничего не выбрано</div>
                 </div>
 
                 <div class="formats-title">ФОРМАТЫ</div>
 
-                <div class="format-labels">
-                    <span class="format-label left">ИЗ</span>
-                    <span class="format-label center"></span>
-                    <span class="format-label right">В</span>
-                </div>
-
+                <!-- 🔥 ЯЧЕЙКИ С ПОДПИСЯМИ ВНУТРИ -->
                 <div class="format-row">
                     <div class="format-col">
-                        <select id="fromFormat">
-                            <option value="stl">STL</option>
-                            <option value="obj">OBJ</option>
-                            <option value="glb">GLB</option>
-                            <option value="gltf">GLTF</option>
-                        </select>
+                        <div class="select-wrapper">
+                            <span class="select-label">ИЗ</span>
+                            <select id="fromFormat" class="format-select">
+                                <option value="stl">STL</option>
+                                <option value="obj">OBJ</option>
+                                <option value="glb">GLB</option>
+                                <option value="gltf">GLTF</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="format-arrow">→</div>
                     <div class="format-col">
-                        <select id="toFormat">
-                            <option value="stl">STL</option>
-                            <option value="obj">OBJ</option>
-                            <option value="glb">GLB</option>
-                            <option value="gltf">GLTF</option>
-                        </select>
+                        <div class="select-wrapper">
+                            <span class="select-label">В</span>
+                            <select id="toFormat" class="format-select">
+                                <option value="stl">STL</option>
+                                <option value="obj">OBJ</option>
+                                <option value="glb">GLB</option>
+                                <option value="gltf">GLTF</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
