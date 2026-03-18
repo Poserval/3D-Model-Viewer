@@ -1,4 +1,4 @@
-<!-- 🔥 converter.html - ПОЛНЫЙ КОД СТРАНИЦЫ КОНВЕРТЕРА 🔥 -->
+<!-- 🔥 converter.html - ПОЛНЫЙ КОД СТРАНИЦЫ КОНВЕРТЕРА С ПРИЕМОМ ФАЙЛА ИЗ ПРИЛОЖЕНИЯ 🔥 -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -75,7 +75,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-top: -50px;
+            margin-top: -80px;
         }
 
         .converter-content {
@@ -110,7 +110,7 @@
             background: rgba(255, 255, 255, 0.1);
             border-radius: 8px;
             padding: 12px;
-            margin-bottom: 25px; /* Увеличено для единого отступа */
+            margin-bottom: 25px;
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: white;
             min-height: 70px;
@@ -149,38 +149,42 @@
             word-break: break-word;
         }
 
+        .file-info .app-badge {
+            color: #ffaa00;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
         /* ЗАГОЛОВОК ФОРМАТЫ */
         .formats-title {
             text-align: center;
             color: white;
             font-size: 18px;
             font-weight: 600;
-            margin-bottom: 25px; /* Одинаковый отступ как у других элементов */
+            margin-bottom: 25px;
             text-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
 
-        /* ГОРИЗОНТАЛЬНЫЙ РЯД С ЯЧЕЙКАМИ */
+        /* ЯЧЕЙКИ С ПОДПИСЯМИ ВНУТРИ */
         .format-row {
             display: flex;
             align-items: center;
             gap: 15px;
-            margin-bottom: 25px; /* Одинаковый отступ как у других элементов */
+            margin-bottom: 25px;
         }
 
         .format-col {
             flex: 1;
         }
 
-        /* 🔥 НОВЫЙ СТИЛЬ ДЛЯ КОНТЕЙНЕРА ВЫБОРА */
         .select-wrapper {
             position: relative;
             width: 100%;
         }
 
-        /* 🔥 СТИЛИ ДЛЯ SELECT */
         .format-select {
             width: 100%;
-            padding: 12px 12px 12px 40px; /* Увеличен отступ слева для "ИЗ" и "В" */
+            padding: 12px 12px 12px 40px;
             border-radius: 8px;
             background: rgba(255, 255, 255, 0.2);
             color: white;
@@ -189,7 +193,7 @@
             cursor: pointer;
             appearance: none;
             -webkit-appearance: none;
-            text-align: center; /* Текст по центру */
+            text-align: center;
         }
 
         .format-select option {
@@ -198,7 +202,6 @@
             text-align: left;
         }
 
-        /* 🔥 ПОДПИСИ "ИЗ" и "В" ВНУТРИ ЯЧЕЕК */
         .select-label {
             position: absolute;
             left: 12px;
@@ -207,7 +210,7 @@
             color: rgba(255, 255, 255, 0.7);
             font-size: 14px;
             font-weight: 600;
-            pointer-events: none; /* Чтобы не мешало нажатию */
+            pointer-events: none;
             text-shadow: 0 1px 3px rgba(0,0,0,0.3);
             z-index: 5;
         }
@@ -232,7 +235,7 @@
             color: white;
             border: 1px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-            margin-bottom: 25px; /* Одинаковый отступ */
+            margin-bottom: 25px;
         }
 
         .convert-btn:hover {
@@ -242,7 +245,7 @@
 
         /* ПРОГРЕСС */
         .progress-area { 
-            margin-bottom: 25px; /* Одинаковый отступ */
+            margin-bottom: 25px; 
         }
         .progress-bar {
             width: 100%;
@@ -261,7 +264,7 @@
 
         /* СКАЧИВАНИЕ */
         .download-area { 
-            margin-bottom: 25px; /* Одинаковый отступ */
+            margin-bottom: 25px; 
             text-align: center; 
         }
         .download-link {
@@ -337,7 +340,6 @@
 
                 <div class="formats-title">ФОРМАТЫ</div>
 
-                <!-- 🔥 ЯЧЕЙКИ С ПОДПИСЯМИ ВНУТРИ -->
                 <div class="format-row">
                     <div class="format-col">
                         <div class="select-wrapper">
@@ -391,6 +393,7 @@
     <script>
         const fileInput = document.getElementById('fileInput');
         const dropArea = document.getElementById('dropArea');
+        const fileInfo = document.getElementById('fileInfo');
         const fileInfoContent = document.getElementById('fileInfoContent');
         const fromFormat = document.getElementById('fromFormat');
         const toFormat = document.getElementById('toFormat');
@@ -404,16 +407,64 @@
         
         let selectedFile = null;
         
+        // 🔥 ПОЛУЧАЕМ ФАЙЛ ИЗ ОСНОВНОГО ПРИЛОЖЕНИЯ
+        const urlParams = new URLSearchParams(window.location.search);
+        const fileName = urlParams.get('file');
+        const fileDataBase64 = urlParams.get('data');
+
+        // Если есть данные файла из приложения
+        if (fileDataBase64) {
+            try {
+                // Декодируем данные
+                const fileDataStr = decodeURIComponent(escape(atob(fileDataBase64)));
+                const fileData = JSON.parse(fileDataStr);
+                
+                // Показываем информацию
+                fileInfoContent.innerHTML = `
+                    <div class="file-name">📎 ${fileData.name}</div>
+                    <div class="file-details">
+                        <span>📦 ${(fileData.size / 1024 / 1024).toFixed(2)} MB</span>
+                        <span>🏷️ ${fileData.name.split('.').pop().toUpperCase()}</span>
+                    </div>
+                    <div class="app-badge">⚡ Файл из приложения</div>
+                `;
+                
+                // Автоматически выбираем формат
+                const ext = fileData.name.split('.').pop().toLowerCase();
+                if (ext === 'stl') fromFormat.value = 'stl';
+                else if (ext === 'obj') fromFormat.value = 'obj';
+                else if (ext === 'glb') fromFormat.value = 'glb';
+                else if (ext === 'gltf') fromFormat.value = 'gltf';
+                
+                // Сохраняем информацию
+                selectedFile = fileData;
+                
+            } catch (e) {
+                console.error('Ошибка загрузки данных файла:', e);
+                fileInfoContent.innerHTML = 'Ошибка загрузки файла из приложения';
+            }
+        } else if (fileName) {
+            // Старая версия для обратной совместимости
+            fileInfoContent.innerHTML = `
+                <div class="file-name">📎 ${fileName}</div>
+                <div class="file-details">
+                    <span>⚠️ Файл нужно выбрать заново</span>
+                </div>
+            `;
+        }
+        
+        // Обработчики выбора файла
         dropArea.onclick = () => fileInput.click();
         
         fileInput.onchange = (e) => {
-            selectedFile = e.target.files[0];
-            if (selectedFile) {
-                const ext = selectedFile.name.split('.').pop().toLowerCase();
-                const sizeMB = (selectedFile.size / 1024 / 1024).toFixed(2);
+            const file = e.target.files[0];
+            if (file) {
+                selectedFile = file;
+                const ext = file.name.split('.').pop().toLowerCase();
+                const sizeMB = (file.size / 1024 / 1024).toFixed(2);
                 
                 fileInfoContent.innerHTML = `
-                    <div class="file-name">${selectedFile.name}</div>
+                    <div class="file-name">📎 ${file.name}</div>
                     <div class="file-details">
                         <span>📦 ${sizeMB} MB</span>
                         <span>🏷️ ${ext.toUpperCase()}</span>
@@ -427,11 +478,13 @@
             }
         };
         
+        // Функция обновления прогресса
         function updateProgress(percent) {
             progressFill.style.width = percent + '%';
             progressText.textContent = percent + '%';
         }
         
+        // Обработчик кнопки конвертации
         convertBtn.onclick = async () => {
             if (!selectedFile) {
                 alert('Сначала выберите файл');
@@ -450,6 +503,7 @@
             downloadArea.style.display = 'none';
             updateProgress(0);
             
+            // Эмуляция конвертации (заменить на реальную)
             let progress = 0;
             const interval = setInterval(() => {
                 progress += 10;
@@ -463,6 +517,7 @@
                     
                     const newFileName = baseName + '.' + to;
                     
+                    // Создаем тестовый файл (заменить на реальный результат)
                     const blob = new Blob([selectedFile], {type: 'application/octet-stream'});
                     const url = URL.createObjectURL(blob);
                     
