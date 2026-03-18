@@ -1,4 +1,4 @@
-<!-- 🔥 converter.html - ПОЛНЫЙ КОД СТРАНИЦЫ КОНВЕРТЕРА С ПРИЕМОМ ФАЙЛА ИЗ ПРИЛОЖЕНИЯ 🔥 -->
+<!-- 🔥 converter.html - ПОЛНЫЙ КОД СТРАНИЦЫ КОНВЕРТЕРА С АВТОМАТИЧЕСКОЙ ЗАГРУЗКОЙ ФАЙЛА ИЗ ПРИЛОЖЕНИЯ 🔥 -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -150,9 +150,10 @@
         }
 
         .file-info .app-badge {
-            color: #ffaa00;
+            color: #4CAF50;
             font-size: 12px;
             margin-top: 5px;
+            font-weight: 600;
         }
 
         /* ЗАГОЛОВОК ФОРМАТЫ */
@@ -426,7 +427,7 @@
                         <span>📦 ${(fileData.size / 1024 / 1024).toFixed(2)} MB</span>
                         <span>🏷️ ${fileData.name.split('.').pop().toUpperCase()}</span>
                     </div>
-                    <div class="app-badge">⚡ Файл из приложения</div>
+                    <div class="app-badge">✅ Файл загружен из приложения</div>
                 `;
                 
                 // Автоматически выбираем формат
@@ -436,20 +437,25 @@
                 else if (ext === 'glb') fromFormat.value = 'glb';
                 else if (ext === 'gltf') fromFormat.value = 'gltf';
                 
-                // Сохраняем информацию
-                selectedFile = fileData;
+                // Сохраняем информацию о файле
+                selectedFile = {
+                    name: fileData.name,
+                    size: fileData.size,
+                    type: fileData.type
+                };
                 
             } catch (e) {
                 console.error('Ошибка загрузки данных файла:', e);
-                fileInfoContent.innerHTML = 'Ошибка загрузки файла из приложения';
+                fileInfoContent.innerHTML = '❌ Ошибка загрузки файла из приложения';
             }
         } else if (fileName) {
-            // Старая версия для обратной совместимости
+            // Если только имя файла (старая версия)
             fileInfoContent.innerHTML = `
                 <div class="file-name">📎 ${fileName}</div>
                 <div class="file-details">
-                    <span>⚠️ Файл нужно выбрать заново</span>
+                    <span>ℹ️ Информация о файле</span>
                 </div>
+                <div class="app-badge">📁 Файл из приложения (выберите заново)</div>
             `;
         }
         
@@ -460,6 +466,43 @@
             const file = e.target.files[0];
             if (file) {
                 selectedFile = file;
+                const ext = file.name.split('.').pop().toLowerCase();
+                const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+                
+                fileInfoContent.innerHTML = `
+                    <div class="file-name">📎 ${file.name}</div>
+                    <div class="file-details">
+                        <span>📦 ${sizeMB} MB</span>
+                        <span>🏷️ ${ext.toUpperCase()}</span>
+                    </div>
+                `;
+                
+                if (ext === 'stl') fromFormat.value = 'stl';
+                else if (ext === 'obj') fromFormat.value = 'obj';
+                else if (ext === 'glb') fromFormat.value = 'glb';
+                else if (ext === 'gltf') fromFormat.value = 'gltf';
+            }
+        };
+        
+        // Поддержка drag & drop
+        dropArea.ondragover = (e) => {
+            e.preventDefault();
+            dropArea.style.background = 'rgba(255, 255, 255, 0.25)';
+        };
+        
+        dropArea.ondragleave = () => {
+            dropArea.style.background = 'rgba(255, 255, 255, 0.2)';
+        };
+        
+        dropArea.ondrop = (e) => {
+            e.preventDefault();
+            dropArea.style.background = 'rgba(255, 255, 255, 0.2)';
+            
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                fileInput.files = e.dataTransfer.files;
+                selectedFile = file;
+                
                 const ext = file.name.split('.').pop().toLowerCase();
                 const sizeMB = (file.size / 1024 / 1024).toFixed(2);
                 
@@ -518,7 +561,8 @@
                     const newFileName = baseName + '.' + to;
                     
                     // Создаем тестовый файл (заменить на реальный результат)
-                    const blob = new Blob([selectedFile], {type: 'application/octet-stream'});
+                    const dummyContent = 'Конвертированный файл';
+                    const blob = new Blob([dummyContent], {type: 'application/octet-stream'});
                     const url = URL.createObjectURL(blob);
                     
                     downloadLink.href = url;
