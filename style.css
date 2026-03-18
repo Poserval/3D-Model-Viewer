@@ -74,13 +74,14 @@ body::before {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;  /* прижимаем всё к верху */
     align-items: center;
     position: relative;
     z-index: 2;
+    /* 🔥 ОТРИЦАТЕЛЬНЫЙ ОТСТУП ДЛЯ ПОДТЯГИВАНИЯ НИЗА */
+    margin-top: -50px;  /* подтягиваем весь контейнер вверх */
 }
 
-/* 🔥 ЛОГОТИП - ПРИЖАТ К ВЕРХУ */
+/* 🔥 ЛОГОТИП */
 .app-logo {
     position: relative;
     width: 100%;
@@ -89,8 +90,10 @@ body::before {
     margin: 0;
     padding: 0;
     top: var(--logo-top-position);
-    margin-bottom: 0;  /* убираем отступ снизу */
+    margin-bottom: 0;
     z-index: 10;
+    /* 🔥 ВЫТАСКИВАЕМ ЛОГОТИП ИЗ ПОТОКА */
+    transform: translateY(-30px);  /* дополнительное поднятие */
 }
 
 .logo-image {
@@ -106,17 +109,22 @@ body::before {
     box-shadow: none;
 }
 
-.logo-image:hover {
-    transform: perspective(1000px) rotateX(calc(var(--logo-3d-rotate-x) * 2)) rotateY(calc(var(--logo-3d-rotate-y) * 2)) scale(1.05);
-    filter: drop-shadow(0 25px 35px rgba(0, 0, 0, 0.5)) 
-            drop-shadow(0 0 70px rgba(200, 80, 192, 0.8));
+/* 🔥 КОНТЕЙНЕР ДЛЯ НИЖНИХ ЭЛЕМЕНТОВ */
+.content-wrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* 🔥 ПОДТЯГИВАЕМ К ЛОГОТИПУ */
+    margin-top: -100px;  /* отрицательный отступ тянет вверх */
+    position: relative;
+    z-index: 5;
 }
 
-/* 🔥 ОКНО ПРЕВЬЮ - ПОД ЛОГОТИПОМ */
+/* 🔥 ОКНО ПРЕВЬЮ */
 .preview-area {
     width: 450px;
     height: 450px;
-    margin-top: -20px;  /* прижимаем к логотипу */
     background: rgba(255, 255, 255, 0.15);
     border-radius: var(--border-radius);
     border: 2px solid rgba(255, 255, 255, 0.25);
@@ -129,6 +137,8 @@ body::before {
     box-shadow: 
         0 20px 40px rgba(0, 0, 0, 0.3),
         inset 0 1px 2px rgba(255, 255, 255, 0.3);
+    /* 🔥 ДОПОЛНИТЕЛЬНОЕ ПОДТЯГИВАНИЕ */
+    margin-top: 0;
 }
 
 .preview-placeholder {
@@ -174,20 +184,19 @@ canvas[hidden] {
     opacity: 0 !important;
 }
 
-/* 🔥 ТОНКАЯ ПОЛОСКА ПОД БУКВАМИ */
+/* 🔥 ТОНКАЯ ПОЛОСКА */
 .file-name-container {
     width: 100%;
     max-width: 450px;
-    margin-top: 5px;  /* минимальный отступ от окна */
+    margin-top: 5px;
     margin-bottom: 10px;
     position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 30px;  /* фиксированная высота */
+    height: 30px;
 }
 
-/* Тонкая полоска (всегда видна) */
 .file-name-container::before {
     content: '';
     position: absolute;
@@ -200,7 +209,6 @@ canvas[hidden] {
     z-index: 1;
 }
 
-/* Текст по центру полоски */
 .file-name {
     position: relative;
     color: white;
@@ -219,10 +227,10 @@ canvas[hidden] {
         -1px  1px 0 #000,
          1px  1px 0 #000;
     letter-spacing: 0.5px;
-    line-height: 30px;  /* чтобы текст был по центру полоски */
+    line-height: 30px;
 }
 
-/* 🔥 КОНТЕЙНЕРЫ ДЛЯ КНОПОК - ПОД ПОЛОСКОЙ */
+/* 🔥 КОНТЕЙНЕРЫ ДЛЯ КНОПОК */
 .button-row {
     display: flex;
     flex-direction: row;
@@ -230,10 +238,10 @@ canvas[hidden] {
     width: 100%;
     max-width: 450px;
     justify-content: center;
-    margin-top: 5px;  /* минимальный отступ */
+    margin-top: 5px;
 }
 
-/* 🔥 ВСЕ КНОПКИ ОДИНАКОВЫЕ */
+/* 🔥 ВСЕ КНОПКИ */
 .btn {
     padding: 16px 0;
     border: none;
@@ -261,18 +269,12 @@ canvas[hidden] {
     box-shadow: 0 12px 28px rgba(0, 122, 255, 0.5);
 }
 
-/* 🔥 НЕАКТИВНЫЕ КНОПКИ */
 .btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     transform: none !important;
     background: linear-gradient(145deg, #4a4a4a, #2a2a2a);
     border-color: rgba(255, 255, 255, 0.1);
-}
-
-.btn:disabled:hover {
-    transform: none;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
 }
 
 /* ИНДИКАТОР ЗАГРУЗКИ */
@@ -465,6 +467,11 @@ canvas[hidden] {
 @media (max-width: 480px) {
     .container {
         padding: 0 15px;
+        margin-top: -40px;  /* ещё больше подтягиваем на мобилках */
+    }
+    
+    .app-logo {
+        transform: translateY(-20px);
     }
     
     .logo-image {
@@ -472,10 +479,13 @@ canvas[hidden] {
         height: var(--logo-size-mobile);
     }
     
+    .content-wrapper {
+        margin-top: -80px;
+    }
+    
     .preview-area {
         width: 300px;
         height: 300px;
-        margin-top: -30px;
     }
     
     .file-name-container {
@@ -498,21 +508,6 @@ canvas[hidden] {
         max-width: 140px;
         padding: 14px 0;
         font-size: 14px;
-    }
-    
-    .viewer-title {
-        font-size: 14px;
-        margin-right: 60px;
-    }
-    
-    .control-btn {
-        padding: 8px 16px;
-        font-size: 13px;
-        min-width: 100px;
-    }
-    
-    :root {
-        --element-spacing: 20px;
     }
 }
 
