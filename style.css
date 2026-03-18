@@ -6,19 +6,16 @@
     --transition: all 0.3s ease;
     --header-height: 60px;
     
-    /* 🔥 РАЗМЕРЫ ЛОГОТИПА */
-    --logo-size: 240px;
-    --logo-size-mobile: 200px;
-    
-    /* 🔥 РАЗМЕРЫ ОКНА */
-    --preview-size: 320px;
-    --preview-size-mobile: 280px;
+    /* 🔥 РАЗМЕРЫ */
+    --logo-size: 260px;
+    --logo-size-mobile: 220px;
+    --preview-size: 340px;
+    --preview-size-mobile: 300px;
     
     /* 🔥 ОТСТУПЫ */
-    --logo-top-margin: 20px;
-    --preview-top-margin: 10px;
-    --button-gap: 15px;
-    --container-padding: 20px;
+    --logo-top-margin: 30px;
+    --preview-margin: 15px;
+    --button-gap: 12px;
 }
 
 * {
@@ -27,7 +24,6 @@
     box-sizing: border-box;
 }
 
-/* 🔥 ФОН КАК НА КАРТИНКЕ */
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     background: linear-gradient(145deg, #4158D0 0%, #C850C0 50%, #FFB347 100%);
@@ -47,11 +43,10 @@ body {
     display: block;
 }
 
-/* ГЛАВНЫЙ ЭКРАН */
 .container {
     max-width: 400px;
     margin: 0 auto;
-    padding: var(--container-padding);
+    padding: 20px;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -64,8 +59,7 @@ body {
     width: 100%;
     display: flex;
     justify-content: center;
-    margin-top: var(--logo-top-margin);
-    margin-bottom: 20px;
+    margin-bottom: 10px;
 }
 
 .logo-image {
@@ -74,35 +68,105 @@ body {
     object-fit: contain;
 }
 
-/* 🔥 ОКНО ПРЕВЬЮ */
+/* 🔥 ОКНО ПРЕВЬЮ - БОЛЬШОЕ */
 .preview-area {
-    width: var(--preview-size);
-    height: var(--preview-size);
+    width: 100%;
+    max-width: var(--preview-size);
+    aspect-ratio: 1/1;
     background: rgba(255, 255, 255, 0.15);
     border-radius: var(--border-radius);
-    border: 3px solid rgba(255, 255, 255, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.3);
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
     overflow: hidden;
-    backdrop-filter: blur(10px);
-    margin-bottom: 15px;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(8px);
+    margin: 15px 0;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
 }
 
 .preview-placeholder {
     color: white;
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 600;
     text-align: center;
     padding: 20px;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-    letter-spacing: 1px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    letter-spacing: 0.5px;
 }
 
 .preview-placeholder[hidden] {
     display: none !important;
+}
+
+/* ИНДИКАТОР ЗАГРУЗКИ */
+.loading-indicator {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    z-index: 10;
+    backdrop-filter: blur(4px);
+}
+
+.loading-indicator.active {
+    display: flex;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255, 255, 255, 0.2);
+    border-top: 4px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+    color: white;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.loading-progress {
+    width: 80%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-color), #C850C0);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    color: white;
+    font-size: 14px;
 }
 
 /* СТИЛИ ДЛЯ РЕНДЕРЕРОВ */
@@ -114,7 +178,12 @@ body {
     left: 0;
 }
 
-/* 🔥 КОНТЕЙНЕРЫ ДЛЯ КНОПОК */
+model-viewer[hidden],
+canvas[hidden] {
+    display: none !important;
+}
+
+/* 🔥 КНОПКИ - НА ВСЮ ШИРИНУ */
 .button-row {
     display: flex;
     gap: var(--button-gap);
@@ -124,7 +193,6 @@ body {
     margin: 8px 0;
 }
 
-/* 🔥 ВСЕ КНОПКИ ОДИНАКОВЫЕ */
 .btn {
     padding: 16px 0;
     border: none;
@@ -135,25 +203,26 @@ body {
     transition: var(--transition);
     flex: 1;
     text-align: center;
-    background: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.2);
     color: white;
-    border: 2px solid rgba(255, 255, 255, 0.4);
-    backdrop-filter: blur(5px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(4px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
 }
 
 .btn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.3);
     transform: translateY(-2px);
-    border-color: rgba(255, 255, 255, 0.6);
-    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
 .btn:disabled {
-    opacity: 0.4;
+    opacity: 0.3;
     cursor: not-allowed;
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: none;
 }
 
 /* НАЗВАНИЕ ФАЙЛА */
@@ -161,29 +230,31 @@ body {
     color: white;
     font-size: 14px;
     text-align: center;
-    margin: 5px 0 15px 0;
+    margin: 10px 0 5px 0;
     word-break: break-all;
     max-width: var(--preview-size);
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-    opacity: 0.9;
 }
 
-/* 🔥 АДАПТИВНОСТЬ */
+/* АДАПТИВНОСТЬ */
 @media (max-width: 480px) {
     :root {
-        --logo-size: 200px;
-        --preview-size: 280px;
-        --button-gap: 12px;
-        --container-padding: 15px;
-        --logo-top-margin: 15px;
+        --logo-size: 220px;
+        --preview-size: 300px;
+        --button-gap: 10px;
+        --logo-top-margin: 20px;
     }
     
     .preview-placeholder {
-        font-size: 16px;
+        font-size: 18px;
     }
     
     .btn {
         padding: 14px 0;
+        font-size: 14px;
+    }
+    
+    .loading-text {
         font-size: 14px;
     }
 }
