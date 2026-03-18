@@ -15,7 +15,7 @@
     <!-- Главный экран -->
     <div id="main-screen" class="screen active">
         <div class="container">
-            <!-- ЛОГОТИП -->
+            <!-- ЛОГОТИП СВЕРХУ -->
             <div class="app-logo">
                 <img src="icons/logo-header.png" alt="3D Model Viewer Logo" class="logo-image">
             </div>
@@ -45,20 +45,23 @@
                 </div>
             </div>
             
-            <!-- КНОПКИ В РЯД (ОСНОВНЫЕ) -->
+            <!-- ТОНКАЯ ЧЁРНАЯ ПОЛОСА С НАЗВАНИЕМ ФАЙЛА -->
+            <div class="file-name-container">
+                <div id="file-name" class="file-name"></div>
+            </div>
+            
+            <!-- ПЕРВЫЙ РЯД КНОПОК (ГОРИЗОНТАЛЬНО) -->
             <div class="button-row">
                 <input type="file" id="file-input" accept=".glb,.gltf,.obj,.stl" hidden>
-                <button id="select-file-btn" class="btn primary">ВЫБРАТЬ ФАЙЛ</button>
-                <button id="open-3d-btn" class="btn primary" disabled>ОТКРЫТЬ В 3D</button>
+                <button id="select-file-btn" class="btn">ВЫБРАТЬ ФАЙЛ</button>
+                <button id="open-3d-btn" class="btn" disabled>ОТКРЫТЬ В 3D</button>
             </div>
             
-            <!-- КНОПКА КОНВЕРТЕРА (второй ряд) -->
-            <div class="button-row converter-row">
-                <button id="go-to-converter-btn" class="btn primary converter">КОНВЕРТЕР (ОНЛАЙН)</button>
+            <!-- ВТОРОЙ РЯД КНОПОК (ГОРИЗОНТАЛЬНО) -->
+            <div class="button-row">
+                <button id="go-to-converter-btn" class="btn">КОНВЕРТЕР (ОНЛАЙН)</button>
+                <button id="my-model-btn" class="btn" disabled>МОЯ МОДЕЛЬ</button>
             </div>
-            
-            <!-- НАЗВАНИЕ ФАЙЛА -->
-            <div id="file-name" class="file-name"></div>
         </div>
     </div>
 
