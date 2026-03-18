@@ -1,4 +1,4 @@
-// script.js - ПОЛНАЯ РАБОЧАЯ ВЕРСИЯ С ИСПРАВЛЕННЫМ ПРЕВЬЮ ДЛЯ STL
+// script.js - ПОЛНАЯ РАБОЧАЯ ВЕРСИЯ С ПЕРЕДАЧЕЙ ФАЙЛА В КОНВЕРТЕР
 
 // Состояния приложения
 const APP_STATES = {
@@ -118,7 +118,7 @@ class ModelViewerApp {
             this.handleResize();
         });
         
-        // КОНВЕРТЕР - ОТКРЫВАЕМ В БРАУЗЕРЕ
+        // КОНВЕРТЕР - ОТКРЫВАЕМ В БРАУЗЕРЕ С ПЕРЕДАЧЕЙ ФАЙЛА
         if (this.converterBtn) {
             this.converterBtn.addEventListener('click', () => {
                 this.openConverterInBrowser();
@@ -126,19 +126,38 @@ class ModelViewerApp {
         }
     }
     
-    // ОТКРЫТИЕ КОНВЕРТЕРА В БРАУЗЕРЕ
+    // 🔥 ОТКРЫТИЕ КОНВЕРТЕРА В БРАУЗЕРЕ С ПЕРЕДАЧЕЙ ФАЙЛА
     openConverterInBrowser() {
         const converterUrl = 'https://poserval.github.io/3D-Model-Viewer/converter.html';
         
         let fullUrl = converterUrl;
+        
+        // Если есть выбранный файл — передаём его данные
         if (this.currentFile) {
-            fullUrl += '?file=' + encodeURIComponent(this.currentFile.name);
+            // Создаём объект с данными файла
+            const fileData = {
+                name: this.currentFile.name,
+                size: this.currentFile.size,
+                type: this.currentFile.type,
+                lastModified: this.currentFile.lastModified
+            };
+            
+            // Кодируем в base64
+            const fileDataStr = JSON.stringify(fileData);
+            const fileDataBase64 = btoa(unescape(encodeURIComponent(fileDataStr)));
+            
+            fullUrl += '?file=' + encodeURIComponent(this.currentFile.name) + 
+                       '&data=' + encodeURIComponent(fileDataBase64);
         }
         
-        console.log('🌐 Открываем конвертер в браузере:', fullUrl);
+        console.log('🌐 Открываем конвертер с файлом:', fullUrl);
         
         // Открываем в браузере
-        window.open(fullUrl, '_blank');
+        if (window.Capacitor && window.Capacitor.isNative) {
+            window.open(fullUrl, '_system');
+        } else {
+            window.open(fullUrl, '_blank');
+        }
     }
 
     initThreeJS() {
@@ -449,38 +468,27 @@ class ModelViewerApp {
 
     // 🔧 ИСПРАВЛЕННЫЙ МЕТОД - КАМЕРА БЛИЖЕ И ПО ЦЕНТРУ
     setupPreviewCamera(object) {
-        // Сначала центрируем объект
         const box = new THREE.Box3().setFromObject(object);
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
         
         console.log('📐 Размер модели для превью:', size);
         
-        // Смещаем объект так, чтобы его центр оказался в начале координат
         object.position.x = -center.x;
         object.position.y = -center.y;
         object.position.z = -center.z;
         
-        // Применяем автоматическое выравнивание (поворот)
         this.autoAlignModel(object, size);
         
-        // Вычисляем максимальный размер модели
         const maxDim = Math.max(size.x, size.y, size.z);
         const fov = this.previewCamera.fov * (Math.PI / 180);
         
-        // 🔥 УМЕНЬШАЕМ КОЭФФИЦИЕНТ ДЛЯ ПРИБЛИЖЕНИЯ
-        // Чем меньше коэффициент, тем ближе камера
-        const distanceFactor = 0.3; // Было 1.2, теперь 0.7 - ближе
-        
-        // Рассчитываем дистанцию камеры
+        const distanceFactor = 0.7;
         let cameraDistance = Math.abs(maxDim / Math.sin(fov / 2)) * distanceFactor;
-        
-        // Ограничиваем минимальную дистанцию, чтобы камера не была слишком близко
         cameraDistance = Math.max(cameraDistance, 2);
         
         console.log('📷 Дистанция камеры превью:', cameraDistance);
         
-        // Устанавливаем камеру строго по центру
         this.previewCamera.position.set(0, 0, cameraDistance);
         this.previewCamera.lookAt(0, 0, 0);
         this.previewCamera.updateProjectionMatrix();
@@ -726,14 +734,12 @@ class ModelViewerApp {
                 
                 this.clearThreeJSScene(this.mainScene);
                 
-                // Создаем группу для всех мешей
                 const group = new THREE.Group();
                 let hasMesh = false;
                 
                 object.traverse((child) => {
                     if (child.isMesh) {
                         hasMesh = true;
-                        // Клонируем и добавляем в группу
                         const mesh = child.clone();
                         if (!mesh.material) {
                             mesh.material = new THREE.MeshStandardMaterial({ 
