@@ -8,7 +8,7 @@
     
     /* 🔥 ПАРАМЕТРЫ ДВИЖЕНИЯ */
     --logo-offset: -80px;        /* двигает логотип */
-    --content-offset: -100px;     /* двигает ВСЁ, что под логотипом */
+    --content-offset: -200px;     /* двигает ВСЁ, что под логотипом (20% вниз) */
     --vertical-spacing: 0px;      /* зазор */
 }
 
@@ -97,16 +97,6 @@ body::before {
     background: transparent;
     border-radius: 0;
     box-shadow: none;
-}
-
-/* 🔥 КОНТЕЙНЕР НИЖНИХ ЭЛЕМЕНТОВ */
-.content-wrapper {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: relative;
-    z-index: 5;
 }
 
 /* 🔥 ОКНО ПРЕВЬЮ */
@@ -452,7 +442,7 @@ canvas[hidden] {
 @media (max-width: 480px) {
     :root {
         --logo-offset: -60px;
-        --content-offset: -200px;
+        --content-offset: -150px; /* 20% вниз на мобилках */
     }
     
     .container {
