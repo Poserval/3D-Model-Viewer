@@ -98,15 +98,15 @@
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
         }
 
-        /* ПОЛЕ ЗАГРУЗКИ */
+        /* 🔥 ПОЛЕ ЗАГРУЗКИ - УМЕНЬШЕНО В ПОЛ РАЗА ПО ВЫСОТЕ */
         .upload-area {
             background: rgba(255, 255, 255, 0.2);
             border: 2px dashed rgba(255, 255, 255, 0.4);
             border-radius: 12px;
-            padding: 30px;
+            padding: 15px 30px;  /* Уменьшено с 30px до 15px вертикальные отступы */
             text-align: center;
             cursor: pointer;
-            margin-bottom: 20px;
+            margin-bottom: 10px;  /* Уменьшено с 20px для компактности */
             transition: all 0.3s ease;
         }
 
@@ -116,9 +116,9 @@
         }
 
         .upload-icon {
-            font-size: 48px;
+            font-size: 36px;  /* Чуть уменьшен значок */
             color: white;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
             filter: drop-shadow(0 0 10px rgba(255,255,255,0.5));
         }
 
@@ -132,7 +132,39 @@
         .upload-hint {
             color: rgba(255, 255, 255, 0.7);
             font-size: 12px;
-            margin-top: 10px;
+            margin-top: 5px;
+        }
+
+        /* 🔥 ИНФОРМАЦИЯ О ВЫБРАННОМ ФАЙЛЕ - ТЕПЕРЬ ИМЕЕТ СВОЕ МЕСТО */
+        .file-info {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 14px;
+            word-break: break-word;
+            min-height: 70px; /* Минимальная высота, чтобы не дергался экран */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .file-info strong {
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 600;
+        }
+
+        .file-info .file-details {
+            margin-top: 5px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
         }
 
         /* ФОРМАТЫ */
@@ -265,7 +297,7 @@
         @media (max-width: 480px) {
             .app-logo {
                 top: -70px;
-                margin-bottom: -50px;
+                margin-bottom: -80px;
             }
             
             .logo-image {
@@ -289,6 +321,21 @@
             .format-arrow {
                 transform: rotate(90deg);
             }
+            
+            .upload-area {
+                padding: 12px 20px;
+            }
+            
+            .file-info {
+                padding: 10px 12px;
+                min-height: 60px;
+                font-size: 13px;
+            }
+            
+            .file-info .file-details {
+                font-size: 12px;
+                gap: 10px;
+            }
         }
     </style>
 </head>
@@ -305,13 +352,21 @@
             <div class="converter-content">
                 <input type="file" id="fileInput" accept=".stl,.obj,.glb,.gltf" style="display: none;">
 
+                <!-- ПОЛЕ ЗАГРУЗКИ - УМЕНЬШЕНО ПО ВЫСОТЕ -->
                 <div class="upload-area" id="dropArea">
                     <div class="upload-icon">📁</div>
                     <div class="upload-text">Нажмите для выбора файла</div>
                     <div class="upload-hint">Поддерживаются: STL, OBJ, GLB, GLTF</div>
                 </div>
 
-                <div id="selectedFileInfo" style="color: white; margin-bottom: 20px; display: none;"></div>
+                <!-- 🔥 ИНФОРМАЦИЯ О ФАЙЛЕ - ТЕПЕРЬ НА ПОСТОЯННОМ МЕСТЕ -->
+                <div id="fileInfoContainer" class="file-info" style="display: none;">
+                    <div id="fileName"></div>
+                    <div id="fileDetails" class="file-details"></div>
+                </div>
+
+                <!-- ВРЕМЕННЫЙ КОНТЕЙНЕР ДЛЯ СОВМЕСТИМОСТИ СО СТАРЫМ КОДОМ -->
+                <div id="selectedFileInfo" style="display: none;"></div>
 
                 <div class="format-row">
                     <div class="format-col">
@@ -369,7 +424,10 @@
         // Элементы
         const fileInput = document.getElementById('fileInput');
         const dropArea = document.getElementById('dropArea');
-        const selectedFileInfo = document.getElementById('selectedFileInfo');
+        const fileInfoContainer = document.getElementById('fileInfoContainer');
+        const fileNameElement = document.getElementById('fileName');
+        const fileDetailsElement = document.getElementById('fileDetails');
+        const selectedFileInfo = document.getElementById('selectedFileInfo'); // для совместимости
         const fromFormat = document.getElementById('fromFormat');
         const toFormat = document.getElementById('toFormat');
         const convertBtn = document.getElementById('convertBtn');
@@ -382,12 +440,9 @@
         
         // Если есть имя файла из приложения
         if (fileName) {
-            selectedFileInfo.style.display = 'block';
-            selectedFileInfo.innerHTML = `
-                <strong>Файл из приложения:</strong><br>
-                ${fileName}<br>
-                <span style="color: #ffaa00;">⚠️ Файл нужно выбрать заново</span>
-            `;
+            fileInfoContainer.style.display = 'flex';
+            fileNameElement.innerHTML = `<strong>Файл из приложения:</strong> ${fileName}`;
+            fileDetailsElement.innerHTML = `<span>⚠️ Файл нужно выбрать заново</span>`;
         }
         
         // Обработчики
@@ -397,10 +452,21 @@
             selectedFile = e.target.files[0];
             if (selectedFile) {
                 const ext = selectedFile.name.split('.').pop().toLowerCase();
+                const sizeMB = (selectedFile.size / 1024 / 1024).toFixed(2);
+                
+                // Обновляем постоянный контейнер
+                fileInfoContainer.style.display = 'flex';
+                fileNameElement.innerHTML = `<strong>Выбран:</strong> ${selectedFile.name}`;
+                fileDetailsElement.innerHTML = `
+                    <span>📦 ${sizeMB} MB</span>
+                    <span>🏷️ ${ext.toUpperCase()}</span>
+                `;
+                
+                // Для совместимости со старым кодом
                 selectedFileInfo.style.display = 'block';
                 selectedFileInfo.innerHTML = `
                     <strong>Выбран:</strong> ${selectedFile.name}<br>
-                    <strong>Размер:</strong> ${(selectedFile.size / 1024 / 1024).toFixed(2)} MB<br>
+                    <strong>Размер:</strong> ${sizeMB} MB<br>
                     <strong>Формат:</strong> ${ext}
                 `;
                 
@@ -473,4 +539,4 @@
         };
     </script>
 </body>
-    </html>
+</html>
