@@ -1,4 +1,4 @@
-<!-- 🔥 converter.html - ПОЛНЫЙ КОД СТРАНИЦЫ КОНВЕРТЕРА С LOGO-HEADER2.PNG 🔥 -->
+<!-- 🔥 converter.html - ИСПРАВЛЕННАЯ ВЕРСИЯ 🔥 -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -47,7 +47,7 @@
             z-index: 2;
         }
 
-        /* 🔥 ХЕДЕР С LOGO-HEADER2.PNG - ТАКОЙ ЖЕ КАК НА ГЛАВНОЙ */
+        /* ХЕДЕР С LOGO-HEADER2.PNG */
         .app-logo {
             position: relative;
             width: 100%;
@@ -56,7 +56,7 @@
             margin: 0;
             padding: 0;
             top: -90px;
-            margin-bottom: -100px;  /* Увеличено чтобы компенсировать поднятие контента */
+            margin-bottom: -100px;
             z-index: 10;
         }
 
@@ -77,13 +77,13 @@
                     drop-shadow(0 0 70px rgba(200, 80, 192, 0.8));
         }
 
-        /* 🔥 КОНТЕЙНЕР С КОНТЕНТОМ - ПОДТЯНУТ ВВЕРХ */
+        /* КОНТЕЙНЕР С КОНТЕНТОМ */
         .content-wrapper {
             width: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-top: -80px;  /* Подтягиваем содержимое под логотип */
+            margin-top: -80px;
         }
 
         /* ОСНОВНОЙ КОНТЕНТ */
@@ -98,15 +98,15 @@
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
         }
 
-        /* 🔥 ПОЛЕ ЗАГРУЗКИ - УМЕНЬШЕНО В ПОЛ РАЗА ПО ВЫСОТЕ */
+        /* ПОЛЕ ЗАГРУЗКИ */
         .upload-area {
             background: rgba(255, 255, 255, 0.2);
             border: 2px dashed rgba(255, 255, 255, 0.4);
             border-radius: 12px;
-            padding: 15px 30px;  /* Уменьшено с 30px до 15px вертикальные отступы */
+            padding: 15px 30px;
             text-align: center;
             cursor: pointer;
-            margin-bottom: 10px;  /* Уменьшено с 20px для компактности */
+            margin-bottom: 15px;
             transition: all 0.3s ease;
         }
 
@@ -116,7 +116,7 @@
         }
 
         .upload-icon {
-            font-size: 36px;  /* Чуть уменьшен значок */
+            font-size: 36px;
             color: white;
             margin-bottom: 5px;
             filter: drop-shadow(0 0 10px rgba(255,255,255,0.5));
@@ -135,36 +135,44 @@
             margin-top: 5px;
         }
 
-        /* 🔥 ИНФОРМАЦИЯ О ВЫБРАННОМ ФАЙЛЕ - ТЕПЕРЬ ИМЕЕТ СВОЕ МЕСТО */
+        /* 🔥 ЕДИНСТВЕННОЕ ОКНО ИНФОРМАЦИИ О ФАЙЛЕ */
         .file-info {
             width: 100%;
             background: rgba(255, 255, 255, 0.1);
             border-radius: 8px;
-            padding: 12px 15px;
-            margin-bottom: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: white;
             font-size: 14px;
             word-break: break-word;
-            min-height: 70px; /* Минимальная высота, чтобы не дергался экран */
+            min-height: 80px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             backdrop-filter: blur(5px);
+            text-align: center;
         }
 
-        .file-info strong {
-            color: rgba(255, 255, 255, 0.9);
+        .file-info .file-name {
             font-weight: 600;
+            margin-bottom: 5px;
+            color: rgba(255, 255, 255, 0.95);
         }
 
         .file-info .file-details {
-            margin-top: 5px;
             font-size: 13px;
             color: rgba(255, 255, 255, 0.8);
             display: flex;
             gap: 15px;
+            justify-content: center;
             flex-wrap: wrap;
+        }
+
+        .file-info .placeholder-text {
+            color: rgba(255, 255, 255, 0.6);
+            font-style: italic;
+            font-size: 15px;
         }
 
         /* ФОРМАТЫ */
@@ -291,13 +299,14 @@
             color: white;
             font-size: 12px;
             opacity: 0.7;
+            text-align: center;
         }
 
         /* АДАПТИВНОСТЬ */
         @media (max-width: 480px) {
             .app-logo {
                 top: -70px;
-                margin-bottom: -50px;
+                margin-bottom: -80px;
             }
             
             .logo-image {
@@ -327,46 +336,37 @@
             }
             
             .file-info {
-                padding: 10px 12px;
-                min-height: 60px;
+                padding: 12px;
+                min-height: 70px;
                 font-size: 13px;
-            }
-            
-            .file-info .file-details {
-                font-size: 12px;
-                gap: 10px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- 🔥 ХЕДЕР С LOGO-HEADER2.PNG -->
+        <!-- ХЕДЕР -->
         <div class="app-logo">
             <img src="icons/logo-header2.png" alt="3D Model Viewer Logo" class="logo-image">
         </div>
 
-        <!-- КОНТЕЙНЕР С КОНТЕНТОМ (ПОДТЯНУТ ВВЕРХ) -->
+        <!-- КОНТЕЙНЕР С КОНТЕНТОМ -->
         <div class="content-wrapper">
             <!-- ОСНОВНОЙ КОНТЕНТ -->
             <div class="converter-content">
                 <input type="file" id="fileInput" accept=".stl,.obj,.glb,.gltf" style="display: none;">
 
-                <!-- ПОЛЕ ЗАГРУЗКИ - УМЕНЬШЕНО ПО ВЫСОТЕ -->
+                <!-- ПОЛЕ ЗАГРУЗКИ -->
                 <div class="upload-area" id="dropArea">
                     <div class="upload-icon">📁</div>
                     <div class="upload-text">Нажмите для выбора файла</div>
                     <div class="upload-hint">Поддерживаются: STL, OBJ, GLB, GLTF</div>
                 </div>
 
-                <!-- 🔥 ИНФОРМАЦИЯ О ФАЙЛЕ - ТЕПЕРЬ НА ПОСТОЯННОМ МЕСТЕ -->
-                <div id="fileInfoContainer" class="file-info" style="display: none;">
-                    <div id="fileName"></div>
-                    <div id="fileDetails" class="file-details"></div>
+                <!-- 🔥 ЕДИНСТВЕННОЕ ОКНО ИНФОРМАЦИИ О ФАЙЛЕ -->
+                <div id="fileInfo" class="file-info">
+                    <div id="fileInfoContent" class="placeholder-text">Ничего не выбрано</div>
                 </div>
-
-                <!-- ВРЕМЕННЫЙ КОНТЕЙНЕР ДЛЯ СОВМЕСТИМОСТИ СО СТАРЫМ КОДОМ -->
-                <div id="selectedFileInfo" style="display: none;"></div>
 
                 <div class="format-row">
                     <div class="format-col">
@@ -415,19 +415,11 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/OBJExporter.js"></script>
 
     <script>
-        // Код конвертера
-        const urlParams = new URLSearchParams(window.location.search);
-        const fileName = urlParams.get('file');
-        
-        let selectedFile = null;
-        
         // Элементы
         const fileInput = document.getElementById('fileInput');
         const dropArea = document.getElementById('dropArea');
-        const fileInfoContainer = document.getElementById('fileInfoContainer');
-        const fileNameElement = document.getElementById('fileName');
-        const fileDetailsElement = document.getElementById('fileDetails');
-        const selectedFileInfo = document.getElementById('selectedFileInfo'); // для совместимости
+        const fileInfo = document.getElementById('fileInfo');
+        const fileInfoContent = document.getElementById('fileInfoContent');
         const fromFormat = document.getElementById('fromFormat');
         const toFormat = document.getElementById('toFormat');
         const convertBtn = document.getElementById('convertBtn');
@@ -438,11 +430,20 @@
         const downloadLink = document.getElementById('downloadLink');
         const debugInfo = document.getElementById('debugInfo');
         
+        let selectedFile = null;
+        
+        // Параметры из URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const fileName = urlParams.get('file');
+        
         // Если есть имя файла из приложения
         if (fileName) {
-            fileInfoContainer.style.display = 'flex';
-            fileNameElement.innerHTML = `<strong>Файл из приложения:</strong> ${fileName}`;
-            fileDetailsElement.innerHTML = `<span>⚠️ Файл нужно выбрать заново</span>`;
+            fileInfoContent.innerHTML = `
+                <div class="file-name">${fileName}</div>
+                <div class="file-details">
+                    <span>⚠️ Файл нужно выбрать заново</span>
+                </div>
+            `;
         }
         
         // Обработчики
@@ -454,20 +455,51 @@
                 const ext = selectedFile.name.split('.').pop().toLowerCase();
                 const sizeMB = (selectedFile.size / 1024 / 1024).toFixed(2);
                 
-                // Обновляем постоянный контейнер
-                fileInfoContainer.style.display = 'flex';
-                fileNameElement.innerHTML = `<strong>Выбран:</strong> ${selectedFile.name}`;
-                fileDetailsElement.innerHTML = `
-                    <span>📦 ${sizeMB} MB</span>
-                    <span>🏷️ ${ext.toUpperCase()}</span>
+                // Обновляем единственное окно информации
+                fileInfoContent.innerHTML = `
+                    <div class="file-name">${selectedFile.name}</div>
+                    <div class="file-details">
+                        <span>📦 ${sizeMB} MB</span>
+                        <span>🏷️ ${ext.toUpperCase()}</span>
+                    </div>
                 `;
                 
-                // Для совместимости со старым кодом
-                selectedFileInfo.style.display = 'block';
-                selectedFileInfo.innerHTML = `
-                    <strong>Выбран:</strong> ${selectedFile.name}<br>
-                    <strong>Размер:</strong> ${sizeMB} MB<br>
-                    <strong>Формат:</strong> ${ext}
+                // Автоматически выбираем формат
+                if (ext === 'stl') fromFormat.value = 'stl';
+                else if (ext === 'obj') fromFormat.value = 'obj';
+                else if (ext === 'glb') fromFormat.value = 'glb';
+                else if (ext === 'gltf') fromFormat.value = 'gltf';
+            }
+        };
+        
+        // Поддержка drag & drop
+        dropArea.ondragover = (e) => {
+            e.preventDefault();
+            dropArea.style.background = 'rgba(255, 255, 255, 0.25)';
+        };
+        
+        dropArea.ondragleave = () => {
+            dropArea.style.background = 'rgba(255, 255, 255, 0.2)';
+        };
+        
+        dropArea.ondrop = (e) => {
+            e.preventDefault();
+            dropArea.style.background = 'rgba(255, 255, 255, 0.2)';
+            
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                fileInput.files = e.dataTransfer.files;
+                selectedFile = file;
+                
+                const ext = file.name.split('.').pop().toLowerCase();
+                const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+                
+                fileInfoContent.innerHTML = `
+                    <div class="file-name">${file.name}</div>
+                    <div class="file-details">
+                        <span>📦 ${sizeMB} MB</span>
+                        <span>🏷️ ${ext.toUpperCase()}</span>
+                    </div>
                 `;
                 
                 if (ext === 'stl') fromFormat.value = 'stl';
@@ -525,7 +557,7 @@
                         
                         debugInfo.style.display = 'block';
                         debugInfo.innerHTML = `
-                            <strong>Конвертация выполнена:</strong><br>
+                            ✅ Конвертация выполнена:<br>
                             ${selectedFile.name} → ${newFileName}
                         `;
                     }
