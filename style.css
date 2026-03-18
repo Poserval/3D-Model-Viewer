@@ -10,14 +10,14 @@
     --logo-size: 280px;           
     --logo-size-mobile: 320px;    
     --logo-top-position: -80px;    /* отступ сверху */
-    --logo-margin-bottom: -40px;   /* компенсация */
+    --logo-margin-bottom: -20px;   /* компенсация */
     --logo-3d-rotate-x: 2deg;      
     --logo-3d-rotate-y: 1deg;      
     --logo-shadow-intensity: 0.5;   
     --logo-glow-color: 200, 80, 192;
 
     /* 🔥 ЕДИНЫЙ ОТСТУП ДЛЯ ВСЕХ ЭЛЕМЕНТОВ */
-    --element-spacing: 25px;
+    --element-spacing: 15px;
 }
 
 * {
@@ -70,18 +70,17 @@ body::before {
 .container {
     max-width: 400px;
     margin: 0 auto;
-    padding: 20px;
-    padding-bottom: max(20px, env(safe-area-inset-bottom));
+    padding: 0 20px;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;  /* прижимаем всё к верху */
     align-items: center;
     position: relative;
     z-index: 2;
 }
 
-/* 🔥 ЛОГОТИП */
+/* 🔥 ЛОГОТИП - ПРИЖАТ К ВЕРХУ */
 .app-logo {
     position: relative;
     width: 100%;
@@ -90,7 +89,7 @@ body::before {
     margin: 0;
     padding: 0;
     top: var(--logo-top-position);
-    margin-bottom: var(--logo-margin-bottom);
+    margin-bottom: 0;  /* убираем отступ снизу */
     z-index: 10;
 }
 
@@ -113,11 +112,11 @@ body::before {
             drop-shadow(0 0 70px rgba(200, 80, 192, 0.8));
 }
 
-/* 🔥 ОКНО ПРЕВЬЮ */
+/* 🔥 ОКНО ПРЕВЬЮ - ПОД ЛОГОТИПОМ */
 .preview-area {
     width: 450px;
     height: 450px;
-    margin-top: calc(var(--element-spacing) - 20px);
+    margin-top: -20px;  /* прижимаем к логотипу */
     background: rgba(255, 255, 255, 0.15);
     border-radius: var(--border-radius);
     border: 2px solid rgba(255, 255, 255, 0.25);
@@ -175,40 +174,55 @@ canvas[hidden] {
     opacity: 0 !important;
 }
 
-/* 🔥 ТОНКАЯ ЧЁРНАЯ ПОЛОСА */
+/* 🔥 ТОНКАЯ ПОЛОСКА ПОД БУКВАМИ */
 .file-name-container {
     width: 100%;
     max-width: 450px;
-    margin-top: var(--element-spacing);
-    margin-bottom: var(--element-spacing);
-    border-top: 2px solid rgba(0, 0, 0, 0.6);
-    border-bottom: 2px solid rgba(0, 0, 0, 0.6);
-    background: rgba(0, 0, 0, 0.2);
-    padding: 8px 0;
-    backdrop-filter: blur(5px);
+    margin-top: 5px;  /* минимальный отступ от окна */
+    margin-bottom: 10px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 30px;  /* фиксированная высота */
 }
 
+/* Тонкая полоска (всегда видна) */
+.file-name-container::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: rgba(0, 0, 0, 0.6);
+    transform: translateY(-50%);
+    z-index: 1;
+}
+
+/* Текст по центру полоски */
 .file-name {
+    position: relative;
     color: white;
     font-size: 15px;
     font-weight: 600;
     text-align: center;
     word-break: break-all;
-    display: -webkit-box;
-    -webkit-line-clamp: 1;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    max-height: 1.8em;
-    line-height: 1.5em;
+    display: inline-block;
+    max-width: 90%;
+    background: transparent;
+    padding: 0 10px;
+    z-index: 2;
     text-shadow: 
         -1px -1px 0 #000,  
          1px -1px 0 #000,
         -1px  1px 0 #000,
          1px  1px 0 #000;
     letter-spacing: 0.5px;
+    line-height: 30px;  /* чтобы текст был по центру полоски */
 }
 
-/* 🔥 КОНТЕЙНЕРЫ ДЛЯ КНОПОК - ГОРИЗОНТАЛЬНЫЕ РЯДЫ */
+/* 🔥 КОНТЕЙНЕРЫ ДЛЯ КНОПОК - ПОД ПОЛОСКОЙ */
 .button-row {
     display: flex;
     flex-direction: row;
@@ -216,7 +230,7 @@ canvas[hidden] {
     width: 100%;
     max-width: 450px;
     justify-content: center;
-    margin-top: var(--element-spacing);
+    margin-top: 5px;  /* минимальный отступ */
 }
 
 /* 🔥 ВСЕ КНОПКИ ОДИНАКОВЫЕ */
@@ -450,7 +464,7 @@ canvas[hidden] {
 /* 🔥 АДАПТИВНОСТЬ */
 @media (max-width: 480px) {
     .container {
-        padding: 15px;
+        padding: 0 15px;
     }
     
     .logo-image {
@@ -461,10 +475,17 @@ canvas[hidden] {
     .preview-area {
         width: 300px;
         height: 300px;
+        margin-top: -30px;
     }
     
     .file-name-container {
         max-width: 300px;
+        height: 25px;
+    }
+    
+    .file-name {
+        line-height: 25px;
+        font-size: 14px;
     }
     
     .button-row {
