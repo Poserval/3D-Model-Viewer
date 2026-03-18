@@ -7,8 +7,8 @@
     --header-height: 60px;
     
     /* 🔥 ПАРАМЕТРЫ ДВИЖЕНИЯ */
-    --logo-offset: 100px;        /* двигает логотип */
-    --content-offset: 250px;     /* двигает ВСЁ, что под логотипом (20% вниз) */
+    --logo-offset: -80px;        /* двигает логотип */
+    --content-offset: -300px;     /* увеличил с -200px до -300px (ещё на 20% вниз) */
     --vertical-spacing: 0px;      /* зазор */
 }
 
@@ -442,7 +442,7 @@ canvas[hidden] {
 @media (max-width: 480px) {
     :root {
         --logo-offset: -60px;
-        --content-offset: -150px; /* 20% вниз на мобилках */
+        --content-offset: -250px; /* увеличил с -150px до -250px на мобилках */
     }
     
     .container {
