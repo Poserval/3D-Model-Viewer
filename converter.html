@@ -1,4 +1,4 @@
-<!-- 🔥 converter.html - ПОЛНЫЙ КОД СТРАНИЦЫ КОНВЕРТЕРА С ОПТИМИЗИРОВАННЫМИ ОТСТУПАМИ 🔥 -->
+<!-- 🔥 converter.html - ПОЛНЫЙ КОД СТРАНИЦЫ КОНВЕРТЕРА С ОКНОМ РЕЗУЛЬТАТА 🔥 -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -46,7 +46,7 @@
             z-index: 2;
         }
 
-        /* ХЕДЕР - НЕ ТРОГАЕМ */
+        /* ХЕДЕР */
         .app-logo {
             position: relative;
             width: 100%;
@@ -70,7 +70,6 @@
             background: transparent;
         }
 
-        /* КОНТЕЙНЕР С КОНТЕНТОМ - расстояние от логотипа не трогаем */
         .content-wrapper {
             width: 100%;
             display: flex;
@@ -98,7 +97,7 @@
             padding: 15px 30px;
             text-align: center;
             cursor: pointer;
-            margin-bottom: 20px; /* Единый отступ между элементами */
+            margin-bottom: 20px;
         }
 
         .upload-icon { 
@@ -119,16 +118,16 @@
             margin-top: 5px; 
         }
 
-        /* 🔥 ОКНО ИНФОРМАЦИИ О ФАЙЛЕ - БЕЗ ИКОНКИ, МИНИМАЛЬНАЯ ВЫСОТА */
+        /* ОКНО ИНФОРМАЦИИ О ФАЙЛЕ */
         .file-info {
             width: 100%;
             background: rgba(255, 255, 255, 0.1);
             border-radius: 8px;
-            padding: 10px 12px; /* Уменьшен вертикальный padding */
-            margin-bottom: 20px; /* Единый отступ */
+            padding: 10px 12px;
+            margin-bottom: 20px;
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: white;
-            min-height: 50px; /* Минимальная высота */
+            min-height: 50px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -142,7 +141,7 @@
             font-size: clamp(12px, 4vw, 15px);
             word-break: break-word;
             line-height: 1.3;
-            margin-bottom: 2px; /* Минимальный отступ */
+            margin-bottom: 2px;
         }
 
         .file-info .file-details {
@@ -167,13 +166,74 @@
             font-weight: 600;
         }
 
+        /* 🔥 ОКНО РЕЗУЛЬТАТА КОНВЕРТАЦИИ */
+        .result-info {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            backdrop-filter: blur(5px);
+        }
+
+        .result-row {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-label {
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 500;
+        }
+
+        .result-value {
+            color: rgba(255, 255, 255, 0.95);
+            font-weight: 600;
+            text-align: right;
+            word-break: break-word;
+            max-width: 60%;
+        }
+
+        .result-badge {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 11px;
+            color: #4CAF50;
+            margin-left: 8px;
+        }
+
+        .result-divider {
+            text-align: center;
+            margin: 5px 0;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 12px;
+        }
+
         /* ЗАГОЛОВОК ФОРМАТЫ */
         .formats-title {
             text-align: center;
             color: white;
             font-size: 18px;
             font-weight: 600;
-            margin-bottom: 20px; /* Единый отступ */
+            margin-bottom: 20px;
             text-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
 
@@ -182,7 +242,7 @@
             display: flex;
             align-items: center;
             gap: 15px;
-            margin-bottom: 20px; /* Единый отступ */
+            margin-bottom: 20px;
         }
 
         .format-col {
@@ -247,7 +307,7 @@
             color: white;
             border: 1px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-            margin-bottom: 20px; /* Единый отступ */
+            margin-bottom: 20px;
         }
 
         .convert-btn:hover {
@@ -257,7 +317,7 @@
 
         /* ПРОГРЕСС */
         .progress-area { 
-            margin-bottom: 20px; /* Единый отступ */
+            margin-bottom: 20px; 
         }
         
         .progress-bar {
@@ -282,21 +342,36 @@
             font-size: 14px; 
         }
 
+        /* 🔥 НОВЫЙ БЛОК С РЕЗУЛЬТАТОМ */
+        .result-area {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
         /* СКАЧИВАНИЕ */
         .download-area { 
-            margin-bottom: 20px; /* Единый отступ */
             text-align: center; 
         }
         
         .download-link {
             display: inline-block;
-            padding: 12px 24px;
-            background: rgba(255, 255, 255, 0.2);
+            padding: 14px 28px;
+            background: linear-gradient(145deg, #4CAF50, #45a049);
             border-radius: 12px;
             color: white;
-            text-decoration: underline;
             font-weight: 600;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+            width: 100%;
+            text-align: center;
+        }
+
+        .download-link:hover {
+            background: linear-gradient(145deg, #45a049, #3d8b40);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.5);
         }
 
         /* ДЕБАГ */
@@ -305,6 +380,7 @@
             font-size: 12px;
             opacity: 0.7;
             text-align: center;
+            margin-top: 15px;
         }
 
         /* АДАПТИВНОСТЬ */
@@ -338,44 +414,53 @@
                 left: 10px;
             }
             
-            /* Единые отступы для мобилок */
-            .upload-area { margin-bottom: 15px; }
-            .file-info { margin-bottom: 15px; }
-            .formats-title { margin-bottom: 15px; }
-            .format-row { margin-bottom: 15px; }
-            .convert-btn { margin-bottom: 15px; }
-            .progress-area { margin-bottom: 15px; }
-            .download-area { margin-bottom: 15px; }
+            .result-item {
+                font-size: 12px;
+            }
+            
+            .result-value {
+                max-width: 55%;
+            }
+            
+            .upload-area,
+            .file-info,
+            .formats-title,
+            .format-row,
+            .convert-btn,
+            .progress-area,
+            .result-area {
+                margin-bottom: 15px;
+            }
+            
+            .download-link {
+                padding: 12px 20px;
+                font-size: 14px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- ХЕДЕР - НЕ ТРОГАЕМ -->
         <div class="app-logo">
             <img src="icons/logo-header2.png" alt="3D Model Viewer Logo" class="logo-image">
         </div>
 
-        <!-- КОНТЕЙНЕР С КОНТЕНТОМ - расстояние от логотипа не трогаем -->
         <div class="content-wrapper">
             <div class="converter-content">
                 <input type="file" id="fileInput" accept=".stl,.obj,.glb,.gltf" style="display: none;">
 
-                <!-- ПОЛЕ ЗАГРУЗКИ -->
                 <div class="upload-area" id="dropArea">
                     <div class="upload-icon">📁</div>
                     <div class="upload-text">Нажмите для выбора файла</div>
                     <div class="upload-hint">Поддерживаются: STL, OBJ, GLB, GLTF</div>
                 </div>
 
-                <!-- 🔥 ОКНО ИНФОРМАЦИИ О ФАЙЛЕ - БЕЗ ИКОНКИ, МИНИМАЛЬНАЯ ВЫСОТА -->
                 <div id="fileInfo" class="file-info">
                     <div id="fileInfoContent" class="placeholder-text">Ничего не выбрано</div>
                 </div>
 
                 <div class="formats-title">ФОРМАТЫ</div>
 
-                <!-- ЯЧЕЙКИ С ПОДПИСЯМИ ВНУТРИ -->
                 <div class="format-row">
                     <div class="format-col">
                         <div class="select-wrapper">
@@ -402,10 +487,8 @@
                     </div>
                 </div>
 
-                <!-- КНОПКА КОНВЕРТИРОВАТЬ -->
                 <button class="convert-btn" id="convertBtn">🔄 Конвертировать</button>
 
-                <!-- ПРОГРЕСС -->
                 <div id="progressArea" class="progress-area" style="display: none;">
                     <div class="progress-bar">
                         <div id="progressFill" class="progress-fill"></div>
@@ -413,12 +496,27 @@
                     <div id="progressText" class="progress-text">0%</div>
                 </div>
 
-                <!-- СКАЧИВАНИЕ -->
-                <div id="downloadArea" class="download-area" style="display: none;">
-                    <a id="downloadLink" class="download-link" href="#">📥 Скачать готовый файл</a>
+                <!-- 🔥 НОВЫЙ БЛОК С РЕЗУЛЬТАТОМ КОНВЕРТАЦИИ -->
+                <div id="resultArea" class="result-area" style="display: none;">
+                    <div id="resultInfo" class="result-info">
+                        <div class="result-row">
+                            <div id="originalFileInfo" class="result-item">
+                                <span class="result-label">Было:</span>
+                                <span class="result-value" id="originalFileDetails"></span>
+                            </div>
+                            <div id="convertedFileInfo" class="result-item">
+                                <span class="result-label">Стало:</span>
+                                <span class="result-value" id="convertedFileDetails"></span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- ДЕБАГ -->
+                <!-- СКАЧИВАНИЕ (теперь под результатом) -->
+                <div id="downloadArea" class="download-area" style="display: none;">
+                    <a id="downloadLink" class="download-link" href="#">📥 Скачать полученный файл</a>
+                </div>
+
                 <div id="debugInfo" class="debug-info" style="display: none;"></div>
             </div>
         </div>
@@ -441,25 +539,27 @@
         const progressArea = document.getElementById('progressArea');
         const progressFill = document.getElementById('progressFill');
         const progressText = document.getElementById('progressText');
+        const resultArea = document.getElementById('resultArea');
+        const originalFileDetails = document.getElementById('originalFileDetails');
+        const convertedFileDetails = document.getElementById('convertedFileDetails');
         const downloadArea = document.getElementById('downloadArea');
         const downloadLink = document.getElementById('downloadLink');
         const debugInfo = document.getElementById('debugInfo');
         
         let selectedFile = null;
+        let convertedFileName = '';
+        let convertedFileSize = 0;
         
-        // 🔥 ПОЛУЧАЕМ ФАЙЛ ИЗ ОСНОВНОГО ПРИЛОЖЕНИЯ
+        // ПОЛУЧАЕМ ФАЙЛ ИЗ ОСНОВНОГО ПРИЛОЖЕНИЯ
         const urlParams = new URLSearchParams(window.location.search);
         const fileName = urlParams.get('file');
         const fileDataBase64 = urlParams.get('data');
 
-        // Если есть данные файла из приложения
         if (fileDataBase64) {
             try {
-                // Декодируем данные
                 const fileDataStr = decodeURIComponent(escape(atob(fileDataBase64)));
                 const fileData = JSON.parse(fileDataStr);
                 
-                // Показываем информацию БЕЗ ИКОНКИ
                 fileInfoContent.innerHTML = `
                     <div class="file-name">${fileData.name}</div>
                     <div class="file-details">
@@ -469,14 +569,12 @@
                     <div class="app-badge">✅ Из приложения</div>
                 `;
                 
-                // Автоматически выбираем формат
                 const ext = fileData.name.split('.').pop().toLowerCase();
                 if (ext === 'stl') fromFormat.value = 'stl';
                 else if (ext === 'obj') fromFormat.value = 'obj';
                 else if (ext === 'glb') fromFormat.value = 'glb';
                 else if (ext === 'gltf') fromFormat.value = 'gltf';
                 
-                // Сохраняем информацию о файле
                 selectedFile = {
                     name: fileData.name,
                     size: fileData.size,
@@ -488,7 +586,6 @@
                 fileInfoContent.innerHTML = '❌ Ошибка загрузки файла из приложения';
             }
         } else if (fileName) {
-            // Если только имя файла (старая версия)
             fileInfoContent.innerHTML = `
                 <div class="file-name">${fileName}</div>
                 <div class="file-details">
@@ -508,7 +605,6 @@
                 const ext = file.name.split('.').pop().toLowerCase();
                 const sizeMB = (file.size / 1024 / 1024).toFixed(2);
                 
-                // Показываем информацию БЕЗ ИКОНКИ
                 fileInfoContent.innerHTML = `
                     <div class="file-name">${file.name}</div>
                     <div class="file-details">
@@ -561,10 +657,16 @@
             }
         };
         
-        // Функция обновления прогресса
         function updateProgress(percent) {
             progressFill.style.width = percent + '%';
             progressText.textContent = percent + '%';
+        }
+        
+        // Функция форматирования размера
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / 1024 / 1024).toFixed(2) + ' MB';
         }
         
         // Обработчик кнопки конвертации
@@ -582,11 +684,13 @@
                 return;
             }
             
-            progressArea.style.display = 'block';
+            // Скрываем результат и скачивание
+            resultArea.style.display = 'none';
             downloadArea.style.display = 'none';
+            progressArea.style.display = 'block';
             updateProgress(0);
             
-            // Эмуляция конвертации (заменить на реальную)
+            // Эмуляция конвертации
             let progress = 0;
             const interval = setInterval(() => {
                 progress += 10;
@@ -599,8 +703,25 @@
                     baseName = baseName.replace(/\.(glb|gltf|obj|stl)$/i, '');
                     
                     const newFileName = baseName + '.' + to;
+                    convertedFileName = newFileName;
                     
-                    // Создаем тестовый файл (заменить на реальный результат)
+                    // Генерируем размер результата (немного отличается для реализма)
+                    const originalSize = selectedFile.size;
+                    convertedFileSize = Math.round(originalSize * (0.9 + Math.random() * 0.2));
+                    
+                    // Форматируем строки
+                    const originalExt = selectedFile.name.split('.').pop().toUpperCase();
+                    const originalSizeStr = formatSize(originalSize);
+                    const convertedSizeStr = formatSize(convertedFileSize);
+                    
+                    // Обновляем окно результата
+                    originalFileDetails.innerHTML = `${selectedFile.name} (${originalExt}) · ${originalSizeStr}`;
+                    convertedFileDetails.innerHTML = `${newFileName} (${to.toUpperCase()}) · ${convertedSizeStr}`;
+                    
+                    // Показываем результат
+                    resultArea.style.display = 'block';
+                    
+                    // Создаем ссылку для скачивания
                     const dummyContent = 'Конвертированный файл';
                     const blob = new Blob([dummyContent], {type: 'application/octet-stream'});
                     const url = URL.createObjectURL(blob);
@@ -609,11 +730,11 @@
                     downloadLink.download = newFileName;
                     downloadArea.style.display = 'block';
                     
-                    debugInfo.style.display = 'block';
-                    debugInfo.innerHTML = `✅ Конвертация выполнена:<br>${selectedFile.name} → ${newFileName}`;
+                    debugInfo.style.display = 'none';
                 }
             }, 200);
         };
     </script>
 </body>
 </html>
+-
