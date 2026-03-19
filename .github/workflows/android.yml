@@ -26,7 +26,6 @@ jobs:
       
     - name: Generate Android project
       run: |
-        # 🔥 Удаляем старую android папку, если она есть
         rm -rf android
         npx cap add android
         npx cap sync android
@@ -42,10 +41,32 @@ jobs:
         cd android
         chmod +x gradlew
         ./gradlew assembleRelease --no-daemon
+        
+    - name: Find APK file
+      run: |
+        echo "🔍 Ищем APK файл..."
+        echo "=== Все APK файлы в проекте ==="
+        find . -name "*.apk" -type f | while read file; do
+          echo "📦 Найден APK: $file"
+          ls -la "$file"
+        done
+        
+        echo "=== Содержимое android/ ==="
+        find android -name "*.apk" -type f -exec ls -la {} \; || echo "APK не найден в android/"
+        
+        echo "=== Содержимое build/outputs ==="
+        find android -path "*/build/outputs/*" -name "*.apk" -type f -exec ls -la {} \; || echo "APK не найден в build/outputs"
       
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: 3d-model-viewer-apk
-        path: android/app/build/outputs/apk/release/app-release.apk
+        path: |
+          android/app/build/outputs/apk/release/*.apk
+          android/app/build/outputs/apk/debug/*.apk
+          app/build/outputs/apk/release/*.apk
+          app/build/outputs/apk/debug/*.apk
+          **/*.apk
         retention-days: 30
+        if-no-files-found: warn
+ 
