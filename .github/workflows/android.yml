@@ -42,31 +42,35 @@ jobs:
         chmod +x gradlew
         ./gradlew assembleRelease --no-daemon
         
-    - name: Find APK file
+    - name: Sign APK
       run: |
-        echo "🔍 Ищем APK файл..."
-        echo "=== Все APK файлы в проекте ==="
-        find . -name "*.apk" -type f | while read file; do
-          echo "📦 Найден APK: $file"
-          ls -la "$file"
-        done
+        echo "🔐 Подписываем APK..."
+        cd android/app/build/outputs/apk/release/
         
-        echo "=== Содержимое android/ ==="
-        find android -name "*.apk" -type f -exec ls -la {} \; || echo "APK не найден в android/"
+        # Проверяем наличие файлов
+        echo "Содержимое папки:"
+        ls -la
         
-        echo "=== Содержимое build/outputs ==="
-        find android -path "*/build/outputs/*" -name "*.apk" -type f -exec ls -la {} \; || echo "APK не найден в build/outputs"
-      
+        # Декодируем keystore
+        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > keystore.jks
+        
+        # Подписываем
+        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+          -keystore keystore.jks \
+          -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
+          -keypass "${{ secrets.KEY_PASSWORD }}" \
+          app-release-unsigned.apk \
+          "${{ secrets.KEY_ALIAS }}"
+        
+        # Переименовываем
+        cp app-release-unsigned.apk 3d-model-viewer.apk
+        echo "✅ Подписанный APK готов"
+        ls -la 3d-model-viewer.apk
+        
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: 3d-model-viewer-apk
-        path: |
-          android/app/build/outputs/apk/release/*.apk
-          android/app/build/outputs/apk/debug/*.apk
-          app/build/outputs/apk/release/*.apk
-          app/build/outputs/apk/debug/*.apk
-          **/*.apk
+        path: android/app/build/outputs/apk/release/3d-model-viewer.apk
         retention-days: 30
-        if-no-files-found: warn
  
