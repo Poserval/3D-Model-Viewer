@@ -1,4 +1,4 @@
-<!-- 🔥 converter.html - ПОЛНЫЙ КОД СТРАНИЦЫ КОНВЕРТЕРА С ОКНОМ РЕЗУЛЬТАТА 🔥 -->
+<!-- 🔥 converter.html - ПОЛНЫЙ КОД СТРАНИЦЫ КОНВЕРТЕРА С УЛУЧШЕННЫМ ОТОБРАЖЕНИЕМ РЕЗУЛЬТАТА 🔥 -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -166,7 +166,7 @@
             font-weight: 600;
         }
 
-        /* 🔥 ОКНО РЕЗУЛЬТАТА КОНВЕРТАЦИИ */
+        /* ОКНО РЕЗУЛЬТАТА КОНВЕРТАЦИИ */
         .result-info {
             width: 100%;
             background: rgba(255, 255, 255, 0.1);
@@ -186,45 +186,32 @@
 
         .result-item {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
+            gap: 8px;
             font-size: 13px;
-            padding: 4px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .result-item:last-child {
-            border-bottom: none;
+            line-height: 1.4;
+            word-break: break-word;
         }
 
         .result-label {
             color: rgba(255, 255, 255, 0.7);
             font-weight: 500;
+            min-width: 45px;
+            flex-shrink: 0;
         }
 
         .result-value {
             color: rgba(255, 255, 255, 0.95);
-            font-weight: 600;
-            text-align: right;
+            font-weight: 500;
             word-break: break-word;
-            max-width: 60%;
+            flex: 1;
         }
 
-        .result-badge {
-            background: rgba(76, 175, 80, 0.2);
-            border: 1px solid rgba(76, 175, 80, 0.3);
-            border-radius: 4px;
-            padding: 2px 8px;
-            font-size: 11px;
-            color: #4CAF50;
-            margin-left: 8px;
-        }
-
-        .result-divider {
-            text-align: center;
-            margin: 5px 0;
-            color: rgba(255, 255, 255, 0.3);
+        .result-value .file-size {
+            color: rgba(255, 255, 255, 0.6);
             font-size: 12px;
+            margin-left: 5px;
+            white-space: nowrap;
         }
 
         /* ЗАГОЛОВОК ФОРМАТЫ */
@@ -342,7 +329,7 @@
             font-size: 14px; 
         }
 
-        /* 🔥 НОВЫЙ БЛОК С РЕЗУЛЬТАТОМ */
+        /* БЛОК С РЕЗУЛЬТАТОМ */
         .result-area {
             width: 100%;
             margin-bottom: 20px;
@@ -418,8 +405,8 @@
                 font-size: 12px;
             }
             
-            .result-value {
-                max-width: 55%;
+            .result-label {
+                min-width: 40px;
             }
             
             .upload-area,
@@ -496,15 +483,15 @@
                     <div id="progressText" class="progress-text">0%</div>
                 </div>
 
-                <!-- 🔥 НОВЫЙ БЛОК С РЕЗУЛЬТАТОМ КОНВЕРТАЦИИ -->
+                <!-- НОВЫЙ БЛОК С РЕЗУЛЬТАТОМ КОНВЕРТАЦИИ -->
                 <div id="resultArea" class="result-area" style="display: none;">
                     <div id="resultInfo" class="result-info">
                         <div class="result-row">
-                            <div id="originalFileInfo" class="result-item">
+                            <div class="result-item">
                                 <span class="result-label">Было:</span>
                                 <span class="result-value" id="originalFileDetails"></span>
                             </div>
-                            <div id="convertedFileInfo" class="result-item">
+                            <div class="result-item">
                                 <span class="result-label">Стало:</span>
                                 <span class="result-value" id="convertedFileDetails"></span>
                             </div>
@@ -512,7 +499,7 @@
                     </div>
                 </div>
 
-                <!-- СКАЧИВАНИЕ (теперь под результатом) -->
+                <!-- СКАЧИВАНИЕ -->
                 <div id="downloadArea" class="download-area" style="display: none;">
                     <a id="downloadLink" class="download-link" href="#">📥 Скачать полученный файл</a>
                 </div>
@@ -669,6 +656,15 @@
             return (bytes / 1024 / 1024).toFixed(2) + ' MB';
         }
         
+        // Функция для обрезания слишком длинных имен
+        function truncateFileName(name, maxLength = 30) {
+            if (name.length <= maxLength) return name;
+            const ext = name.split('.').pop();
+            const nameWithoutExt = name.slice(0, name.lastIndexOf('.'));
+            const truncatedName = nameWithoutExt.slice(0, maxLength - ext.length - 3) + '...';
+            return truncatedName + '.' + ext;
+        }
+        
         // Обработчик кнопки конвертации
         convertBtn.onclick = async () => {
             if (!selectedFile) {
@@ -705,18 +701,17 @@
                     const newFileName = baseName + '.' + to;
                     convertedFileName = newFileName;
                     
-                    // Генерируем размер результата (немного отличается для реализма)
+                    // Генерируем размер результата
                     const originalSize = selectedFile.size;
                     convertedFileSize = Math.round(originalSize * (0.9 + Math.random() * 0.2));
                     
-                    // Форматируем строки
-                    const originalExt = selectedFile.name.split('.').pop().toUpperCase();
-                    const originalSizeStr = formatSize(originalSize);
-                    const convertedSizeStr = formatSize(convertedFileSize);
+                    // Форматируем строки - ТОЛЬКО название и размер, без дублирования формата
+                    const originalDisplay = `${selectedFile.name} · ${formatSize(originalSize)}`;
+                    const convertedDisplay = `${newFileName} · ${formatSize(convertedFileSize)}`;
                     
                     // Обновляем окно результата
-                    originalFileDetails.innerHTML = `${selectedFile.name} (${originalExt}) · ${originalSizeStr}`;
-                    convertedFileDetails.innerHTML = `${newFileName} (${to.toUpperCase()}) · ${convertedSizeStr}`;
+                    originalFileDetails.innerHTML = originalDisplay;
+                    convertedFileDetails.innerHTML = convertedDisplay;
                     
                     // Показываем результат
                     resultArea.style.display = 'block';
@@ -737,4 +732,3 @@
     </script>
 </body>
 </html>
--
