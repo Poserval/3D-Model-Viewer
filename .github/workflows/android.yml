@@ -25,7 +25,11 @@ jobs:
       run: npm run build
       
     - name: Generate Android project
-      run: npx cap add android && npx cap sync android
+      run: |
+        # 🔥 Удаляем старую android папку, если она есть
+        rm -rf android
+        npx cap add android
+        npx cap sync android
       
     - name: Setup Java
       uses: actions/setup-java@v4
@@ -45,4 +49,3 @@ jobs:
         name: 3d-model-viewer-apk
         path: android/app/build/outputs/apk/release/app-release.apk
         retention-days: 30
-        
