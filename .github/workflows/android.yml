@@ -2,7 +2,7 @@ name: Build Android APK
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -18,136 +18,14 @@ jobs:
       with:
         node-version: '18'
         
-    - name: Clean previous build
-      run: rm -rf capacitor-web android
-      
     - name: Install dependencies
-      run: npm install --package-lock=false
+      run: npm install
       
     - name: Build web assets
-      run: |
-        mkdir -p capacitor-web
-        cp index.html style.css script.js manifest.json capacitor-web/
-        cp -r icons capacitor-web/
-        
+      run: npm run build
+      
     - name: Generate Android project
       run: npx cap add android && npx cap sync android
-      
-    - name: Add download permissions to AndroidManifest
-      run: |
-        echo "📱 Добавляем разрешения для скачивания..."
-        cd android/app/src/main
-        
-        # Создаем XML для FileProvider
-        mkdir -p res/xml
-        cat > res/xml/file_paths.xml << 'EOF'
-        <?xml version="1.0" encoding="utf-8"?>
-        <paths>
-            <external-path name="external_files" path="." />
-            <external-files-path name="external_files" path="." />
-            <cache-path name="cache" path="." />
-            <external-cache-path name="external_cache" path="." />
-        </paths>
-        EOF
-        
-        # Создаем новый манифест с разрешениями
-        cat > AndroidManifest.xml << 'EOF'
-        <?xml version="1.0" encoding="utf-8"?>
-        <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-            package="ru.dviewer.app">
-
-            <uses-permission android:name="android.permission.INTERNET" />
-            <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-            <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-
-            <application
-                android:allowBackup="true"
-                android:icon="@mipmap/ic_launcher"
-                android:label="@string/app_name"
-                android:roundIcon="@mipmap/ic_launcher_round"
-                android:supportsRtl="true"
-                android:theme="@style/AppTheme"
-                android:requestLegacyExternalStorage="true">
-                
-                <activity
-                    android:name=".MainActivity"
-                    android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
-                    android:label="@string/title_activity_main"
-                    android:launchMode="singleTask"
-                    android:exported="true">
-                    
-                    <intent-filter>
-                        <action android:name="android.intent.action.MAIN" />
-                        <category android:name="android.intent.category.LAUNCHER" />
-                    </intent-filter>
-                </activity>
-                
-                <provider
-                    android:name="androidx.core.content.FileProvider"
-                    android:authorities="${applicationId}.fileprovider"
-                    android:exported="false"
-                    android:grantUriPermissions="true">
-                    <meta-data
-                        android:name="android.support.FILE_PROVIDER_PATHS"
-                        android:resource="@xml/file_paths" />
-                </provider>
-            </application>
-        </manifest>
-        EOF
-        
-        echo "✅ AndroidManifest.xml обновлен с разрешениями!"
-      
-    - name: Replace launcher icons with proper scaling
-      run: |
-        echo "🔄 Заменяем иконки с правильным масштабированием..."
-        convert ./icons/icon-app-162.png -resize 108x108 ./icons/icon-108.png 2>/dev/null || echo "ImageMagick не установлен, используем исходную иконку"
-        
-        find android -name "ic_launcher*.png" -type f | while read file; do
-          echo "Заменяем: $file"
-          if [ -f "./icons/icon-108.png" ]; then
-            cp ./icons/icon-108.png "$file" 2>/dev/null || true
-          else
-            cp ./icons/icon-app-162.png "$file" 2>/dev/null || true
-          fi
-        done
-        echo "✅ Иконки заменены!"
-      
-    - name: Configure Android signing
-      run: |
-        echo "🔐 Настраиваем подпись в Android..."
-        cd android/app
-        
-        keytool -genkeypair -v \
-          -keystore release.keystore \
-          -alias release_key \
-          -keyalg RSA \
-          -keysize 2048 \
-          -validity 10000 \
-          -storepass "android123" \
-          -keypass "android123" \
-          -dname "CN=3D Viewer, O=3DViewer, C=RU"
-        
-        cat > signing-config.gradle << 'EOF'
-        android {
-            signingConfigs {
-                release {
-                    storeFile file("release.keystore")
-                    storePassword "android123"
-                    keyAlias "release_key"
-                    keyPassword "android123"
-                }
-            }
-            buildTypes {
-                release {
-                    signingConfig signingConfigs.release
-                    minifyEnabled false
-                }
-            }
-        }
-        EOF
-        
-        echo "apply from: 'signing-config.gradle'" >> build.gradle
-        echo "✅ Подпись настроена!"
       
     - name: Setup Java
       uses: actions/setup-java@v4
@@ -155,15 +33,16 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
         
-    - name: Build Signed Release APK
+    - name: Build Release APK
       run: |
         cd android
         chmod +x gradlew
         ./gradlew assembleRelease --no-daemon
-        
-    - name: Upload APK to Artifacts
+      
+    - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: 3d-model-viewer-apk
-        path: android/app/build/outputs/apk/release/*.apk
+        path: android/app/build/outputs/apk/release/app-release.apk
         retention-days: 30
+        
