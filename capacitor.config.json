@@ -11,7 +11,7 @@
       "minSdkVersion": 22,
       "compileSdkVersion": 35,
       "versionCode": 2,
-      "versionName": "1.1.0"  // ← было 1.0.1, стало 1.1.0
+      "versionName": "1.1.0"
     }
   },
   "includeAssets": [
