@@ -1,10 +1,19 @@
 {
-  "name": "3d-model-viewer",
-  "version": "1.1.1",
-  "capacitor": {
-    "android": {
-      "versionCode": 3,  // ⬅️ новый код
-      "versionName": "1.1.1"
+  "appId": "ru.dviewer.app",
+  "appName": "3DViewer",
+  "webDir": "capacitor-web",
+  "version": "1.1.0",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "buildOptions": {
+      "targetSdkVersion": 35,
+      "minSdkVersion": 22,
+      "compileSdkVersion": 35
     }
-  }
+  },
+  "includeAssets": [
+    "wasm/**/*"
+  ]
 }
