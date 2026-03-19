@@ -1,20 +1,27 @@
 {
-  "appId": "ru.dviewer.app",
-  "appName": "3DViewer",
-  "webDir": "capacitor-web",
-  "server": {
-    "androidScheme": "https"
+  "name": "3d-model-viewer",
+  "version": "1.0.1",
+  "scripts": {
+    "build": "mkdir -p capacitor-web && cp *.html *.json *.js *.css capacitor-web/ && cp -r icons capacitor-web/",
+    "clean": "rm -rf capacitor-web android",
+    "cap:add": "npm run build && npx cap add android && npm run clean",
+    "cap:sync": "npm run build && npx cap sync android && npm run clean"
   },
-  "android": {
-    "buildOptions": {
-      "targetSdkVersion": 35,
-      "minSdkVersion": 22,
-      "compileSdkVersion": 35,
+  "dependencies": {
+    "@capacitor/android": "^5.0.0",
+    "@capacitor/cli": "^5.0.0",
+    "@capacitor/core": "^5.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/app": "^5.0.8",
+    "@capacitor/splash-screen": "^5.0.8"
+  },
+  "capacitor": {
+    "android": {
       "versionCode": 2,
-      "versionName": "1.1.0"
+      "versionName": "1.0.1",
+      "minSdkVersion": 22,
+      "targetSdkVersion": 35
     }
-  },
-  "includeAssets": [
-    "wasm/**/*"
-  ]
+  }
 }
