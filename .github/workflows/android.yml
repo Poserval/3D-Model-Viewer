@@ -19,7 +19,7 @@ jobs:
         node-version: '18'
         
     - name: Install dependencies
-      run: npm install
+      run: npm install --legacy-peer-deps
       
     - name: Build web assets
       run: npm run build
@@ -42,83 +42,16 @@ jobs:
         chmod +x gradlew
         ./gradlew assembleRelease --no-daemon
         
-    - name: Sign APK
-      run: |
-        echo "🔐 Подписываем APK..."
-        cd android/app/build/outputs/apk/release/
-        
-        echo "Содержимое папки:"
-        ls -la
-        
-        # ДИАГНОСТИКА
-        echo "=== ДИАГНОСТИКА СЕКРЕТОВ ==="
-        echo "KEYSTORE_BASE64 длина: ${#KEYSTORE_BASE64}"
-        echo "KEYSTORE_BASE64 первые 50 символов: ${KEYSTORE_BASE64:0:50}"
-        echo "KEY_ALIAS: $KEY_ALIAS"
-        echo "KEYSTORE_PASSWORD длина: ${#KEYSTORE_PASSWORD}"
-        
-        # Пробуем декодировать разными способами
-        echo "=== ПРОБУЕМ ДЕКОДИРОВАТЬ ==="
-        echo "$KEYSTORE_BASE64" > keystore_b64.txt
-        echo "Размер временного файла: $(wc -c < keystore_b64.txt)"
-        
-        # Способ 1 - прямой
-        if base64 -d keystore_b64.txt > keystore.jks 2>/dev/null; then
-          echo "✅ Способ 1 сработал"
-          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
-            -keystore keystore.jks \
-            -storepass "$KEYSTORE_PASSWORD" \
-            -keypass "$KEY_PASSWORD" \
-            app-release-unsigned.apk \
-            "$KEY_ALIAS"
-          cp app-release-unsigned.apk 3d-model-viewer.apk
-          echo "✅ APK подписан и готов"
-        else
-          echo "❌ Способ 1 не сработал"
-          
-          # Способ 2 - с очисткой
-          echo "=== Пробуем способ 2 (очистка) ==="
-          cat keystore_b64.txt | tr -d '\n\r ' > keystore_clean.txt
-          if base64 -d keystore_clean.txt > keystore2.jks 2>/dev/null; then
-            echo "✅ Способ 2 сработал"
-            jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
-              -keystore keystore2.jks \
-              -storepass "$KEYSTORE_PASSWORD" \
-              -keypass "$KEY_PASSWORD" \
-              app-release-unsigned.apk \
-              "$KEY_ALIAS"
-            cp app-release-unsigned.apk 3d-model-viewer.apk
-            echo "✅ APK подписан и готов"
-          else
-            echo "❌ Способ 2 не сработал"
-            
-            # Способ 3 - без декодирования (просто копируем)
-            echo "=== Пробуем способ 3 (без подписи) ==="
-            cp app-release-unsigned.apk 3d-model-viewer.apk
-            echo "⚠️ APK будет без подписи, установка может не работать"
-          fi
-        fi
-        
-        echo "Итоговое содержимое папки:"
-        ls -la
-        
     - name: Find APK
       run: |
-        echo "🔍 Ищем APK файл..."
+        echo "🔍 Поиск APK файла..."
         find . -name "*.apk" -type f | while read file; do
-          echo "📦 Найден APK: $file"
-          ls -la "$file"
+          echo "📦 Найден: $file"
         done
         
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: 3d-model-viewer-apk
-        path: "**/*.apk"
+        path: android/app/build/outputs/apk/release/app-release-unsigned.apk
         retention-days: 30
-      env:
-        KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-        KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
- 
