@@ -19,8 +19,10 @@ jobs:
         node-version: '18'
         
     - name: Install dependencies
-      run: npm install --legacy-peer-deps
-      
+      run: |
+        npm install -g @capacitor/cli
+        npm install --legacy-peer-deps
+        
     - name: Build web assets
       run: npm run build
       
@@ -29,7 +31,48 @@ jobs:
         rm -rf android
         npx cap add android
         npx cap sync android
-      
+        
+    - name: Fix Android configuration
+      run: |
+        # Создаем правильный build.gradle
+        cat > android/app/build.gradle << 'EOF'
+        plugins {
+            id 'com.android.application'
+        }
+
+        android {
+            namespace 'ru.dviewer.app'
+            compileSdk 34
+
+            defaultConfig {
+                applicationId "ru.dviewer.app"
+                minSdk 22
+                targetSdk 34
+                versionCode 2
+                versionName "1.1.0"
+            }
+
+            buildTypes {
+                release {
+                    minifyEnabled false
+                    proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+                }
+            }
+            
+            compileOptions {
+                sourceCompatibility JavaVersion.VERSION_1_8
+                targetCompatibility JavaVersion.VERSION_1_8
+            }
+        }
+
+        dependencies {
+            implementation fileTree(dir: 'libs', include: ['*.jar'])
+            implementation 'androidx.appcompat:appcompat:1.6.1'
+            implementation 'com.google.android.material:material:1.9.0'
+            implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+        }
+        EOF
+        
     - name: Setup Java
       uses: actions/setup-java@v4
       with:
@@ -40,18 +83,21 @@ jobs:
       run: |
         cd android
         chmod +x gradlew
-        ./gradlew assembleRelease --no-daemon
+        ./gradlew clean
+        ./gradlew assembleRelease --no-daemon --stacktrace
         
     - name: Find APK
       run: |
-        echo "🔍 Поиск APK файла..."
+        echo "🔍 Поиск APK файлов..."
         find . -name "*.apk" -type f | while read file; do
           echo "📦 Найден: $file"
+          ls -la "$file"
+          file "$file"
         done
         
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: 3d-model-viewer-apk
-        path: android/app/build/outputs/apk/release/app-release-unsigned.apk
+        path: android/app/build/outputs/apk/release/*.apk
         retention-days: 30
