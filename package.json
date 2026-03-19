@@ -1,6 +1,6 @@
 {
   "name": "3d-model-viewer",
-  "version": "1.1.0",  // ← СДЕЛАЙ ОДИНАКОВО!
+  "version": "1.1.0",
   "scripts": {
     "build": "mkdir -p capacitor-web && cp *.html *.json *.js *.css capacitor-web/ && cp -r icons capacitor-web/",
     "clean": "rm -rf capacitor-web android",
@@ -16,5 +16,4 @@
     "@capacitor/app": "^5.0.8",
     "@capacitor/splash-screen": "^5.0.8"
   }
-  // УБЕРИ блок "capacitor" отсюда полностью!
 }
