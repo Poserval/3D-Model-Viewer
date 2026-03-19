@@ -2,7 +2,7 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -18,84 +18,90 @@ jobs:
       with:
         node-version: '18'
         
-    - name: Install dependencies
-      run: |
-        npm install -g @capacitor/cli
-        npm install --legacy-peer-deps
-        
-    - name: Build web assets
-      run: npm run build
+    - name: Clean previous build
+      run: rm -rf capacitor-web android
       
-    - name: Generate Android project
+    - name: Install dependencies
+      run: npm install --package-lock=false
+      
+    - name: Build web assets
       run: |
-        rm -rf android
-        npx cap add android
-        npx cap sync android
+        mkdir -p capacitor-web
+        cp index.html style.css script.js manifest.json capacitor-web/
+        cp -r icons capacitor-web/
         
-    - name: Fix Android configuration
+    - name: Generate Android project
+      run: npx cap add android && npx cap sync android
+      
+    - name: Replace launcher icons with proper scaling
       run: |
-        # Создаем правильный build.gradle
-        cat > android/app/build.gradle << 'EOF'
-        plugins {
-            id 'com.android.application'
-        }
-
+        echo "🔄 Заменяем иконки с правильным масштабированием..."
+        
+        # Создаем уменьшенную версию иконки 108x108 для лучшего отображения
+        convert ./icons/icon-app-162.png -resize 108x108 ./icons/icon-108.png 2>/dev/null || echo "ImageMagick не установлен, используем исходную иконку"
+        
+        # Заменяем иконки на уменьшенную версию
+        find android -name "ic_launcher*.png" -type f | while read file; do
+          echo "Заменяем: $file"
+          if [ -f "./icons/icon-108.png" ]; then
+            cp ./icons/icon-108.png "$file" 2>/dev/null || true
+          else
+            cp ./icons/icon-app-162.png "$file" 2>/dev/null || true
+          fi
+        done
+        
+        echo "✅ Иконки заменены с правильным масштабированием!"
+      
+    - name: Configure Android signing
+      run: |
+        echo "🔐 Настраиваем подпись в Android..."
+        cd android/app
+        
+        keytool -genkeypair -v \
+          -keystore release.keystore \
+          -alias release_key \
+          -keyalg RSA \
+          -keysize 2048 \
+          -validity 10000 \
+          -storepass "android123" \
+          -keypass "android123" \
+          -dname "CN=3D Viewer, O=3DViewer, C=RU"
+        
+        cat > signing-config.gradle << 'EOF'
         android {
-            namespace 'ru.dviewer.app'
-            compileSdk 34
-
-            defaultConfig {
-                applicationId "ru.dviewer.app"
-                minSdk 22
-                targetSdk 34
-                versionCode 2
-                versionName "1.1.0"
-            }
-
-            buildTypes {
+            signingConfigs {
                 release {
-                    minifyEnabled false
-                    proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+                    storeFile file("release.keystore")
+                    storePassword "android123"
+                    keyAlias "release_key"
+                    keyPassword "android123"
                 }
             }
-            
-            compileOptions {
-                sourceCompatibility JavaVersion.VERSION_1_8
-                targetCompatibility JavaVersion.VERSION_1_8
+            buildTypes {
+                release {
+                    signingConfig signingConfigs.release
+                    minifyEnabled false
+                }
             }
-        }
-
-        dependencies {
-            implementation fileTree(dir: 'libs', include: ['*.jar'])
-            implementation 'androidx.appcompat:appcompat:1.6.1'
-            implementation 'com.google.android.material:material:1.9.0'
-            implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
         }
         EOF
         
+        echo "apply from: 'signing-config.gradle'" >> build.gradle
+        echo "✅ Подпись настроена!"
+      
     - name: Setup Java
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
         java-version: '17'
         
-    - name: Build Release APK
+    - name: Build Signed Release APK
       run: |
         cd android
         chmod +x gradlew
-        ./gradlew clean
-        ./gradlew assembleRelease --no-daemon --stacktrace
+        ./gradlew assembleRelease --no-daemon
         
-    - name: Find APK
-      run: |
-        echo "🔍 Поиск APK файлов..."
-        find . -name "*.apk" -type f | while read file; do
-          echo "📦 Найден: $file"
-          ls -la "$file"
-          file "$file"
-        done
-        
-    - name: Upload APK
+    - name: Upload APK to Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: 3d-model-viewer-apk
