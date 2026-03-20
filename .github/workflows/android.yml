@@ -52,12 +52,30 @@ jobs:
         
         echo "✅ Иконки заменены с правильным масштабированием!"
       
+    - name: Update version for RuStore
+      run: |
+        echo "🔄 Обновляем версию для RuStore..."
+        cd android/app
+        
+        # Увеличиваем versionCode на 1
+        CURRENT_CODE=$(grep -oP 'versionCode \K\d+' build.gradle)
+        NEW_CODE=$((CURRENT_CODE + 1))
+        echo "Текущий versionCode: $CURRENT_CODE -> Новый: $NEW_CODE"
+        
+        # Обновляем versionCode
+        sed -i "s/versionCode [0-9]\+/versionCode $NEW_CODE/" build.gradle
+        
+        # Обновляем versionName
+        sed -i 's/versionName "[0-9.]\+"/versionName "1.1.0"/' build.gradle
+        
+        echo "✅ Версия обновлена: versionCode $NEW_CODE, versionName 1.1.0"
+      
     - name: Configure Android signing
       run: |
         echo "🔐 Настраиваем подпись в Android..."
         cd android/app
         
-        # Создаем ключ (для тестирования)
+        # Создаем ключ
         keytool -genkeypair -v \
           -keystore release.keystore \
           -alias release_key \
