@@ -48,27 +48,24 @@ jobs:
         
     - name: Setup signing in build.gradle
       run: |
-        cat >> android/app/build.gradle << 'EOF'
-        
-android {
-    signingConfigs {
-        release {
-            storeFile file('release.keystore')
-            storePassword 'android123'
-            keyAlias 'release_key'
-            keyPassword 'android123'
-        }
-    }
-    buildTypes {
-        release {
-            signingConfig signingConfigs.release
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
-    }
-}
-EOF
-        echo "✅ Подпись настроена в build.gradle"
+        echo "" >> android/app/build.gradle
+        echo "android {" >> android/app/build.gradle
+        echo "    signingConfigs {" >> android/app/build.gradle
+        echo "        release {" >> android/app/build.gradle
+        echo "            storeFile file('release.keystore')" >> android/app/build.gradle
+        echo "            storePassword 'android123'" >> android/app/build.gradle
+        echo "            keyAlias 'release_key'" >> android/app/build.gradle
+        echo "            keyPassword 'android123'" >> android/app/build.gradle
+        echo "        }" >> android/app/build.gradle
+        echo "    }" >> android/app/build.gradle
+        echo "    buildTypes {" >> android/app/build.gradle
+        echo "        release {" >> android/app/build.gradle
+        echo "            signingConfig signingConfigs.release" >> android/app/build.gradle
+        echo "            minifyEnabled false" >> android/app/build.gradle
+        echo "            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'" >> android/app/build.gradle
+        echo "        }" >> android/app/build.gradle
+        echo "    }" >> android/app/build.gradle
+        echo "}" >> android/app/build.gradle
         
     - name: Setup Java
       uses: actions/setup-java@v4
