@@ -52,20 +52,6 @@ jobs:
         
         echo "✅ Иконки заменены с правильным масштабированием!"
       
-    - name: Update Android version for RuStore
-      run: |
-        echo "🔄 Обновляем версию Android для обновления в RuStore..."
-        cd android/app
-        
-        # Увеличиваем versionCode (должен быть больше предыдущего)
-        # Если предыдущая версия была 1, ставим 2
-        sed -i 's/versionCode [0-9]*/versionCode 2/' build.gradle
-        
-        # Обновляем versionName (видимая версия)
-        sed -i 's/versionName "[0-9.]*"/versionName "1.1.0"/' build.gradle
-        
-        echo "✅ Версия обновлена: versionCode 2, versionName 1.1.0"
-      
     - name: Configure Android signing with saved keystore
       run: |
         echo "🔐 Настраиваем подпись в Android с сохраненным ключом..."
