@@ -33,12 +33,61 @@ jobs:
     - name: Generate Android project
       run: npx cap add android && npx cap sync android
       
-    - name: Replace launcher icons
+    - name: Replace launcher icons with proper scaling
       run: |
-        echo "🔄 Заменяем иконки..."
+        echo "🔄 Заменяем иконки с правильным масштабированием..."
+        
+        # Создаем уменьшенную версию иконки 108x108 для лучшего отображения
+        convert ./icons/icon-app-162.png -resize 108x108 ./icons/icon-108.png 2>/dev/null || echo "ImageMagick не установлен, используем исходную иконку"
+        
+        # Заменяем иконки на уменьшенную версию
         find android -name "ic_launcher*.png" -type f | while read file; do
-          cp ./icons/icon-app-162.png "$file" 2>/dev/null || true
+          echo "Заменяем: $file"
+          if [ -f "./icons/icon-108.png" ]; then
+            cp ./icons/icon-108.png "$file" 2>/dev/null || true
+          else
+            cp ./icons/icon-app-162.png "$file" 2>/dev/null || true
+          fi
         done
+        
+        echo "✅ Иконки заменены с правильным масштабированием!"
+      
+    - name: Configure Android signing
+      run: |
+        echo "🔐 Настраиваем подпись в Android..."
+        cd android/app
+        
+        keytool -genkeypair -v \
+          -keystore release.keystore \
+          -alias release_key \
+          -keyalg RSA \
+          -keysize 2048 \
+          -validity 10000 \
+          -storepass "android123" \
+          -keypass "android123" \
+          -dname "CN=3D Viewer, O=3DViewer, C=RU"
+        
+        cat > signing-config.gradle << 'EOF'
+        android {
+            signingConfigs {
+                release {
+                    storeFile file("release.keystore")
+                    storePassword "android123"
+                    keyAlias "release_key"
+                    keyPassword "android123"
+                }
+            }
+            buildTypes {
+                release {
+                    signingConfig signingConfigs.release
+                    minifyEnabled false
+                }
+            }
+        }
+        EOF
+        
+        echo "apply from: 'signing-config.gradle'" >> build.gradle
+        echo "✅ Подпись настроена!"
       
     - name: Setup Java
       uses: actions/setup-java@v4
@@ -46,27 +95,15 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
         
-    - name: Build Release APK
+    - name: Build Signed Release APK
       run: |
         cd android
         chmod +x gradlew
         ./gradlew assembleRelease --no-daemon
         
-    - name: Sign APK with debug key
-      run: |
-        cd android/app/build/outputs/apk/release
-        keytool -genkey -v -keystore debug.keystore -alias debug \
-          -keyalg RSA -keysize 2048 -validity 10000 \
-          -storepass android -keypass android \
-          -dname "CN=Debug, OU=Debug, O=Debug, L=Debug, ST=Debug, C=RU"
-        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
-          -keystore debug.keystore -storepass android -keypass android \
-          app-release-unsigned.apk debug
-        mv app-release-unsigned.apk 3d-model-viewer.apk
-        
-    - name: Upload APK
+    - name: Upload APK to Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: 3d-model-viewer-apk
-        path: android/app/build/outputs/apk/release/3d-model-viewer.apk
+        path: android/app/build/outputs/apk/release/*.apk
         retention-days: 30
