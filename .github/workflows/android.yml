@@ -52,29 +52,37 @@ jobs:
         
         echo "✅ Иконки заменены с правильным масштабированием!"
       
-    - name: Configure Android signing
+    - name: Update Android version for RuStore
       run: |
-        echo "🔐 Настраиваем подпись в Android..."
+        echo "🔄 Обновляем версию Android для обновления в RuStore..."
         cd android/app
         
-        keytool -genkeypair -v \
-          -keystore release.keystore \
-          -alias release_key \
-          -keyalg RSA \
-          -keysize 2048 \
-          -validity 10000 \
-          -storepass "android123" \
-          -keypass "android123" \
-          -dname "CN=3D Viewer, O=3DViewer, C=RU"
+        # Увеличиваем versionCode (должен быть больше предыдущего)
+        # Если предыдущая версия была 1, ставим 2
+        sed -i 's/versionCode [0-9]*/versionCode 2/' build.gradle
         
+        # Обновляем versionName (видимая версия)
+        sed -i 's/versionName "[0-9.]*"/versionName "1.1.0"/' build.gradle
+        
+        echo "✅ Версия обновлена: versionCode 2, versionName 1.1.0"
+      
+    - name: Configure Android signing with saved keystore
+      run: |
+        echo "🔐 Настраиваем подпись в Android с сохраненным ключом..."
+        cd android/app
+        
+        # Декодируем сохраненный keystore из секретов
+        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > release.keystore
+        
+        # Создаем конфиг подписи
         cat > signing-config.gradle << 'EOF'
         android {
             signingConfigs {
                 release {
                     storeFile file("release.keystore")
-                    storePassword "android123"
-                    keyAlias "release_key"
-                    keyPassword "android123"
+                    storePassword "${{ secrets.KEYSTORE_PASSWORD }}"
+                    keyAlias "${{ secrets.KEY_ALIAS }}"
+                    keyPassword "${{ secrets.KEY_PASSWORD }}"
                 }
             }
             buildTypes {
@@ -87,7 +95,7 @@ jobs:
         EOF
         
         echo "apply from: 'signing-config.gradle'" >> build.gradle
-        echo "✅ Подпись настроена!"
+        echo "✅ Подпись настроена с постоянным ключом!"
       
     - name: Setup Java
       uses: actions/setup-java@v4
