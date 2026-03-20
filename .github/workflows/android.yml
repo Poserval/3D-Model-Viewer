@@ -52,23 +52,30 @@ jobs:
         
         echo "✅ Иконки заменены с правильным масштабированием!"
       
-    - name: Configure Android signing with saved keystore
+    - name: Configure Android signing
       run: |
-        echo "🔐 Настраиваем подпись в Android с сохраненным ключом..."
+        echo "🔐 Настраиваем подпись в Android..."
         cd android/app
         
-        # Декодируем сохраненный keystore из секретов
-        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > release.keystore
+        # Создаем ключ (для тестирования)
+        keytool -genkeypair -v \
+          -keystore release.keystore \
+          -alias release_key \
+          -keyalg RSA \
+          -keysize 2048 \
+          -validity 10000 \
+          -storepass "android123" \
+          -keypass "android123" \
+          -dname "CN=3D Viewer, O=3DViewer, C=RU"
         
-        # Создаем конфиг подписи
         cat > signing-config.gradle << 'EOF'
         android {
             signingConfigs {
                 release {
                     storeFile file("release.keystore")
-                    storePassword "${{ secrets.KEYSTORE_PASSWORD }}"
-                    keyAlias "${{ secrets.KEY_ALIAS }}"
-                    keyPassword "${{ secrets.KEY_PASSWORD }}"
+                    storePassword "android123"
+                    keyAlias "release_key"
+                    keyPassword "android123"
                 }
             }
             buildTypes {
@@ -81,7 +88,7 @@ jobs:
         EOF
         
         echo "apply from: 'signing-config.gradle'" >> build.gradle
-        echo "✅ Подпись настроена с постоянным ключом!"
+        echo "✅ Подпись настроена!"
       
     - name: Setup Java
       uses: actions/setup-java@v4
