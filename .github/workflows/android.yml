@@ -37,43 +37,16 @@ jobs:
       run: |
         echo "🔄 Заменяем иконки..."
         find android -name "ic_launcher*.png" -type f | while read file; do
-          echo "Заменяем: $file"
           cp ./icons/icon-app-162.png "$file" 2>/dev/null || true
         done
-        
-    - name: Restore keystore from secrets
-      run: |
-        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.keystore
-        echo "✅ Keystore восстановлен"
-        
-    - name: Setup signing in build.gradle
-      run: |
-        echo "" >> android/app/build.gradle
-        echo "android {" >> android/app/build.gradle
-        echo "    signingConfigs {" >> android/app/build.gradle
-        echo "        release {" >> android/app/build.gradle
-        echo "            storeFile file('release.keystore')" >> android/app/build.gradle
-        echo "            storePassword 'android123'" >> android/app/build.gradle
-        echo "            keyAlias 'release_key'" >> android/app/build.gradle
-        echo "            keyPassword 'android123'" >> android/app/build.gradle
-        echo "        }" >> android/app/build.gradle
-        echo "    }" >> android/app/build.gradle
-        echo "    buildTypes {" >> android/app/build.gradle
-        echo "        release {" >> android/app/build.gradle
-        echo "            signingConfig signingConfigs.release" >> android/app/build.gradle
-        echo "            minifyEnabled false" >> android/app/build.gradle
-        echo "            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'" >> android/app/build.gradle
-        echo "        }" >> android/app/build.gradle
-        echo "    }" >> android/app/build.gradle
-        echo "}" >> android/app/build.gradle
-        
+      
     - name: Setup Java
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
         java-version: '17'
         
-    - name: Build Signed Release APK
+    - name: Build Release APK
       run: |
         cd android
         chmod +x gradlew
