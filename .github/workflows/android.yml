@@ -52,7 +52,7 @@ jobs:
         chmod +x gradlew
         ./gradlew assembleRelease --no-daemon
         
-    - name: Sign APK
+    - name: Sign APK with debug key
       run: |
         cd android/app/build/outputs/apk/release
         keytool -genkey -v -keystore debug.keystore -alias debug \
@@ -62,7 +62,7 @@ jobs:
         jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
           -keystore debug.keystore -storepass android -keypass android \
           app-release-unsigned.apk debug
-        cp app-release-unsigned.apk 3d-model-viewer.apk
+        mv app-release-unsigned.apk 3d-model-viewer.apk
         
     - name: Upload APK
       uses: actions/upload-artifact@v4
