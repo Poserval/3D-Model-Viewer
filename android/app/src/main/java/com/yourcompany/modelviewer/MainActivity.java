@@ -1,15 +1,11 @@
-package ru.dviewer.app;
+package ru.dviewer.app2;
 
 import android.app.Activity;
-import android.os.Build;
 import android.os.Bundle;
-import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.util.Base64;
-import android.util.Log;
 
 public class MainActivity extends Activity {
     private WebView webView;
@@ -19,19 +15,7 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // ВКЛЮЧАЕМ ОТЛАДКУ ДО ВСЕГО
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            WebView.setWebContentsDebuggingEnabled(true);
-            Log.d("3DViewer", "ОТЛАДКА ВКЛЮЧЕНА!");
-        }
-
         webView = findViewById(R.id.webview);
-        
-        // Включим еще раз для надежности
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            WebView.setWebContentsDebuggingEnabled(true);
-            Log.d("3DViewer", "ОТЛАДКА ПОДТВЕРЖДЕНА!");
-        }
         
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
@@ -41,12 +25,8 @@ public class MainActivity extends Activity {
         webSettings.setAllowContentAccess(true);
         webSettings.setWebGLEnabled(true);
         webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
-        webSettings.setAppCacheEnabled(true);
         webSettings.setLoadWithOverviewMode(true);
         webSettings.setUseWideViewPort(true);
-        
-        // Добавляем интерфейс для JavaScript
-        webView.addJavascriptInterface(new WebAppInterface(), "Android");
         
         webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -58,8 +38,6 @@ public class MainActivity extends Activity {
         
         webView.setWebChromeClient(new WebChromeClient());
         webView.loadUrl("file:///android_asset/www/index.html");
-        
-        Log.d("3DViewer", "WebView создан и загружен");
     }
 
     @Override
@@ -68,43 +46,6 @@ public class MainActivity extends Activity {
             webView.goBack();
         } else {
             super.onBackPressed();
-        }
-    }
-    
-    public class WebAppInterface {
-        @JavascriptInterface
-        public void saveFile(String base64Data, String fileName) {
-            try {
-                Log.d("3DViewer", "saveFile вызван: " + fileName);
-                byte[] data = Base64.decode(base64Data, Base64.DEFAULT);
-                Log.d("3DViewer", "Данные декодированы: " + data.length + " байт");
-                DownloadHelper.saveFile(MainActivity.this, data, fileName);
-            } catch (Exception e) {
-                Log.e("3DViewer", "Ошибка в saveFile", e);
-            }
-        }
-        
-        @JavascriptInterface
-        public void openConverter(String url) {
-            try {
-                Log.d("3DViewer", "openConverter: " + url);
-                webView.loadUrl(url);
-            } catch (Exception e) {
-                Log.e("3DViewer", "Ошибка в openConverter", e);
-            }
-        }
-        
-        @JavascriptInterface
-        public void shareText(String text) {
-            try {
-                Log.d("3DViewer", "shareText: " + text);
-                android.content.Intent shareIntent = new android.content.Intent(android.content.Intent.ACTION_SEND);
-                shareIntent.setType("text/plain");
-                shareIntent.putExtra(android.content.Intent.EXTRA_TEXT, text);
-                startActivity(android.content.Intent.createChooser(shareIntent, "Поделиться"));
-            } catch (Exception e) {
-                Log.e("3DViewer", "Ошибка в shareText", e);
-            }
         }
     }
 }
