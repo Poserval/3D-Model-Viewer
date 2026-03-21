@@ -33,67 +33,38 @@ jobs:
     - name: Generate Android project
       run: npx cap add android && npx cap sync android
       
-    - name: Replace launcher icons with proper scaling
+    - name: Replace launcher icons
       run: |
-        echo "🔄 Заменяем иконки с правильным масштабированием..."
-        
-        # Создаем уменьшенную версию иконки 108x108 для лучшего отображения
-        convert ./icons/icon-app-162.png -resize 108x108 ./icons/icon-108.png 2>/dev/null || echo "ImageMagick не установлен, используем исходную иконку"
-        
-        # Заменяем иконки на уменьшенную версию
+        echo "🔄 Заменяем иконки..."
         find android -name "ic_launcher*.png" -type f | while read file; do
-          echo "Заменяем: $file"
-          if [ -f "./icons/icon-108.png" ]; then
-            cp ./icons/icon-108.png "$file" 2>/dev/null || true
-          else
-            cp ./icons/icon-app-162.png "$file" 2>/dev/null || true
-          fi
+          cp ./icons/icon-app-162.png "$file" 2>/dev/null || true
         done
-        
-        echo "✅ Иконки заменены с правильным масштабированием!"
+        echo "✅ Иконки заменены!"
       
     - name: Update version for RuStore
       run: |
-        echo "🔄 Обновляем версию для RuStore..."
+        echo "🔄 Обновляем версию..."
         cd android/app
-        
-        # Увеличиваем versionCode на 1
-        CURRENT_CODE=$(grep -oP 'versionCode \K\d+' build.gradle)
-        NEW_CODE=$((CURRENT_CODE + 1))
-        echo "Текущий versionCode: $CURRENT_CODE -> Новый: $NEW_CODE"
-        
-        # Обновляем versionCode
-        sed -i "s/versionCode [0-9]\+/versionCode $NEW_CODE/" build.gradle
-        
-        # Обновляем versionName
-        sed -i 's/versionName "[0-9.]\+"/versionName "1.1.0"/' build.gradle
-        
-        echo "✅ Версия обновлена: versionCode $NEW_CODE, versionName 1.1.0"
+        sed -i 's/versionCode [0-9]\+/versionCode 1/' build.gradle
+        sed -i 's/versionName "[0-9.]\+"/versionName "1.0.0"/' build.gradle
+        echo "✅ Версия: versionCode 1, versionName 1.0.0"
       
-    - name: Configure Android signing
+    - name: Configure Android signing with permanent keystore
       run: |
-        echo "🔐 Настраиваем подпись в Android..."
+        echo "🔐 Настраиваем подпись с постоянным keystore..."
         cd android/app
         
-        # Создаем ключ
-        keytool -genkeypair -v \
-          -keystore release.keystore \
-          -alias release_key \
-          -keyalg RSA \
-          -keysize 2048 \
-          -validity 10000 \
-          -storepass "android123" \
-          -keypass "android123" \
-          -dname "CN=3D Viewer, O=3DViewer, C=RU"
+        # Декодируем keystore из секретов
+        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > release.keystore
         
-        cat > signing-config.gradle << 'EOF'
+        cat > signing-config.gradle << EOF
         android {
             signingConfigs {
                 release {
                     storeFile file("release.keystore")
-                    storePassword "android123"
-                    keyAlias "release_key"
-                    keyPassword "android123"
+                    storePassword "${{ secrets.KEYSTORE_PASSWORD }}"
+                    keyAlias "${{ secrets.KEY_ALIAS }}"
+                    keyPassword "${{ secrets.KEY_PASSWORD }}"
                 }
             }
             buildTypes {
@@ -106,7 +77,7 @@ jobs:
         EOF
         
         echo "apply from: 'signing-config.gradle'" >> build.gradle
-        echo "✅ Подпись настроена!"
+        echo "✅ Подпись настроена с постоянным ключом!"
       
     - name: Setup Java
       uses: actions/setup-java@v4
