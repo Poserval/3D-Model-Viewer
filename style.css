@@ -6,7 +6,7 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background: linear-gradient(135deg, #4158D0 0%, #C850C0 50%, #FFCC70 100%);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
     color: #333;
 }
@@ -22,7 +22,7 @@ body {
 
 /* Главный экран */
 .container {
-    max-width: 800px;
+    max-width: 400px;
     margin: 0 auto;
     padding: 20px;
     min-height: 100vh;
@@ -33,72 +33,54 @@ body {
     gap: 20px;
 }
 
-/* Логотип с 3D-эффектом */
 .app-logo {
-    margin-bottom: 10px;
-    perspective: 500px;
+    margin-bottom: 20px;
 }
 
 .logo-image {
-    width: 140px;
-    height: 140px;
-    border-radius: 30px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-    transition: transform 0.3s ease;
-    transform: rotateY(5deg) rotateX(5deg);
+    width: 120px;
+    height: 120px;
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
-.logo-image:hover {
-    transform: rotateY(0deg) rotateX(0deg) scale(1.05);
-}
-
-/* Область предпросмотра */
 .preview-area {
-    width: 300px;
-    height: 300px;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 24px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    width: 200px;
+    height: 200px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    border: 2px dashed rgba(255, 255, 255, 0.3);
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
     overflow: hidden;
     backdrop-filter: blur(10px);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-    transition: all 0.3s ease;
-}
-
-.preview-area:hover {
-    border-color: rgba(255, 255, 255, 0.5);
-    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
 }
 
 .preview-placeholder {
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 16px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
     font-weight: 600;
     text-align: center;
     padding: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
-    letter-spacing: 1px;
 }
 
 .preview-placeholder[hidden] {
     display: none !important;
 }
 
-/* Рендереры */
+/* СТИЛИ ДЛЯ РЕНДЕРЕРОВ */
 .preview-model, .preview-threejs {
     width: 100%;
     height: 100%;
-    border-radius: 22px;
+    border-radius: 18px;
     position: absolute;
     top: 0;
     left: 0;
-    transform: translateZ(0);
 }
 
 .main-model, .main-threejs {
@@ -107,9 +89,9 @@ body {
     position: absolute;
     top: 0;
     left: 0;
-    transform: translateZ(0);
 }
 
+/* Гарантируем что скрытые элементы действительно скрыты */
 model-viewer[hidden],
 canvas[hidden] {
     display: none !important;
@@ -117,66 +99,38 @@ canvas[hidden] {
     opacity: 0 !important;
 }
 
-/* Контейнер для названия файла */
-.file-name-container {
-    width: 100%;
-    max-width: 500px;
-    margin-top: 5px;
-}
-
-.file-name {
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 14px;
-    text-align: center;
-    word-break: break-all;
-    background: rgba(0, 0, 0, 0.4);
-    padding: 8px 16px;
-    border-radius: 20px;
-    backdrop-filter: blur(5px);
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    max-height: 2.8em;
-    line-height: 1.4em;
-}
-
-/* Ряды кнопок */
-.button-row {
-    display: flex;
-    gap: 20px;
-    justify-content: center;
-    flex-wrap: wrap;
-    width: 100%;
-    max-width: 600px;
-}
-
-/* Кнопки */
 .btn {
-    padding: 14px 24px;
+    padding: 12px 24px;
     border: none;
-    border-radius: 40px;
-    font-size: 14px;
-    font-weight: 700;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
     width: 200px;
     text-align: center;
-    letter-spacing: 1px;
-    background: rgba(255, 255, 255, 0.95);
-    color: #333;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    backdrop-filter: blur(5px);
 }
 
-.btn:hover:not(:disabled) {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-    background: white;
+.btn.primary {
+    background: #007AFF;
+    color: white;
 }
 
-.btn:active:not(:disabled) {
-    transform: translateY(0);
+.btn.primary:hover {
+    background: #0056CC;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 122, 255, 0.4);
+}
+
+.btn.secondary {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.btn.secondary:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
 }
 
 .btn:disabled {
@@ -185,35 +139,12 @@ canvas[hidden] {
     transform: none !important;
 }
 
-/* Плейсхолдер вместо кнопки */
-.placeholder-icon {
-    width: 200px;
-    height: 52px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 40px;
-    backdrop-filter: blur(10px);
-    transition: all 0.3s ease;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.icon-placeholder {
-    width: 36px;
-    height: 36px;
-    opacity: 0.7;
-    transition: opacity 0.3s ease;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-}
-
-.placeholder-icon:hover {
-    background: rgba(255, 255, 255, 0.25);
-    border-color: rgba(255, 255, 255, 0.4);
-}
-
-.placeholder-icon:hover .icon-placeholder {
-    opacity: 1;
+.file-name {
+    color: white;
+    font-size: 14px;
+    text-align: center;
+    margin-top: 10px;
+    word-break: break-all;
 }
 
 /* Индикатор загрузки */
@@ -223,13 +154,13 @@ canvas[hidden] {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.85);
+    background: rgba(0, 0, 0, 0.8);
     display: none;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 15px;
-    border-radius: 22px;
+    border-radius: 18px;
     z-index: 10;
 }
 
@@ -238,13 +169,12 @@ canvas[hidden] {
 }
 
 .loading-spinner {
-    width: 44px;
-    height: 44px;
-    border: 4px solid rgba(255, 255, 255, 0.2);
-    border-top: 4px solid #FFCC70;
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top: 4px solid #007AFF;
     border-radius: 50%;
     animation: spin 1s linear infinite;
-    will-change: transform;
 }
 
 @keyframes spin {
@@ -256,7 +186,6 @@ canvas[hidden] {
     color: white;
     font-size: 14px;
     font-weight: 600;
-    letter-spacing: 1px;
 }
 
 .loading-progress {
@@ -277,7 +206,7 @@ canvas[hidden] {
 
 .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #FFCC70, #C850C0);
+    background: #007AFF;
     width: 0%;
     transition: width 0.3s ease;
 }
@@ -298,16 +227,13 @@ canvas[hidden] {
     left: 0;
     right: 0;
     height: 60px;
-    background: rgba(0, 0, 0, 0.85);
-    backdrop-filter: blur(15px);
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
     display: flex;
     align-items: center;
-    padding: 0 max(20px, env(safe-area-inset-left));
-    padding-top: env(safe-area-inset-top);
-    padding-right: max(20px, env(safe-area-inset-right));
+    padding: 0 20px;
     z-index: 100;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
 }
 
 .back-btn {
@@ -315,18 +241,14 @@ canvas[hidden] {
     color: white;
     border: none;
     padding: 8px 16px;
-    border-radius: 20px;
+    border-radius: 8px;
     cursor: pointer;
     font-size: 14px;
-    font-weight: 600;
     margin-right: 15px;
-    transition: all 0.2s ease;
-    touch-action: manipulation;
 }
 
 .back-btn:hover {
     background: rgba(255, 255, 255, 0.2);
-    transform: scale(1.02);
 }
 
 .header-logo {
@@ -334,10 +256,9 @@ canvas[hidden] {
 }
 
 .logo-image-small {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
 }
 
 .viewer-title {
@@ -347,9 +268,6 @@ canvas[hidden] {
     flex: 1;
     text-align: center;
     margin-right: 80px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .viewer-container {
@@ -367,15 +285,13 @@ canvas[hidden] {
     left: 0;
     right: 0;
     height: 80px;
-    background: rgba(0, 0, 0, 0.85);
-    backdrop-filter: blur(15px);
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 20px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding-bottom: env(safe-area-inset-bottom);
-    box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.3);
 }
 
 .control-btn {
@@ -383,12 +299,11 @@ canvas[hidden] {
     color: white;
     border: none;
     padding: 12px 24px;
-    border-radius: 40px;
+    border-radius: 12px;
     cursor: pointer;
     font-size: 14px;
     font-weight: 600;
     transition: all 0.3s ease;
-    touch-action: manipulation;
 }
 
 .control-btn:hover {
@@ -397,21 +312,31 @@ canvas[hidden] {
 }
 
 .control-btn[data-active="true"] {
-    background: linear-gradient(135deg, #007AFF, #0056CC);
-    box-shadow: 0 4px 15px rgba(0, 122, 255, 0.4);
+    background: #007AFF;
+}
+
+/* Плейсхолдер вместо кнопки */
+.placeholder-icon {
+    width: 200px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+}
+
+.icon-placeholder {
+    width: 36px;
+    height: 36px;
+    opacity: 0.7;
 }
 
 /* Адаптивность */
-@media (max-width: 768px) {
+@media (max-width: 480px) {
     .container {
-        max-width: 100%;
         padding: 15px;
-        gap: 15px;
-    }
-    
-    .preview-area {
-        width: 250px;
-        height: 250px;
     }
     
     .logo-image {
@@ -419,12 +344,23 @@ canvas[hidden] {
         height: 100px;
     }
     
-    .btn, .placeholder-icon {
-        width: 160px;
+    .preview-area {
+        width: 180px;
+        height: 180px;
     }
     
-    .button-row {
-        gap: 15px;
+    .btn {
+        width: 180px;
+    }
+    
+    .placeholder-icon {
+        width: 180px;
+        height: 48px;
+    }
+    
+    .icon-placeholder {
+        width: 32px;
+        height: 32px;
     }
     
     .viewer-title {
@@ -435,49 +371,5 @@ canvas[hidden] {
     .control-btn {
         padding: 10px 20px;
         font-size: 13px;
-    }
-}
-
-@media (max-width: 480px) {
-    .preview-area {
-        width: 220px;
-        height: 220px;
-    }
-    
-    .logo-image {
-        width: 80px;
-        height: 80px;
-    }
-    
-    .btn, .placeholder-icon {
-        width: 140px;
-        padding: 10px 16px;
-        font-size: 12px;
-    }
-    
-    .placeholder-icon {
-        height: 44px;
-    }
-    
-    .icon-placeholder {
-        width: 28px;
-        height: 28px;
-    }
-    
-    .button-row {
-        gap: 12px;
-    }
-    
-    .file-name {
-        font-size: 12px;
-        padding: 6px 12px;
-    }
-}
-
-/* Поддержка безопасной зоны */
-@supports (padding: max(0px)) {
-    .container {
-        padding-left: max(15px, env(safe-area-inset-left));
-        padding-right: max(15px, env(safe-area-inset-right));
     }
 }
