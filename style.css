@@ -91,7 +91,6 @@ body {
     left: 0;
 }
 
-/* Гарантируем что скрытые элементы действительно скрыты */
 model-viewer[hidden],
 canvas[hidden] {
     display: none !important;
