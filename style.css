@@ -1,143 +1,100 @@
-:root {
-    --primary-color: #007AFF;
-    --gradient-start: #4158D0;
-    --gradient-end: #C850C0;
-    --border-radius: 16px;
-    --transition: all 0.3s ease;
-    --header-height: 60px;
-    
-    /* 🔥 ПАРАМЕТРЫ ДВИЖЕНИЯ */
-    --logo-offset: -80px;        /* двигает логотип */
-    --content-offset: -100px;     /* МЕНЬШЕ МИНУС = НИЖЕ */
-    --vertical-spacing: 0px;      /* зазор */
-}
-
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
-/* 🔥 ФОН */
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background: linear-gradient(145deg, #4158D0 0%, #C850C0 46%, #FFCC70 100%);
+    background: linear-gradient(135deg, #4158D0 0%, #C850C0 50%, #FFCC70 100%);
     min-height: 100vh;
     color: #333;
-    overflow: hidden;
-    position: relative;
-}
-
-/* 🔥 ДОПОЛНИТЕЛЬНОЕ СВЕЧЕНИЕ */
-body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(circle at 20% 30%, rgba(255,255,255,0.3) 0%, transparent 50%),
-                radial-gradient(circle at 80% 70%, rgba(255,204,112,0.2) 0%, transparent 50%);
-    pointer-events: none;
-    z-index: 0;
 }
 
 .screen {
     display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    z-index: 1;
+    min-height: 100vh;
 }
 
 .screen.active {
     display: block;
 }
 
-/* ГЛАВНЫЙ ЭКРАН */
+/* Главный экран */
 .container {
-    max-width: 400px;
+    max-width: 800px;
     margin: 0 auto;
-    padding: 0 20px;
+    padding: 20px;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    justify-content: center;
     align-items: center;
-    position: relative;
-    z-index: 2;
-    /* 🔥 МОЩНЫЙ ПОДТЯГ ВСЕГО СОДЕРЖИМОГО */
-    transform: translateY(calc(var(--logo-offset) + var(--content-offset)));
+    gap: 20px;
 }
 
-/* 🔥 ЛОГОТИП - ОСТАЁТСЯ НА МЕСТЕ */
+/* Логотип с 3D-эффектом */
 .app-logo {
-    position: relative;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    margin: 0;
-    padding: 0;
-    z-index: 10;
-    /* 🔥 КОМПЕНСИРУЕМ ДВИЖЕНИЕ КОНТЕЙНЕРА */
-    transform: translateY(calc(-1 * var(--logo-offset)));
+    margin-bottom: 10px;
+    perspective: 500px;
 }
 
 .logo-image {
-    width: 280px;
-    height: 280px;
-    object-fit: contain;
-    filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.4)) 
-            drop-shadow(0 0 50px rgba(200, 80, 192, 0.6));
-    transform: perspective(1000px) rotateX(2deg) rotateY(1deg);
-    transition: transform 0.5s ease, filter 0.3s ease;
-    background: transparent;
-    border-radius: 0;
-    box-shadow: none;
+    width: 140px;
+    height: 140px;
+    border-radius: 30px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease;
+    transform: rotateY(5deg) rotateX(5deg);
 }
 
-/* 🔥 ОКНО ПРЕВЬЮ */
+.logo-image:hover {
+    transform: rotateY(0deg) rotateX(0deg) scale(1.05);
+}
+
+/* Область предпросмотра */
 .preview-area {
-    width: 450px;
-    height: 450px;
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: var(--border-radius);
-    border: 2px solid rgba(255, 255, 255, 0.25);
+    width: 300px;
+    height: 300px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 24px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
     overflow: hidden;
-    backdrop-filter: blur(15px);
-    box-shadow: 
-        0 20px 40px rgba(0, 0, 0, 0.3),
-        inset 0 1px 2px rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+}
+
+.preview-area:hover {
+    border-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
 }
 
 .preview-placeholder {
-    color: white;
-    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 16px;
     font-weight: 600;
     text-align: center;
     padding: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
-    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    letter-spacing: 1px;
 }
 
 .preview-placeholder[hidden] {
     display: none !important;
 }
 
-/* СТИЛИ ДЛЯ РЕНДЕРЕРОВ */
+/* Рендереры */
 .preview-model, .preview-threejs {
     width: 100%;
     height: 100%;
-    border-radius: calc(var(--border-radius) - 2px);
+    border-radius: 22px;
     position: absolute;
     top: 0;
     left: 0;
@@ -160,114 +117,120 @@ canvas[hidden] {
     opacity: 0 !important;
 }
 
-/* 🔥 ТОНКАЯ ПОЛОСКА */
+/* Контейнер для названия файла */
 .file-name-container {
     width: 100%;
-    max-width: 450px;
-    margin: 10px 0;
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 30px;
-}
-
-.file-name-container::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: rgba(0, 0, 0, 0.6);
-    transform: translateY(-50%);
-    z-index: 1;
+    max-width: 500px;
+    margin-top: 5px;
 }
 
 .file-name {
-    position: relative;
-    color: white;
-    font-size: 15px;
-    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 14px;
     text-align: center;
     word-break: break-all;
-    display: inline-block;
-    max-width: 90%;
-    background: transparent;
-    padding: 0 10px;
-    z-index: 2;
-    text-shadow: 
-        -1px -1px 0 #000,  
-         1px -1px 0 #000,
-        -1px  1px 0 #000,
-         1px  1px 0 #000;
-    letter-spacing: 0.5px;
-    line-height: 30px;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 8px 16px;
+    border-radius: 20px;
+    backdrop-filter: blur(5px);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    max-height: 2.8em;
+    line-height: 1.4em;
 }
 
-/* 🔥 КОНТЕЙНЕРЫ ДЛЯ КНОПОК */
+/* Ряды кнопок */
 .button-row {
     display: flex;
-    flex-direction: row;
-    gap: 15px;
-    width: 100%;
-    max-width: 450px;
+    gap: 20px;
     justify-content: center;
-    margin-top: 10px;
+    flex-wrap: wrap;
+    width: 100%;
+    max-width: 600px;
 }
 
-/* 🔥 ВСЕ КНОПКИ */
+/* Кнопки */
 .btn {
-    padding: 16px 0;
+    padding: 14px 24px;
     border: none;
-    border-radius: var(--border-radius);
-    font-size: 16px;
-    font-weight: 600;
+    border-radius: 40px;
+    font-size: 14px;
+    font-weight: 700;
     cursor: pointer;
-    transition: var(--transition);
+    transition: all 0.3s ease;
     width: 200px;
-    max-width: 200px;
     text-align: center;
-    position: relative;
-    overflow: hidden;
-    touch-action: manipulation;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-    flex: 1;
-    background: linear-gradient(145deg, #007AFF, #0055BB);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    letter-spacing: 1px;
+    background: rgba(255, 255, 255, 0.95);
+    color: #333;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(5px);
 }
 
 .btn:hover:not(:disabled) {
-    background: linear-gradient(145deg, #0055BB, #003B80);
     transform: translateY(-3px);
-    box-shadow: 0 12px 28px rgba(0, 122, 255, 0.5);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    background: white;
+}
+
+.btn:active:not(:disabled) {
+    transform: translateY(0);
 }
 
 .btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     transform: none !important;
-    background: linear-gradient(145deg, #4a4a4a, #2a2a2a);
-    border-color: rgba(255, 255, 255, 0.1);
 }
 
-/* ИНДИКАТОР ЗАГРУЗКИ */
+/* Плейсхолдер вместо кнопки */
+.placeholder-icon {
+    width: 200px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 40px;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.icon-placeholder {
+    width: 36px;
+    height: 36px;
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.placeholder-icon:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.placeholder-icon:hover .icon-placeholder {
+    opacity: 1;
+}
+
+/* Индикатор загрузки */
 .loading-indicator {
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.85);
     display: none;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 15px;
-    border-radius: calc(var(--border-radius) - 2px);
+    border-radius: 22px;
     z-index: 10;
-    backdrop-filter: blur(5px);
 }
 
 .loading-indicator.active {
@@ -275,10 +238,10 @@ canvas[hidden] {
 }
 
 .loading-spinner {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border: 4px solid rgba(255, 255, 255, 0.2);
-    border-top: 4px solid white;
+    border-top: 4px solid #FFCC70;
     border-radius: 50%;
     animation: spin 1s linear infinite;
     will-change: transform;
@@ -293,6 +256,7 @@ canvas[hidden] {
     color: white;
     font-size: 14px;
     font-weight: 600;
+    letter-spacing: 1px;
 }
 
 .loading-progress {
@@ -313,25 +277,29 @@ canvas[hidden] {
 
 .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--primary-color), #C850C0);
+    background: linear-gradient(90deg, #FFCC70, #C850C0);
     width: 0%;
     transition: width 0.3s ease;
 }
 
 .progress-text {
-    color: white;
+    color: rgba(255, 255, 255, 0.8);
     font-size: 12px;
 }
 
-/* ШАПКА ДЛЯ ЭКРАНА ПРОСМОТРА */
+/* Экран просмотра */
+.viewer-screen {
+    background: #000;
+}
+
 .header {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    height: var(--header-height);
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(10px);
+    height: 60px;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(15px);
     display: flex;
     align-items: center;
     padding: 0 max(20px, env(safe-area-inset-left));
@@ -347,17 +315,18 @@ canvas[hidden] {
     color: white;
     border: none;
     padding: 8px 16px;
-    border-radius: 8px;
+    border-radius: 20px;
     cursor: pointer;
     font-size: 14px;
+    font-weight: 600;
     margin-right: 15px;
+    transition: all 0.2s ease;
     touch-action: manipulation;
-    transition: var(--transition);
 }
 
 .back-btn:hover {
     background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-2px);
+    transform: scale(1.02);
 }
 
 .header-logo {
@@ -365,10 +334,10 @@ canvas[hidden] {
 }
 
 .logo-image-small {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    filter: drop-shadow(0 2px 5px rgba(0,0,0,0.3));
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .viewer-title {
@@ -383,17 +352,12 @@ canvas[hidden] {
     text-overflow: ellipsis;
 }
 
-/* ЭКРАН ПРОСМОТРА 3D */
-.viewer-screen {
-    background: #000;
-}
-
 .viewer-container {
     position: fixed;
-    top: var(--header-height);
+    top: 60px;
     left: 0;
     right: 0;
-    bottom: 60px;
+    bottom: 80px;
     background: #000;
 }
 
@@ -402,9 +366,9 @@ canvas[hidden] {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 60px;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(10px);
+    height: 80px;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(15px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -418,15 +382,13 @@ canvas[hidden] {
     background: rgba(255, 255, 255, 0.1);
     color: white;
     border: none;
-    padding: 10px 20px;
-    border-radius: var(--border-radius);
+    padding: 12px 24px;
+    border-radius: 40px;
     cursor: pointer;
     font-size: 14px;
     font-weight: 600;
-    transition: var(--transition);
+    transition: all 0.3s ease;
     touch-action: manipulation;
-    min-width: 120px;
-    backdrop-filter: blur(5px);
 }
 
 .control-btn:hover {
@@ -435,50 +397,87 @@ canvas[hidden] {
 }
 
 .control-btn[data-active="true"] {
-    background: linear-gradient(145deg, var(--primary-color), #C850C0);
+    background: linear-gradient(135deg, #007AFF, #0056CC);
+    box-shadow: 0 4px 15px rgba(0, 122, 255, 0.4);
 }
 
-/* 🔥 АДАПТИВНОСТЬ */
-@media (max-width: 480px) {
-    :root {
-        --logo-offset: -60px;
-        --content-offset: -50px; /* МЕНЬШЕ МИНУС = НИЖЕ */
-    }
-    
+/* Адаптивность */
+@media (max-width: 768px) {
     .container {
-        padding: 0 15px;
-    }
-    
-    .logo-image {
-        width: 320px;
-        height: 320px;
+        max-width: 100%;
+        padding: 15px;
+        gap: 15px;
     }
     
     .preview-area {
-        width: 300px;
-        height: 300px;
+        width: 250px;
+        height: 250px;
     }
     
-    .file-name-container {
-        max-width: 300px;
-        height: 25px;
+    .logo-image {
+        width: 100px;
+        height: 100px;
     }
     
-    .file-name {
-        line-height: 25px;
-        font-size: 14px;
+    .btn, .placeholder-icon {
+        width: 160px;
     }
     
     .button-row {
-        max-width: 300px;
-        gap: 10px;
+        gap: 15px;
     }
     
-    .btn {
-        width: 140px;
-        max-width: 140px;
-        padding: 14px 0;
+    .viewer-title {
         font-size: 14px;
+        margin-right: 60px;
+    }
+    
+    .control-btn {
+        padding: 10px 20px;
+        font-size: 13px;
     }
 }
- 
+
+@media (max-width: 480px) {
+    .preview-area {
+        width: 220px;
+        height: 220px;
+    }
+    
+    .logo-image {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .btn, .placeholder-icon {
+        width: 140px;
+        padding: 10px 16px;
+        font-size: 12px;
+    }
+    
+    .placeholder-icon {
+        height: 44px;
+    }
+    
+    .icon-placeholder {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .button-row {
+        gap: 12px;
+    }
+    
+    .file-name {
+        font-size: 12px;
+        padding: 6px 12px;
+    }
+}
+
+/* Поддержка безопасной зоны */
+@supports (padding: max(0px)) {
+    .container {
+        padding-left: max(15px, env(safe-area-inset-left));
+        padding-right: max(15px, env(safe-area-inset-right));
+    }
+}
