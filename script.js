@@ -1,4 +1,4 @@
-// script.js - ИСПРАВЛЕННАЯ ВЕРСИЯ (STL + OBJ + конвертер)
+// script.js - ФИНАЛЬНАЯ ВЕРСИЯ (STL + OBJ + GLB/GLTF + конвертер)
 
 const APP_STATES = {
     MAIN: 'main',
@@ -91,10 +91,10 @@ class ModelViewerApp {
         this.resetCameraBtn.addEventListener('click', () => this.resetCamera());
         window.addEventListener('resize', () => this.handleResize());
         
-        // КНОПКА КОНВЕРТЕРА — ЗАМЕНИ ССЫЛКУ НА РЕАЛЬНУЮ!
+        // КНОПКА КОНВЕРТЕРА — ПРАВИЛЬНАЯ ССЫЛКА
         if (this.converterBtn) {
             this.converterBtn.addEventListener('click', () => {
-                window.open('https://ТВОЯ-ССЫЛКА-НА-КОНВЕРТЕР', '_blank');
+                window.open('https://poserval.github.io/3D-Model-Viewer/converter.html', '_blank');
             });
         }
     }
