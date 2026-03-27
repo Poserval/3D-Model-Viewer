@@ -59,7 +59,7 @@ class ModelViewerApp {
 
     bindEvents() {
         this.selectFileBtn.addEventListener('click', () => {
-            // Пытаемся использовать нативный выбор файла, если доступен
+            // Пробуем использовать Capacitor WebView для выбора файла
             if (window.Capacitor && Capacitor.getPlatform() === 'android') {
                 this.pickFileWithCapacitor();
             } else {
@@ -94,22 +94,32 @@ class ModelViewerApp {
 
     async pickFileWithCapacitor() {
         try {
+            // Используем встроенный Filesystem Capacitor
             const { Filesystem } = Capacitor.Plugins;
-            const result = await Filesystem.chooseFile({
-                types: ['*/*'],
-                multiple: false
-            });
-
-            if (!result || !result.files || !result.files[0]) return;
-
-            const fileData = result.files[0];
-            const blob = new Blob([fileData.data], { type: fileData.mimeType });
-            const file = new File([blob], fileData.name, { type: fileData.mimeType });
-
-            const fakeEvent = { target: { files: [file] } };
-            this.handleFileSelect(fakeEvent);
+            
+            // Создаём временный input для выбора файла
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.glb,.gltf,.obj,.stl';
+            
+            input.onchange = async (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                // Читаем файл через Filesystem API
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    const blob = new Blob([e.target.result], { type: file.type });
+                    const newFile = new File([blob], file.name, { type: file.type });
+                    const fakeEvent = { target: { files: [newFile] } };
+                    this.handleFileSelect(fakeEvent);
+                };
+                reader.readAsArrayBuffer(file);
+            };
+            
+            input.click();
         } catch (err) {
-            console.warn('Capacitor FilePicker не сработал, используем fallback', err);
+            console.warn('Capacitor выбор не сработал, используем fallback', err);
             this.fileInput.click();
         }
     }
