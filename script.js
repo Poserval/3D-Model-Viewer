@@ -1,4 +1,4 @@
-// script.js - ФИНАЛЬНАЯ ВЕРСИЯ (STL + OBJ + GLB/GLTF + конвертер)
+// script.js - ФИНАЛЬНАЯ ВЕРСИЯ (с передачей модели в конвертер и увеличенным предпросмотром)
 
 const APP_STATES = {
     MAIN: 'main',
@@ -21,6 +21,7 @@ class ModelViewerApp {
         
         this.autoRotate = true;
         this.currentFileURL = null;
+        this.currentFileData = null; // для передачи в конвертер
         
         this.previewScene = null;
         this.previewCamera = null;
@@ -91,9 +92,21 @@ class ModelViewerApp {
         this.resetCameraBtn.addEventListener('click', () => this.resetCamera());
         window.addEventListener('resize', () => this.handleResize());
         
-        // КНОПКА КОНВЕРТЕРА — ПРАВИЛЬНАЯ ССЫЛКА
+        // КНОПКА КОНВЕРТЕРА — ПЕРЕДАЁМ МОДЕЛЬ
         if (this.converterBtn) {
             this.converterBtn.addEventListener('click', () => {
+                // Сохраняем модель в sessionStorage перед переходом
+                if (this.currentFile && this.currentFileURL) {
+                    // Сохраняем данные файла
+                    const modelData = {
+                        name: this.currentFile.name,
+                        type: this.currentFileType,
+                        data: this.currentFileURL
+                    };
+                    sessionStorage.setItem('modelToConvert', JSON.stringify(modelData));
+                } else {
+                    sessionStorage.removeItem('modelToConvert');
+                }
                 window.open('https://poserval.github.io/3D-Model-Viewer/converter.html', '_blank');
             });
         }
@@ -265,10 +278,16 @@ class ModelViewerApp {
         const box = new THREE.Box3().setFromObject(object);
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
+        
+        // Центрируем объект
         object.position.set(-center.x, -center.y, -center.z);
+        
+        // Увеличиваем масштаб — уменьшаем дистанцию камеры
         const maxDim = Math.max(size.x, size.y, size.z);
-        let dist = Math.max(maxDim * 1.0, 1.5);
-        dist = Math.min(dist, 8);
+        let dist = maxDim * 0.8; // было 1.0, уменьшил для приближения
+        dist = Math.max(dist, 1.2);
+        dist = Math.min(dist, 6);
+        
         this.previewCamera.position.set(0, 0, dist);
         this.previewCamera.lookAt(0, 0, 0);
     }
