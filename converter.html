@@ -46,7 +46,6 @@
             z-index: 2;
         }
 
-        /* ХЕДЕР */
         .app-logo {
             position: relative;
             width: 100%;
@@ -89,7 +88,6 @@
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
         }
 
-        /* ПОЛЕ ЗАГРУЗКИ */
         .upload-area {
             background: rgba(255, 255, 255, 0.2);
             border: 2px dashed rgba(255, 255, 255, 0.4);
@@ -100,25 +98,10 @@
             margin-bottom: 20px;
         }
 
-        .upload-icon { 
-            font-size: 36px; 
-            color: white; 
-            margin-bottom: 5px; 
-        }
-        
-        .upload-text { 
-            color: white; 
-            font-size: 16px; 
-            font-weight: 600; 
-        }
-        
-        .upload-hint { 
-            color: rgba(255, 255, 255, 0.7); 
-            font-size: 12px; 
-            margin-top: 5px; 
-        }
+        .upload-icon { font-size: 36px; color: white; margin-bottom: 5px; }
+        .upload-text { color: white; font-size: 16px; font-weight: 600; }
+        .upload-hint { color: rgba(255, 255, 255, 0.7); font-size: 12px; margin-top: 5px; }
 
-        /* ОКНО ИНФОРМАЦИИ О ФАЙЛЕ */
         .file-info {
             width: 100%;
             background: rgba(255, 255, 255, 0.1);
@@ -132,7 +115,6 @@
             flex-direction: column;
             justify-content: center;
             text-align: center;
-            backdrop-filter: blur(5px);
         }
 
         .file-info .file-name {
@@ -166,7 +148,6 @@
             font-weight: 600;
         }
 
-        /* ОКНО РЕЗУЛЬТАТА КОНВЕРТАЦИИ */
         .result-info {
             width: 100%;
             background: rgba(255, 255, 255, 0.1);
@@ -175,46 +156,14 @@
             margin-bottom: 20px;
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: white;
-            backdrop-filter: blur(5px);
         }
 
-        .result-row {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
+        .result-row { display: flex; flex-direction: column; gap: 8px; }
+        .result-item { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; line-height: 1.4; word-break: break-word; }
+        .result-label { color: rgba(255, 255, 255, 0.7); font-weight: 500; min-width: 45px; flex-shrink: 0; }
+        .result-value { color: rgba(255, 255, 255, 0.95); font-weight: 500; word-break: break-word; flex: 1; }
+        .result-value .file-size { color: rgba(255, 255, 255, 0.6); font-size: 12px; margin-left: 5px; white-space: nowrap; }
 
-        .result-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 8px;
-            font-size: 13px;
-            line-height: 1.4;
-            word-break: break-word;
-        }
-
-        .result-label {
-            color: rgba(255, 255, 255, 0.7);
-            font-weight: 500;
-            min-width: 45px;
-            flex-shrink: 0;
-        }
-
-        .result-value {
-            color: rgba(255, 255, 255, 0.95);
-            font-weight: 500;
-            word-break: break-word;
-            flex: 1;
-        }
-
-        .result-value .file-size {
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 12px;
-            margin-left: 5px;
-            white-space: nowrap;
-        }
-
-        /* ЗАГОЛОВОК ФОРМАТЫ */
         .formats-title {
             text-align: center;
             color: white;
@@ -224,7 +173,6 @@
             text-shadow: 0 2px 5px rgba(0,0,0,0.3);
         }
 
-        /* ЯЧЕЙКИ С ПОДПИСЯМИ ВНУТРИ */
         .format-row {
             display: flex;
             align-items: center;
@@ -232,14 +180,8 @@
             margin-bottom: 20px;
         }
 
-        .format-col {
-            flex: 1;
-        }
-
-        .select-wrapper {
-            position: relative;
-            width: 100%;
-        }
+        .format-col { flex: 1; }
+        .select-wrapper { position: relative; width: 100%; }
 
         .format-select {
             width: 100%;
@@ -255,12 +197,7 @@
             text-align: center;
         }
 
-        .format-select option {
-            background: #333;
-            color: white;
-            text-align: left;
-        }
-
+        .format-select option { background: #333; color: white; text-align: left; }
         .select-label {
             position: absolute;
             left: 12px;
@@ -270,18 +207,10 @@
             font-size: 14px;
             font-weight: 600;
             pointer-events: none;
-            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
-            z-index: 5;
         }
 
-        .format-arrow {
-            color: white;
-            font-size: 24px;
-            font-weight: bold;
-            text-align: center;
-        }
+        .format-arrow { color: white; font-size: 24px; font-weight: bold; text-align: center; }
 
-        /* КНОПКА КОНВЕРТИРОВАТЬ */
         .convert-btn {
             width: 100%;
             padding: 16px 0;
@@ -297,16 +226,9 @@
             margin-bottom: 20px;
         }
 
-        .convert-btn:hover {
-            background: linear-gradient(145deg, #0055BB, #003B80);
-            transform: translateY(-2px);
-        }
+        .convert-btn:hover { background: linear-gradient(145deg, #0055BB, #003B80); transform: translateY(-2px); }
 
-        /* ПРОГРЕСС */
-        .progress-area { 
-            margin-bottom: 20px; 
-        }
-        
+        .progress-area { margin-bottom: 20px; }
         .progress-bar {
             width: 100%;
             height: 8px;
@@ -314,32 +236,16 @@
             border-radius: 4px;
             overflow: hidden;
         }
-        
         .progress-fill {
             height: 100%;
             background: linear-gradient(90deg, #007AFF, #C850C0);
             width: 0%;
             transition: width 0.3s ease;
         }
-        
-        .progress-text { 
-            color: white; 
-            text-align: center; 
-            margin-top: 5px; 
-            font-size: 14px; 
-        }
+        .progress-text { color: white; text-align: center; margin-top: 5px; font-size: 14px; }
 
-        /* БЛОК С РЕЗУЛЬТАТОМ */
-        .result-area {
-            width: 100%;
-            margin-bottom: 20px;
-        }
-
-        /* СКАЧИВАНИЕ */
-        .download-area { 
-            text-align: center; 
-        }
-        
+        .result-area { width: 100%; margin-bottom: 20px; }
+        .download-area { text-align: center; }
         .download-link {
             display: inline-block;
             padding: 14px 28px;
@@ -354,75 +260,24 @@
             width: 100%;
             text-align: center;
         }
-
         .download-link:hover {
             background: linear-gradient(145deg, #45a049, #3d8b40);
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(76, 175, 80, 0.5);
         }
 
-        /* ДЕБАГ */
-        .debug-info {
-            color: white;
-            font-size: 12px;
-            opacity: 0.7;
-            text-align: center;
-            margin-top: 15px;
-        }
-
-        /* АДАПТИВНОСТЬ */
         @media (max-width: 480px) {
             .logo-image { width: 320px; height: 320px; }
             .format-row { flex-direction: row; }
-            .format-arrow { transform: none; }
-            
-            .file-info {
-                padding: 8px 10px;
-                min-height: 45px;
-            }
-            
-            .file-info .file-name {
-                font-size: clamp(11px, 3.8vw, 14px);
-                margin-bottom: 2px;
-            }
-            
-            .file-info .file-details {
-                font-size: clamp(10px, 3.2vw, 12px);
-                gap: 8px;
-            }
-            
-            .format-select {
-                padding: 10px 10px 10px 35px;
-                font-size: 14px;
-            }
-            
-            .select-label {
-                font-size: 12px;
-                left: 10px;
-            }
-            
-            .result-item {
-                font-size: 12px;
-            }
-            
-            .result-label {
-                min-width: 40px;
-            }
-            
-            .upload-area,
-            .file-info,
-            .formats-title,
-            .format-row,
-            .convert-btn,
-            .progress-area,
-            .result-area {
-                margin-bottom: 15px;
-            }
-            
-            .download-link {
-                padding: 12px 20px;
-                font-size: 14px;
-            }
+            .file-info { padding: 8px 10px; min-height: 45px; }
+            .file-info .file-name { font-size: clamp(11px, 3.8vw, 14px); }
+            .file-info .file-details { font-size: clamp(10px, 3.2vw, 12px); gap: 8px; }
+            .format-select { padding: 10px 10px 10px 35px; font-size: 14px; }
+            .select-label { font-size: 12px; left: 10px; }
+            .result-item { font-size: 12px; }
+            .result-label { min-width: 40px; }
+            .upload-area, .file-info, .formats-title, .format-row, .convert-btn, .progress-area, .result-area { margin-bottom: 15px; }
+            .download-link { padding: 12px 20px; font-size: 14px; }
         }
     </style>
 </head>
@@ -483,7 +338,6 @@
                     <div id="progressText" class="progress-text">0%</div>
                 </div>
 
-                <!-- БЛОК С РЕЗУЛЬТАТОМ КОНВЕРТАЦИИ -->
                 <div id="resultArea" class="result-area" style="display: none;">
                     <div id="resultInfo" class="result-info">
                         <div class="result-row">
@@ -499,12 +353,9 @@
                     </div>
                 </div>
 
-                <!-- СКАЧИВАНИЕ -->
                 <div id="downloadArea" class="download-area" style="display: none;">
                     <a id="downloadLink" class="download-link" href="#">📥 Скачать полученный файл</a>
                 </div>
-
-                <div id="debugInfo" class="debug-info" style="display: none;"></div>
             </div>
         </div>
     </div>
@@ -516,9 +367,9 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/OBJExporter.js"></script>
 
     <script>
+        // Элементы DOM
         const fileInput = document.getElementById('fileInput');
         const dropArea = document.getElementById('dropArea');
-        const fileInfo = document.getElementById('fileInfo');
         const fileInfoContent = document.getElementById('fileInfoContent');
         const fromFormat = document.getElementById('fromFormat');
         const toFormat = document.getElementById('toFormat');
@@ -531,54 +382,155 @@
         const convertedFileDetails = document.getElementById('convertedFileDetails');
         const downloadArea = document.getElementById('downloadArea');
         const downloadLink = document.getElementById('downloadLink');
-        const debugInfo = document.getElementById('debugInfo');
         
         let selectedFile = null;
+        let convertedBlob = null;
         let convertedFileName = '';
-        let convertedFileSize = 0;
         
-        // 🔥 ПОЛУЧАЕМ МОДЕЛЬ ИЗ sessionStorage (передаётся из основного приложения)
-        const storedModel = sessionStorage.getItem('modelToConvert');
-        
-        if (storedModel) {
-            try {
-                const modelData = JSON.parse(storedModel);
-                console.log('📁 Получена модель из приложения:', modelData.name);
-                
-                // Имитируем получение файла по URL
-                // В реальности нужно будет скачать файл, но для демо показываем информацию
-                selectedFile = {
-                    name: modelData.name,
-                    type: modelData.type,
-                    size: modelData.size || 0,
-                    url: modelData.data
+        // 🔥 ФУНКЦИЯ ДЛЯ ПОЛУЧЕНИЯ ФАЙЛА ИЗ INDEXEDDB (из основного приложения)
+        async function loadFileFromIndexedDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('3dviewer_db', 1);
+                request.onerror = () => reject(request.error);
+                request.onsuccess = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains('files')) {
+                        resolve(null);
+                        return;
+                    }
+                    const transaction = db.transaction(['files'], 'readonly');
+                    const store = transaction.objectStore('files');
+                    const getRequest = store.get('current_file');
+                    getRequest.onsuccess = () => {
+                        const fileRecord = getRequest.result;
+                        if (fileRecord && fileRecord.data) {
+                            const file = fileRecord.data;
+                            // Очищаем хранилище
+                            const clearTx = db.transaction(['files'], 'readwrite');
+                            clearTx.objectStore('files').delete('current_file');
+                            resolve(file);
+                        } else {
+                            resolve(null);
+                        }
+                    };
+                    getRequest.onerror = () => reject(getRequest.error);
                 };
-                
-                const ext = modelData.name.split('.').pop().toLowerCase();
-                const sizeMB = (modelData.size / 1024 / 1024).toFixed(2);
-                
-                fileInfoContent.innerHTML = `
-                    <div class="file-name">${modelData.name}</div>
-                    <div class="file-details">
-                        <span>📦 ${sizeMB} MB</span>
-                        <span>🏷️ ${ext.toUpperCase()}</span>
-                    </div>
-                    <div class="app-badge">✅ Из 3D-просмотрщика</div>
-                `;
-                
-                if (ext === 'stl') fromFormat.value = 'stl';
-                else if (ext === 'obj') fromFormat.value = 'obj';
-                else if (ext === 'glb') fromFormat.value = 'glb';
-                else if (ext === 'gltf') fromFormat.value = 'gltf';
-                
-                // Очищаем sessionStorage, чтобы не загружать повторно
-                sessionStorage.removeItem('modelToConvert');
-                
-            } catch (e) {
-                console.error('Ошибка загрузки модели из приложения:', e);
-                fileInfoContent.innerHTML = '❌ Ошибка загрузки модели из приложения';
-            }
+            });
         }
+        
+        // 🔥 ФУНКЦИЯ КОНВЕРТАЦИИ (реальная, через Three.js)
+        async function convertFile(file, from, to) {
+            return new Promise((resolve, reject) => {
+                const url = URL.createObjectURL(file);
+                let loader;
+                
+                if (from === 'stl') loader = new THREE.STLLoader();
+                else if (from === 'obj') loader = new THREE.OBJLoader();
+                else {
+                    reject(new Error('Конвертация GLB/GLTF пока в разработке'));
+                    return;
+                }
+                
+                loader.load(url, (geometryOrObject) => {
+                    let geometry;
+                    let scene;
+                    
+                    if (from === 'stl') {
+                        geometry = geometryOrObject;
+                        scene = new THREE.Scene();
+                        const material = new THREE.MeshStandardMaterial({ color: 0xCCCCCC });
+                        const mesh = new THREE.Mesh(geometry, material);
+                        scene.add(mesh);
+                    } else {
+                        // OBJ — это группа мешей
+                        scene = geometryOrObject;
+                        // Получаем геометрию для экспорта (объединяем все меши)
+                        const tempScene = new THREE.Scene();
+                        let combinedGeometry = new THREE.BufferGeometry();
+                        scene.traverse(child => {
+                            if (child.isMesh) {
+                                const geom = child.geometry;
+                                geom.computeVertexNormals();
+                                if (combinedGeometry.attributes.position) {
+                                    combinedGeometry = combinedGeometry.clone();
+                                    // Объединение сложное, для простоты берем первый меш
+                                } else {
+                                    combinedGeometry = geom.clone();
+                                }
+                            }
+                        });
+                        geometry = combinedGeometry;
+                    }
+                    
+                    // Экспортируем в нужный формат
+                    let output;
+                    let mimeType;
+                    let extension;
+                    
+                    if (to === 'stl') {
+                        const exporter = new THREE.STLExporter();
+                        output = exporter.parse(scene);
+                        mimeType = 'application/vnd.ms-pkistl';
+                        extension = 'stl';
+                    } else if (to === 'obj') {
+                        const exporter = new THREE.OBJExporter();
+                        output = exporter.parse(scene);
+                        mimeType = 'text/plain';
+                        extension = 'obj';
+                    } else {
+                        reject(new Error('Конвертация в GLB/GLTF пока в разработке'));
+                        return;
+                    }
+                    
+                    const blob = new Blob([output], { type: mimeType });
+                    URL.revokeObjectURL(url);
+                    resolve(blob);
+                }, undefined, reject);
+            });
+        }
+        
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+        }
+        
+        function updateProgress(percent) {
+            progressFill.style.width = percent + '%';
+            progressText.textContent = percent + '%';
+        }
+        
+        function displayFileInfo(file, isFromApp = false) {
+            const ext = file.name.split('.').pop().toLowerCase();
+            const sizeMB = formatSize(file.size);
+            
+            fileInfoContent.innerHTML = `
+                <div class="file-name">${file.name}</div>
+                <div class="file-details">
+                    <span>📦 ${sizeMB}</span>
+                    <span>🏷️ ${ext.toUpperCase()}</span>
+                </div>
+                ${isFromApp ? '<div class="app-badge">✅ Из 3D-просмотрщика</div>' : ''}
+            `;
+            
+            if (ext === 'stl') fromFormat.value = 'stl';
+            else if (ext === 'obj') fromFormat.value = 'obj';
+            else if (ext === 'glb') fromFormat.value = 'glb';
+            else if (ext === 'gltf') fromFormat.value = 'gltf';
+        }
+        
+        // Загрузка файла из IndexedDB при старте страницы
+        (async () => {
+            try {
+                const fileFromApp = await loadFileFromIndexedDB();
+                if (fileFromApp) {
+                    selectedFile = fileFromApp;
+                    displayFileInfo(fileFromApp, true);
+                }
+            } catch (e) {
+                console.error('Ошибка загрузки из IndexedDB:', e);
+            }
+        })();
         
         // Обработчики выбора файла
         dropArea.onclick = () => fileInput.click();
@@ -587,25 +539,10 @@
             const file = e.target.files[0];
             if (file) {
                 selectedFile = file;
-                const ext = file.name.split('.').pop().toLowerCase();
-                const sizeMB = (file.size / 1024 / 1024).toFixed(2);
-                
-                fileInfoContent.innerHTML = `
-                    <div class="file-name">${file.name}</div>
-                    <div class="file-details">
-                        <span>📦 ${sizeMB} MB</span>
-                        <span>🏷️ ${ext.toUpperCase()}</span>
-                    </div>
-                `;
-                
-                if (ext === 'stl') fromFormat.value = 'stl';
-                else if (ext === 'obj') fromFormat.value = 'obj';
-                else if (ext === 'glb') fromFormat.value = 'glb';
-                else if (ext === 'gltf') fromFormat.value = 'gltf';
+                displayFileInfo(file, false);
             }
         };
         
-        // Поддержка drag & drop
         dropArea.ondragover = (e) => {
             e.preventDefault();
             dropArea.style.background = 'rgba(255, 255, 255, 0.25)';
@@ -618,52 +555,15 @@
         dropArea.ondrop = (e) => {
             e.preventDefault();
             dropArea.style.background = 'rgba(255, 255, 255, 0.2)';
-            
             const file = e.dataTransfer.files[0];
             if (file) {
-                fileInput.files = e.dataTransfer.files;
                 selectedFile = file;
-                
-                const ext = file.name.split('.').pop().toLowerCase();
-                const sizeMB = (file.size / 1024 / 1024).toFixed(2);
-                
-                fileInfoContent.innerHTML = `
-                    <div class="file-name">${file.name}</div>
-                    <div class="file-details">
-                        <span>📦 ${sizeMB} MB</span>
-                        <span>🏷️ ${ext.toUpperCase()}</span>
-                    </div>
-                `;
-                
-                if (ext === 'stl') fromFormat.value = 'stl';
-                else if (ext === 'obj') fromFormat.value = 'obj';
-                else if (ext === 'glb') fromFormat.value = 'glb';
-                else if (ext === 'gltf') fromFormat.value = 'gltf';
+                fileInput.files = e.dataTransfer.files;
+                displayFileInfo(file, false);
             }
         };
         
-        function updateProgress(percent) {
-            progressFill.style.width = percent + '%';
-            progressText.textContent = percent + '%';
-        }
-        
-        // Функция форматирования размера
-        function formatSize(bytes) {
-            if (bytes < 1024) return bytes + ' B';
-            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-            return (bytes / 1024 / 1024).toFixed(2) + ' MB';
-        }
-        
-        // Функция для обрезания слишком длинных имен
-        function truncateFileName(name, maxLength = 30) {
-            if (name.length <= maxLength) return name;
-            const ext = name.split('.').pop();
-            const nameWithoutExt = name.slice(0, name.lastIndexOf('.'));
-            const truncatedName = nameWithoutExt.slice(0, maxLength - ext.length - 3) + '...';
-            return truncatedName + '.' + ext;
-        }
-        
-        // Обработчик кнопки конвертации
+        // Конвертация
         convertBtn.onclick = async () => {
             if (!selectedFile) {
                 alert('Сначала выберите файл');
@@ -678,54 +578,46 @@
                 return;
             }
             
-            // Скрываем результат и скачивание
+            // Скрываем результат
             resultArea.style.display = 'none';
             downloadArea.style.display = 'none';
             progressArea.style.display = 'block';
             updateProgress(0);
             
-            // Эмуляция конвертации
-            let progress = 0;
-            const interval = setInterval(() => {
-                progress += 10;
-                updateProgress(progress);
+            try {
+                // Эмуляция прогресса (реальная конвертация может быть быстрой)
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    progress += 10;
+                    if (progress <= 90) updateProgress(progress);
+                }, 100);
                 
-                if (progress >= 100) {
-                    clearInterval(interval);
-                    
-                    let baseName = selectedFile.name.replace(/\.[^/.]+$/, '');
-                    baseName = baseName.replace(/\.(glb|gltf|obj|stl)$/i, '');
-                    
-                    const newFileName = baseName + '.' + to;
-                    convertedFileName = newFileName;
-                    
-                    // Генерируем размер результата
-                    const originalSize = selectedFile.size;
-                    convertedFileSize = Math.round(originalSize * (0.9 + Math.random() * 0.2));
-                    
-                    // Форматируем строки - ТОЛЬКО название и размер, без дублирования формата
-                    const originalDisplay = `${selectedFile.name} · ${formatSize(originalSize)}`;
-                    const convertedDisplay = `${newFileName} · ${formatSize(convertedFileSize)}`;
-                    
-                    // Обновляем окно результата
-                    originalFileDetails.innerHTML = originalDisplay;
-                    convertedFileDetails.innerHTML = convertedDisplay;
-                    
-                    // Показываем результат
-                    resultArea.style.display = 'block';
-                    
-                    // Создаем ссылку для скачивания
-                    const dummyContent = 'Конвертированный файл';
-                    const blob = new Blob([dummyContent], {type: 'application/octet-stream'});
-                    const url = URL.createObjectURL(blob);
-                    
-                    downloadLink.href = url;
-                    downloadLink.download = newFileName;
-                    downloadArea.style.display = 'block';
-                    
-                    debugInfo.style.display = 'none';
-                }
-            }, 200);
+                const resultBlob = await convertFile(selectedFile, from, to);
+                
+                clearInterval(progressInterval);
+                updateProgress(100);
+                
+                // Сохраняем результат
+                convertedBlob = resultBlob;
+                const baseName = selectedFile.name.replace(/\.[^/.]+$/, '');
+                convertedFileName = baseName + '.' + to;
+                
+                // Показываем результат
+                originalFileDetails.innerHTML = `${selectedFile.name} · ${formatSize(selectedFile.size)}`;
+                convertedFileDetails.innerHTML = `${convertedFileName} · ${formatSize(resultBlob.size)}`;
+                resultArea.style.display = 'block';
+                
+                // Ссылка на скачивание
+                const url = URL.createObjectURL(resultBlob);
+                downloadLink.href = url;
+                downloadLink.download = convertedFileName;
+                downloadArea.style.display = 'block';
+                
+            } catch (error) {
+                console.error('Ошибка конвертации:', error);
+                alert('Ошибка конвертации: ' + error.message);
+                progressArea.style.display = 'none';
+            }
         };
     </script>
 </body>
