@@ -1,4 +1,4 @@
-// script.js - ИСПРАВЛЕННАЯ ВЕРСИЯ (с Capacitor File Picker)
+// script.js - ИСПРАВЛЕННАЯ ВЕРСИЯ (с Capacitor Filesystem, без FilePicker)
 
 // Состояния приложения
 const APP_STATES = {
@@ -40,7 +40,7 @@ class ModelViewerApp {
         this.lightsInitialized = false;
         this.orbitingLight = null;
         
-        // Capacitor плагины
+        // Capacitor
         this.isCapacitor = window.Capacitor ? true : false;
         
         this.init();
@@ -122,49 +122,29 @@ class ModelViewerApp {
 
     async selectFileCapacitor() {
         try {
-            // Проверяем доступность FilePicker
-            if (!window.Capacitor || !window.Capacitor.Plugins || !window.Capacitor.Plugins.FilePicker) {
-                console.log('FilePicker не доступен, используем стандартный input');
-                this.fileInput.click();
-                return;
-            }
+            console.log('📱 Выбор файла в Capacitor...');
             
-            const { FilePicker } = window.Capacitor.Plugins;
+            // Используем стандартный input в Capacitor - он работает на Android 16
+            // Просто создаем временный input и кликаем по нему
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.glb,.gltf,.obj,.stl';
+            input.style.display = 'none';
+            document.body.appendChild(input);
             
-            console.log('📱 Открываем нативный выбор файла...');
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    this.processSelectedFile(file);
+                }
+                document.body.removeChild(input);
+            };
             
-            const result = await FilePicker.pickFile({
-                types: ['application/octet-stream', 'model/gltf-binary', 'model/gltf+json', 'application/vnd.ms-pkistl', 'application/sla'],
-                extensions: ['glb', 'gltf', 'obj', 'stl']
-            });
+            input.click();
             
-            if (result && result.path) {
-                console.log('✅ Файл выбран:', result.path);
-                
-                // Получаем содержимое файла через Filesystem
-                const { Filesystem } = window.Capacitor.Plugins;
-                
-                const fileData = await Filesystem.readFile({
-                    path: result.path,
-                    directory: result.directory || 'DOCUMENTS'
-                });
-                
-                // Создаем Blob из данных
-                const blob = new Blob([fileData.data], { type: 'application/octet-stream' });
-                const fileName = result.name || result.path.split('/').pop();
-                const fileType = '.' + fileName.split('.').pop().toLowerCase();
-                
-                // Создаем объект File для совместимости с существующим кодом
-                const file = new File([blob], fileName, { type: 'application/octet-stream' });
-                
-                // Обрабатываем как обычный файл
-                this.processSelectedFile(file);
-            }
         } catch (error) {
             console.error('❌ Ошибка выбора файла:', error);
-            if (error.message !== 'User cancelled') {
-                alert('Не удалось выбрать файл. Попробуйте еще раз.');
-            }
+            alert('Не удалось выбрать файл. Попробуйте еще раз.');
         }
     }
 
