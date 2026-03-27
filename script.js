@@ -1,19 +1,6 @@
-// script.js - ФИНАЛЬНАЯ ВЕРСИЯ (STL + OBJ + GLB/GLTF + передача в конвертер через IndexedDB)
-
-const APP_STATES = {
-    MAIN: 'main',
-    PREVIEW: 'preview', 
-    VIEWER: 'viewer'
-};
-
-const RENDERER_FORMATS = {
-    MODEL_VIEWER: ['.glb', '.gltf'],
-    THREE_JS: ['.stl', '.obj']
-};
-
 class ModelViewerApp {
     constructor() {
-        this.currentState = APP_STATES.MAIN;
+        this.currentState = 'main';
         this.currentFile = null;
         this.currentFileType = null;
         this.currentRenderer = null;
@@ -36,53 +23,14 @@ class ModelViewerApp {
         this.lightsInitialized = false;
         this.orbitingLight = null;
         
-        this.isCapacitor = window.Capacitor ? true : false;
-        
-        // Инициализация IndexedDB
-        this.initDB();
-        
         this.init();
-    }
-
-    initDB() {
-        this.dbReady = new Promise((resolve, reject) => {
-            const request = indexedDB.open('3dviewer_db', 1);
-            request.onerror = () => reject(request.error);
-            request.onsuccess = () => {
-                this.db = request.result;
-                resolve();
-            };
-            request.onupgradeneeded = (event) => {
-                const db = event.target.result;
-                if (!db.objectStoreNames.contains('files')) {
-                    db.createObjectStore('files', { keyPath: 'id' });
-                }
-            };
-        });
-    }
-
-    async saveFileToDB(file) {
-        await this.dbReady;
-        return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(['files'], 'readwrite');
-            const store = transaction.objectStore('files');
-            const putRequest = store.put({
-                id: 'current_file',
-                name: file.name,
-                type: file.type,
-                size: file.size,
-                data: file
-            });
-            putRequest.onsuccess = () => resolve();
-            putRequest.onerror = () => reject(putRequest.error);
-        });
     }
 
     init() {
         this.initializeElements();
         this.bindEvents();
         this.initThreeJS();
-        console.log('🚀 3D Model Viewer запущен');
+        console.log('3D Viewer запущен');
     }
 
     initializeElements() {
@@ -97,77 +45,152 @@ class ModelViewerApp {
         this.autoRotateBtn = document.getElementById('auto-rotate-btn');
         this.resetCameraBtn = document.getElementById('reset-camera-btn');
         this.previewPlaceholder = document.getElementById('preview-placeholder');
+        this.previewArea = document.getElementById('preview-area');
+
         this.previewModel = document.getElementById('preview-model');
         this.mainModel = document.getElementById('main-model');
         this.previewThreejs = document.getElementById('preview-threejs');
         this.mainThreejs = document.getElementById('main-threejs');
+
         this.loadingIndicator = document.getElementById('loading-indicator');
         this.progressFill = document.querySelector('.progress-fill');
         this.progressText = document.querySelector('.progress-text');
-        this.converterBtn = document.getElementById('go-to-converter-btn');
     }
 
     bindEvents() {
         this.selectFileBtn.addEventListener('click', () => {
-            if (this.isCapacitor) {
-                this.selectFileCapacitor();
+            // Пытаемся использовать нативный выбор файла, если доступен
+            if (window.Capacitor && Capacitor.getPlatform() === 'android') {
+                this.pickFileWithCapacitor();
             } else {
                 this.fileInput.click();
             }
         });
 
-        if (this.fileInput) {
-            this.fileInput.addEventListener('change', (e) => {
-                this.handleFileSelect(e);
-            });
-        }
+        this.fileInput.addEventListener('change', (e) => {
+            this.handleFileSelect(e);
+        });
 
-        this.open3dBtn.addEventListener('click', () => this.openViewer());
-        this.backBtn.addEventListener('click', () => this.showMainScreen());
-        this.autoRotateBtn.addEventListener('click', () => this.toggleAutoRotate());
-        this.resetCameraBtn.addEventListener('click', () => this.resetCamera());
-        window.addEventListener('resize', () => this.handleResize());
-        
-        // КНОПКА КОНВЕРТЕРА — ПЕРЕДАЧА ФАЙЛА ЧЕРЕЗ INDEXEDDB
-        if (this.converterBtn) {
-            this.converterBtn.addEventListener('click', async () => {
-                if (this.currentFile) {
-                    try {
-                        this.showLoadingIndicator();
-                        await this.saveFileToDB(this.currentFile);
-                        this.hideLoadingIndicator();
-                        window.open('https://poserval.github.io/3D-Model-Viewer/converter.html', '_blank');
-                    } catch (error) {
-                        console.error('❌ Ошибка сохранения файла:', error);
-                        this.hideLoadingIndicator();
-                        alert('Не удалось передать файл в конвертер. Попробуйте еще раз.');
-                    }
-                } else {
-                    window.open('https://poserval.github.io/3D-Model-Viewer/converter.html', '_blank');
-                }
-            });
-        }
+        this.open3dBtn.addEventListener('click', () => {
+            this.openViewer();
+        });
+
+        this.backBtn.addEventListener('click', () => {
+            this.showMainScreen();
+        });
+
+        this.autoRotateBtn.addEventListener('click', () => {
+            this.toggleAutoRotate();
+        });
+
+        this.resetCameraBtn.addEventListener('click', () => {
+            this.resetCamera();
+        });
+
+        window.addEventListener('resize', () => {
+            this.handleResize();
+        });
     }
 
-    async selectFileCapacitor() {
+    async pickFileWithCapacitor() {
         try {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.glb,.gltf,.obj,.stl';
-            input.style.display = 'none';
-            document.body.appendChild(input);
-            input.onchange = (e) => {
-                const file = e.target.files[0];
-                if (file) this.processSelectedFile(file);
-                document.body.removeChild(input);
-            };
-            input.click();
-        } catch (error) {
-            console.error('❌ Ошибка выбора файла:', error);
+            const { Filesystem } = Capacitor.Plugins;
+            const result = await Filesystem.chooseFile({
+                types: ['*/*'],
+                multiple: false
+            });
+
+            if (!result || !result.files || !result.files[0]) return;
+
+            const fileData = result.files[0];
+            const blob = new Blob([fileData.data], { type: fileData.mimeType });
+            const file = new File([blob], fileData.name, { type: fileData.mimeType });
+
+            const fakeEvent = { target: { files: [file] } };
+            this.handleFileSelect(fakeEvent);
+        } catch (err) {
+            console.warn('Capacitor FilePicker не сработал, используем fallback', err);
+            this.fileInput.click();
         }
     }
 
-    processSelectedFile(file) {
+    initThreeJS() {
+        this.previewScene = new THREE.Scene();
+        this.previewCamera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        this.previewRenderer = new THREE.WebGLRenderer({ 
+            canvas: this.previewThreejs,
+            antialias: true,
+            alpha: true
+        });
+        this.previewRenderer.setSize(200, 200);
+        this.previewRenderer.setClearColor(0x000000, 0);
+        
+        const previewAmbient = new THREE.AmbientLight(0xffffff, 1.0);
+        this.previewScene.add(previewAmbient);
+        
+        this.mainScene = new THREE.Scene();
+        this.mainCamera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        this.mainRenderer = new THREE.WebGLRenderer({ 
+            canvas: this.mainThreejs,
+            antialias: true,
+            alpha: true
+        });
+        this.mainRenderer.setClearColor(0x222222, 1);
+        
+        this.previewCamera.position.set(0, 0, 5);
+        this.mainCamera.position.set(0, 0, 5);
+
+        this.animate();
+    }
+
+    setupPreviewLighting() {
+        const lightsToRemove = [];
+        this.previewScene.traverse((child) => {
+            if (child.isLight) lightsToRemove.push(child);
+        });
+        lightsToRemove.forEach(light => this.previewScene.remove(light));
+
+        const ambientLight = new THREE.AmbientLight(0x404080, 0.6);
+        this.previewScene.add(ambientLight);
+        
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(5, 10, 3);
+        this.previewScene.add(directionalLight);
+        
+        const pointLight = new THREE.PointLight(0xffffff, 0.5, 50);
+        pointLight.position.set(0, 0, 8);
+        this.previewScene.add(pointLight);
+    }
+
+    setupMainLighting() {
+        if (this.lightsInitialized) return;
+
+        const ambientLight = new THREE.AmbientLight(0x404080, 0.4);
+        this.mainScene.add(ambientLight);
+        
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        directionalLight.position.set(10, 10, 5);
+        this.mainScene.add(directionalLight);
+        
+        this.orbitingLight = new THREE.PointLight(0xffffff, 1.2, 100);
+        this.orbitingLight.position.set(8, 4, 0);
+        this.mainScene.add(this.orbitingLight);
+        
+        this.lightsInitialized = true;
+    }
+
+    getRendererForFormat(extension) {
+        const MODEL_VIEWER = ['.glb', '.gltf', '.obj'];
+        const THREE_JS = ['.stl'];
+        if (MODEL_VIEWER.includes(extension)) return 'model-viewer';
+        if (THREE_JS.includes(extension)) return 'threejs';
+        return null;
+    }
+
+    handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
         if (this.currentFileURL) URL.revokeObjectURL(this.currentFileURL);
         this.resetPreview();
 
@@ -186,16 +209,12 @@ class ModelViewerApp {
         this.showPreview();
     }
 
-    handleFileSelect(event) {
-        const file = event.target.files[0];
-        if (file) this.processSelectedFile(file);
-    }
-
     validateFile(file) {
         if (file.size > this.MAX_FILE_SIZE) {
             alert(`Файл слишком большой: ${(file.size / (1024 * 1024)).toFixed(1)}MB`);
             return false;
         }
+
         const validFormats = ['.glb', '.gltf', '.obj', '.stl'];
         const ext = '.' + file.name.split('.').pop().toLowerCase();
         if (!validFormats.includes(ext)) {
@@ -203,12 +222,6 @@ class ModelViewerApp {
             return false;
         }
         return true;
-    }
-
-    getRendererForFormat(extension) {
-        if (RENDERER_FORMATS.MODEL_VIEWER.includes(extension)) return 'model-viewer';
-        if (RENDERER_FORMATS.THREE_JS.includes(extension)) return 'threejs';
-        return null;
     }
 
     async showPreview() {
@@ -225,20 +238,20 @@ class ModelViewerApp {
             }
 
             this.open3dBtn.disabled = false;
-            this.currentState = APP_STATES.PREVIEW;
+            this.currentState = 'preview';
         } catch (error) {
-            console.error('❌ Ошибка превью:', error);
-            alert('Ошибка при обработке файла:\n' + error.message);
+            console.error('Ошибка показа превью:', error);
+            alert('Ошибка при обработке файла: ' + error.message);
             this.resetPreview();
         }
     }
 
     hidePreviewPlaceholder() {
-        if (this.previewPlaceholder) this.previewPlaceholder.style.display = 'none';
+        this.previewPlaceholder.style.display = 'none';
     }
 
     showPreviewPlaceholder() {
-        if (this.previewPlaceholder) this.previewPlaceholder.style.display = 'flex';
+        this.previewPlaceholder.style.display = 'flex';
     }
 
     async loadModelViewerPreview() {
@@ -246,69 +259,25 @@ class ModelViewerApp {
             this.clearThreeJSScene(this.previewScene);
             this.previewModel.src = this.currentFileURL;
             this.previewModel.hidden = false;
-            this.hidePreviewPlaceholder();
             setTimeout(() => resolve(), 1000);
         });
     }
 
     async loadThreeJSPreview() {
         return new Promise((resolve, reject) => {
-            let loader;
-            if (this.currentFileType === '.stl') {
-                loader = new THREE.STLLoader();
-            } else if (this.currentFileType === '.obj') {
-                loader = new THREE.OBJLoader();
-            } else {
-                reject(new Error('Неподдерживаемый формат'));
-                return;
-            }
-
-            const onLoad = (object) => {
+            const loader = new THREE.STLLoader();
+            loader.load(this.currentFileURL, (geometry) => {
                 this.clearThreeJSScene(this.previewScene);
-                
-                let modelObject;
-                if (this.currentFileType === '.stl') {
-                    const material = new THREE.MeshStandardMaterial({ color: 0xCCCCCC, roughness: 0.3 });
-                    modelObject = new THREE.Mesh(object, material);
-                } else {
-                    modelObject = object;
-                    modelObject.traverse(child => {
-                        if (child.isMesh) {
-                            child.material = new THREE.MeshStandardMaterial({ color: 0xCCCCCC, roughness: 0.3 });
-                        }
-                    });
-                }
-                
+                const material = new THREE.MeshStandardMaterial({ color: 0xCCCCCC, roughness: 0.3, metalness: 0.1 });
+                const modelObject = new THREE.Mesh(geometry, material);
                 this.previewScene.add(modelObject);
                 this.previewModelObject = modelObject;
                 this.setupPreviewLighting();
                 this.setupPreviewCamera(modelObject);
                 this.previewThreejs.hidden = false;
-                this.hidePreviewPlaceholder();
                 resolve();
-            };
-
-            if (this.currentFileType === '.stl') {
-                loader.load(this.currentFileURL, onLoad, (p) => {
-                    if (p.lengthComputable) this.updateProgress((p.loaded / p.total) * 100);
-                }, reject);
-            } else {
-                loader.load(this.currentFileURL, onLoad, undefined, reject);
-            }
+            }, null, reject);
         });
-    }
-
-    setupPreviewLighting() {
-        const toRemove = [];
-        this.previewScene.traverse(c => { if (c.isLight) toRemove.push(c); });
-        toRemove.forEach(l => this.previewScene.remove(l));
-        this.previewScene.add(new THREE.AmbientLight(0x404080, 0.6));
-        const dir = new THREE.DirectionalLight(0xffffff, 0.8);
-        dir.position.set(5, 10, 3);
-        this.previewScene.add(dir);
-        const point = new THREE.PointLight(0xffffff, 0.5, 50);
-        point.position.set(0, 0, 8);
-        this.previewScene.add(point);
     }
 
     setupPreviewCamera(object) {
@@ -316,40 +285,12 @@ class ModelViewerApp {
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
         object.position.set(-center.x, -center.y, -center.z);
+        this.autoAlignModel(object, size);
         const maxDim = Math.max(size.x, size.y, size.z);
-        let dist = Math.max(maxDim * 1.0, 1.5);
-        dist = Math.min(dist, 8);
+        let dist = maxDim * 1.0;
+        dist = Math.min(Math.max(dist, 1.5), 8);
         this.previewCamera.position.set(0, 0, dist);
         this.previewCamera.lookAt(0, 0, 0);
-    }
-
-    initThreeJS() {
-        this.previewScene = new THREE.Scene();
-        this.previewCamera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
-        this.previewRenderer = new THREE.WebGLRenderer({ canvas: this.previewThreejs, antialias: true, alpha: true });
-        this.previewRenderer.setSize(200, 200);
-        this.previewRenderer.setClearColor(0x000000, 0);
-        
-        this.mainScene = new THREE.Scene();
-        this.mainCamera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
-        this.mainRenderer = new THREE.WebGLRenderer({ canvas: this.mainThreejs, antialias: true });
-        this.mainRenderer.setClearColor(0x222222, 1);
-        
-        this.previewCamera.position.set(0, 0, 5);
-        this.mainCamera.position.set(0, 0, 5);
-        this.animate();
-    }
-
-    setupMainLighting() {
-        if (this.lightsInitialized) return;
-        this.mainScene.add(new THREE.AmbientLight(0x404080, 0.4));
-        const dir = new THREE.DirectionalLight(0xffffff, 0.6);
-        dir.position.set(10, 10, 5);
-        this.mainScene.add(dir);
-        this.orbitingLight = new THREE.PointLight(0xffffff, 1.2, 100);
-        this.orbitingLight.position.set(8, 4, 0);
-        this.mainScene.add(this.orbitingLight);
-        this.lightsInitialized = true;
     }
 
     setupMainCamera(object) {
@@ -357,11 +298,10 @@ class ModelViewerApp {
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
         object.position.set(-center.x, -center.y, -center.z);
+        this.autoAlignModel(object, size);
         const maxDim = Math.max(size.x, size.y, size.z);
-        const fov = this.mainCamera.fov * Math.PI / 180;
-        let dist = maxDim / (2 * Math.tan(fov / 2));
-        dist = Math.max(dist * 1.5, 1);
-        dist = Math.min(dist, 10);
+        let dist = maxDim / (2 * Math.tan(this.mainCamera.fov * Math.PI / 360));
+        dist = Math.min(Math.max(dist * 1.5, 1), 10);
         this.mainCamera.position.set(0, 0, dist);
         this.mainCamera.lookAt(0, 0, 0);
         if (this.mainControls) {
@@ -371,13 +311,24 @@ class ModelViewerApp {
         }
     }
 
+    autoAlignModel(object, size) {
+        const maxDim = Math.max(size.x, size.y, size.z);
+        if (size.y === maxDim) return;
+        if (size.z === maxDim) object.rotation.x = -Math.PI / 2;
+        else if (size.x === maxDim) object.rotation.z = -Math.PI / 2;
+    }
+
     animate() {
         requestAnimationFrame(() => this.animate());
-        if (this.previewRenderer) this.previewRenderer.render(this.previewScene, this.previewCamera);
-        if (this.mainRenderer) {
+        if (this.previewRenderer && this.previewScene && this.previewCamera) {
+            this.previewRenderer.render(this.previewScene, this.previewCamera);
+        }
+        if (this.mainRenderer && this.mainScene && this.mainCamera) {
             if (this.orbitingLight && this.autoRotate) {
                 const t = Date.now() * 0.001;
-                this.orbitingLight.position.set(Math.cos(t * 0.5) * 8, 4 + Math.sin(t * 0.3) * 2, Math.sin(t * 0.5) * 8);
+                this.orbitingLight.position.x = Math.cos(t * 0.5) * 8;
+                this.orbitingLight.position.z = Math.sin(t * 0.5) * 8;
+                this.orbitingLight.position.y = 4 + Math.sin(t * 0.3) * 2;
             }
             if (this.autoRotate && this.mainModelObject && this.currentRenderer === 'threejs') {
                 this.mainModelObject.rotation.y += 0.01;
@@ -390,15 +341,22 @@ class ModelViewerApp {
     clearThreeJSScene(scene) {
         if (!scene) return;
         const toRemove = [];
-        scene.traverse(c => { if (c.isMesh) toRemove.push(c); });
-        toRemove.forEach(m => { if (m.geometry) m.geometry.dispose(); if (m.material) m.material.dispose(); scene.remove(m); });
+        scene.traverse(child => { if (child.isMesh) toRemove.push(child); });
+        toRemove.forEach(obj => {
+            if (obj.geometry) obj.geometry.dispose();
+            if (obj.material) {
+                if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+                else obj.material.dispose();
+            }
+            scene.remove(obj);
+        });
     }
 
     hideAllRenderers() {
-        if (this.previewModel) this.previewModel.hidden = true;
-        if (this.previewThreejs) this.previewThreejs.hidden = true;
-        if (this.mainModel) this.mainModel.hidden = true;
-        if (this.mainThreejs) this.mainThreejs.hidden = true;
+        this.previewModel.hidden = true;
+        this.previewThreejs.hidden = true;
+        this.mainModel.hidden = true;
+        this.mainThreejs.hidden = true;
     }
 
     updateProgress(percent) {
@@ -412,20 +370,26 @@ class ModelViewerApp {
         try {
             this.viewerTitle.textContent = this.currentFile.name;
             this.hideAllRenderers();
-            if (this.currentRenderer === 'model-viewer') await this.openModelViewer();
-            else if (this.currentRenderer === 'threejs') await this.openThreeJSViewer();
+            if (this.currentRenderer === 'model-viewer') {
+                await this.openModelViewer();
+            } else {
+                await this.openThreeJSViewer();
+            }
             this.hideLoadingIndicator();
             this.switchToViewer();
         } catch (error) {
             this.hideLoadingIndicator();
-            alert('Ошибка при открытии модели:\n' + error.message);
+            alert('Ошибка при открытии модели: ' + error.message);
         }
     }
 
     async openModelViewer() {
         return new Promise((resolve) => {
             this.clearThreeJSScene(this.mainScene);
-            if (this.mainControls) this.mainControls.dispose();
+            if (this.mainControls) {
+                this.mainControls.dispose();
+                this.mainControls = null;
+            }
             this.mainModel.src = this.currentFileURL;
             this.mainModel.autoRotate = true;
             this.mainModel.hidden = false;
@@ -435,49 +399,22 @@ class ModelViewerApp {
 
     async openThreeJSViewer() {
         return new Promise((resolve, reject) => {
-            let loader;
-            if (this.currentFileType === '.stl') {
-                loader = new THREE.STLLoader();
-            } else if (this.currentFileType === '.obj') {
-                loader = new THREE.OBJLoader();
-            } else {
-                reject(new Error('Неподдерживаемый формат'));
-                return;
-            }
-
-            const onLoad = (object) => {
+            const loader = new THREE.STLLoader();
+            loader.load(this.currentFileURL, (geometry) => {
                 this.clearThreeJSScene(this.mainScene);
-                let modelObject;
-                if (this.currentFileType === '.stl') {
-                    const material = new THREE.MeshStandardMaterial({ color: 0xCCCCCC, roughness: 0.3 });
-                    modelObject = new THREE.Mesh(object, material);
-                } else {
-                    modelObject = object;
-                    modelObject.traverse(child => {
-                        if (child.isMesh) {
-                            child.material = new THREE.MeshStandardMaterial({ color: 0xCCCCCC, roughness: 0.3 });
-                        }
-                    });
-                }
-                this.mainScene.add(modelObject);
-                this.mainModelObject = modelObject;
+                const material = new THREE.MeshStandardMaterial({ color: 0xCCCCCC, roughness: 0.3, metalness: 0.1 });
+                const model = new THREE.Mesh(geometry, material);
+                this.mainScene.add(model);
+                this.mainModelObject = model;
                 this.setupMainLighting();
-                this.setupMainCamera(modelObject);
+                this.setupMainCamera(model);
                 this.mainControls = new THREE.OrbitControls(this.mainCamera, this.mainThreejs);
                 this.mainControls.enableDamping = true;
                 this.autoRotate = true;
                 this.mainThreejs.hidden = false;
                 this.updateMainThreeJSSize();
                 resolve();
-            };
-
-            if (this.currentFileType === '.stl') {
-                loader.load(this.currentFileURL, onLoad, (p) => {
-                    this.updateProgress((p.loaded / p.total) * 100);
-                }, reject);
-            } else {
-                loader.load(this.currentFileURL, onLoad, undefined, reject);
-            }
+            }, null, reject);
         });
     }
 
@@ -485,7 +422,8 @@ class ModelViewerApp {
         if (this.mainRenderer && this.mainThreejs) {
             const container = this.mainThreejs.parentElement;
             if (container) {
-                const w = container.clientWidth, h = container.clientHeight;
+                const w = container.clientWidth;
+                const h = container.clientHeight;
                 this.mainRenderer.setSize(w, h);
                 this.mainCamera.aspect = w / h;
                 this.mainCamera.updateProjectionMatrix();
@@ -493,7 +431,9 @@ class ModelViewerApp {
         }
     }
 
-    handleResize() { this.updateMainThreeJSSize(); }
+    handleResize() {
+        this.updateMainThreeJSSize();
+    }
 
     switchToViewer() {
         this.mainScreen.classList.remove('active');
@@ -504,19 +444,19 @@ class ModelViewerApp {
 
     toggleAutoRotate() {
         this.autoRotate = !this.autoRotate;
-        if (this.currentRenderer === 'model-viewer' && this.mainModel) this.mainModel.autoRotate = this.autoRotate;
+        if (this.currentRenderer === 'model-viewer') this.mainModel.autoRotate = this.autoRotate;
         this.updateAutoRotateButton();
     }
 
     updateAutoRotateButton() {
+        this.autoRotateBtn.setAttribute('data-active', this.autoRotate);
         this.autoRotateBtn.innerHTML = this.autoRotate ? '⏸️ Автоповорот' : '▶️ Автоповорот';
-        this.autoRotateBtn.setAttribute('data-active', this.autoRotate.toString());
     }
 
     resetCamera() {
-        if (this.currentRenderer === 'model-viewer' && this.mainModel) {
+        if (this.currentRenderer === 'model-viewer') {
             this.mainModel.cameraOrbit = '0deg 75deg 105%';
-        } else if (this.currentRenderer === 'threejs' && this.mainModelObject) {
+        } else if (this.mainModelObject) {
             this.setupMainCamera(this.mainModelObject);
             if (this.mainControls) this.mainControls.reset();
         }
@@ -525,9 +465,9 @@ class ModelViewerApp {
     showMainScreen() {
         this.viewerScreen.classList.remove('active');
         this.mainScreen.classList.add('active');
-        this.resetPreview();
         this.autoRotate = false;
-        if (this.mainModel) this.mainModel.autoRotate = false;
+        if (this.currentRenderer === 'model-viewer') this.mainModel.autoRotate = false;
+        this.resetPreview();
         this.lightsInitialized = false;
     }
 
@@ -537,17 +477,29 @@ class ModelViewerApp {
         this.open3dBtn.disabled = true;
         this.fileName.textContent = '';
         if (this.currentFileURL) URL.revokeObjectURL(this.currentFileURL);
+        this.currentFileURL = null;
         this.currentFile = null;
         this.currentFileType = null;
         this.currentRenderer = null;
         this.clearThreeJSScene(this.previewScene);
         this.clearThreeJSScene(this.mainScene);
-        if (this.mainControls) this.mainControls.dispose();
+        if (this.mainControls) {
+            this.mainControls.dispose();
+            this.mainControls = null;
+        }
         this.lightsInitialized = false;
     }
 
-    showLoadingIndicator() { if (this.loadingIndicator) this.loadingIndicator.classList.add('active'); }
-    hideLoadingIndicator() { if (this.loadingIndicator) this.loadingIndicator.classList.remove('active'); this.updateProgress(0); }
+    showLoadingIndicator() {
+        this.loadingIndicator.classList.add('active');
+    }
+
+    hideLoadingIndicator() {
+        this.loadingIndicator.classList.remove('active');
+        this.updateProgress(0);
+    }
 }
 
-document.addEventListener('DOMContentLoaded', () => new ModelViewerApp());
+document.addEventListener('DOMContentLoaded', () => {
+    window.app = new ModelViewerApp();
+});
