@@ -1,4 +1,4 @@
-<!-- 🔥 converter.html - ПОЛНЫЙ КОД СТРАНИЦЫ КОНВЕРТЕРА С УЛУЧШЕННЫМ ОТОБРАЖЕНИЕМ РЕЗУЛЬТАТА 🔥 -->
+<!-- 🔥 converter.html - ПОЛНЫЙ КОД СТРАНИЦЫ КОНВЕРТЕРА С ПЕРЕДАЧЕЙ МОДЕЛИ ИЗ ОСНОВНОГО ПРИЛОЖЕНИЯ 🔥 -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -483,7 +483,7 @@
                     <div id="progressText" class="progress-text">0%</div>
                 </div>
 
-                <!-- НОВЫЙ БЛОК С РЕЗУЛЬТАТОМ КОНВЕРТАЦИИ -->
+                <!-- БЛОК С РЕЗУЛЬТАТОМ КОНВЕРТАЦИИ -->
                 <div id="resultArea" class="result-area" style="display: none;">
                     <div id="resultInfo" class="result-info">
                         <div class="result-row">
@@ -537,49 +537,47 @@
         let convertedFileName = '';
         let convertedFileSize = 0;
         
-        // ПОЛУЧАЕМ ФАЙЛ ИЗ ОСНОВНОГО ПРИЛОЖЕНИЯ
-        const urlParams = new URLSearchParams(window.location.search);
-        const fileName = urlParams.get('file');
-        const fileDataBase64 = urlParams.get('data');
-
-        if (fileDataBase64) {
+        // 🔥 ПОЛУЧАЕМ МОДЕЛЬ ИЗ sessionStorage (передаётся из основного приложения)
+        const storedModel = sessionStorage.getItem('modelToConvert');
+        
+        if (storedModel) {
             try {
-                const fileDataStr = decodeURIComponent(escape(atob(fileDataBase64)));
-                const fileData = JSON.parse(fileDataStr);
+                const modelData = JSON.parse(storedModel);
+                console.log('📁 Получена модель из приложения:', modelData.name);
+                
+                // Имитируем получение файла по URL
+                // В реальности нужно будет скачать файл, но для демо показываем информацию
+                selectedFile = {
+                    name: modelData.name,
+                    type: modelData.type,
+                    size: modelData.size || 0,
+                    url: modelData.data
+                };
+                
+                const ext = modelData.name.split('.').pop().toLowerCase();
+                const sizeMB = (modelData.size / 1024 / 1024).toFixed(2);
                 
                 fileInfoContent.innerHTML = `
-                    <div class="file-name">${fileData.name}</div>
+                    <div class="file-name">${modelData.name}</div>
                     <div class="file-details">
-                        <span>📦 ${(fileData.size / 1024 / 1024).toFixed(2)} MB</span>
-                        <span>🏷️ ${fileData.name.split('.').pop().toUpperCase()}</span>
+                        <span>📦 ${sizeMB} MB</span>
+                        <span>🏷️ ${ext.toUpperCase()}</span>
                     </div>
-                    <div class="app-badge">✅ Из приложения</div>
+                    <div class="app-badge">✅ Из 3D-просмотрщика</div>
                 `;
                 
-                const ext = fileData.name.split('.').pop().toLowerCase();
                 if (ext === 'stl') fromFormat.value = 'stl';
                 else if (ext === 'obj') fromFormat.value = 'obj';
                 else if (ext === 'glb') fromFormat.value = 'glb';
                 else if (ext === 'gltf') fromFormat.value = 'gltf';
                 
-                selectedFile = {
-                    name: fileData.name,
-                    size: fileData.size,
-                    type: fileData.type
-                };
+                // Очищаем sessionStorage, чтобы не загружать повторно
+                sessionStorage.removeItem('modelToConvert');
                 
             } catch (e) {
-                console.error('Ошибка загрузки данных файла:', e);
-                fileInfoContent.innerHTML = '❌ Ошибка загрузки файла из приложения';
+                console.error('Ошибка загрузки модели из приложения:', e);
+                fileInfoContent.innerHTML = '❌ Ошибка загрузки модели из приложения';
             }
-        } else if (fileName) {
-            fileInfoContent.innerHTML = `
-                <div class="file-name">${fileName}</div>
-                <div class="file-details">
-                    <span>ℹ️ Информация о файле</span>
-                </div>
-                <div class="app-badge">📁 Файл из приложения</div>
-            `;
         }
         
         // Обработчики выбора файла
