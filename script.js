@@ -1,4 +1,4 @@
-// script.js - ФИНАЛЬНАЯ ВЕРСИЯ (с передачей модели в конвертер и увеличенным предпросмотром)
+// script.js - ФИНАЛЬНАЯ ВЕРСИЯ (STL + OBJ + GLB/GLTF + передача в конвертер через IndexedDB)
 
 const APP_STATES = {
     MAIN: 'main',
@@ -21,7 +21,6 @@ class ModelViewerApp {
         
         this.autoRotate = true;
         this.currentFileURL = null;
-        this.currentFileData = null; // для передачи в конвертер
         
         this.previewScene = null;
         this.previewCamera = null;
@@ -39,7 +38,44 @@ class ModelViewerApp {
         
         this.isCapacitor = window.Capacitor ? true : false;
         
+        // Инициализация IndexedDB
+        this.initDB();
+        
         this.init();
+    }
+
+    initDB() {
+        this.dbReady = new Promise((resolve, reject) => {
+            const request = indexedDB.open('3dviewer_db', 1);
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => {
+                this.db = request.result;
+                resolve();
+            };
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains('files')) {
+                    db.createObjectStore('files', { keyPath: 'id' });
+                }
+            };
+        });
+    }
+
+    async saveFileToDB(file) {
+        await this.dbReady;
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['files'], 'readwrite');
+            const store = transaction.objectStore('files');
+            const putRequest = store.put({
+                id: 'current_file',
+                name: file.name,
+                type: file.type,
+                size: file.size,
+                data: file
+            });
+            putRequest.onsuccess = () => resolve();
+            putRequest.onerror = () => reject(putRequest.error);
+        });
     }
 
     init() {
@@ -92,22 +128,23 @@ class ModelViewerApp {
         this.resetCameraBtn.addEventListener('click', () => this.resetCamera());
         window.addEventListener('resize', () => this.handleResize());
         
-        // КНОПКА КОНВЕРТЕРА — ПЕРЕДАЁМ МОДЕЛЬ
+        // КНОПКА КОНВЕРТЕРА — ПЕРЕДАЧА ФАЙЛА ЧЕРЕЗ INDEXEDDB
         if (this.converterBtn) {
-            this.converterBtn.addEventListener('click', () => {
-                // Сохраняем модель в sessionStorage перед переходом
-                if (this.currentFile && this.currentFileURL) {
-                    // Сохраняем данные файла
-                    const modelData = {
-                        name: this.currentFile.name,
-                        type: this.currentFileType,
-                        data: this.currentFileURL
-                    };
-                    sessionStorage.setItem('modelToConvert', JSON.stringify(modelData));
+            this.converterBtn.addEventListener('click', async () => {
+                if (this.currentFile) {
+                    try {
+                        this.showLoadingIndicator();
+                        await this.saveFileToDB(this.currentFile);
+                        this.hideLoadingIndicator();
+                        window.open('https://poserval.github.io/3D-Model-Viewer/converter.html', '_blank');
+                    } catch (error) {
+                        console.error('❌ Ошибка сохранения файла:', error);
+                        this.hideLoadingIndicator();
+                        alert('Не удалось передать файл в конвертер. Попробуйте еще раз.');
+                    }
                 } else {
-                    sessionStorage.removeItem('modelToConvert');
+                    window.open('https://poserval.github.io/3D-Model-Viewer/converter.html', '_blank');
                 }
-                window.open('https://poserval.github.io/3D-Model-Viewer/converter.html', '_blank');
             });
         }
     }
@@ -278,16 +315,10 @@ class ModelViewerApp {
         const box = new THREE.Box3().setFromObject(object);
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
-        
-        // Центрируем объект
         object.position.set(-center.x, -center.y, -center.z);
-        
-        // Увеличиваем масштаб — уменьшаем дистанцию камеры
         const maxDim = Math.max(size.x, size.y, size.z);
-        let dist = maxDim * 0.8; // было 1.0, уменьшил для приближения
-        dist = Math.max(dist, 1.2);
-        dist = Math.min(dist, 6);
-        
+        let dist = Math.max(maxDim * 1.0, 1.5);
+        dist = Math.min(dist, 8);
         this.previewCamera.position.set(0, 0, dist);
         this.previewCamera.lookAt(0, 0, 0);
     }
