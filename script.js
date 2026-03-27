@@ -1,4 +1,4 @@
-// script.js - ИСПРАВЛЕННАЯ ВЕРСИЯ (с Capacitor Filesystem, без FilePicker)
+// script.js - ПОЛНАЯ ИСПРАВЛЕННАЯ ВЕРСИЯ
 
 // Состояния приложения
 const APP_STATES = {
@@ -82,6 +82,9 @@ class ModelViewerApp {
         this.loadingIndicator = document.getElementById('loading-indicator');
         this.progressFill = document.querySelector('.progress-fill');
         this.progressText = document.querySelector('.progress-text');
+        
+        // Кнопка конвертера
+        this.converterBtn = document.getElementById('go-to-converter-btn');
     }
 
     bindEvents() {
@@ -118,14 +121,19 @@ class ModelViewerApp {
         window.addEventListener('resize', () => {
             this.handleResize();
         });
+        
+        // Кнопка конвертера
+        if (this.converterBtn) {
+            this.converterBtn.addEventListener('click', () => {
+                window.open('https://3d-converter.netlify.app', '_blank');
+            });
+        }
     }
 
     async selectFileCapacitor() {
         try {
             console.log('📱 Выбор файла в Capacitor...');
             
-            // Используем стандартный input в Capacitor - он работает на Android 16
-            // Просто создаем временный input и кликаем по нему
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = '.glb,.gltf,.obj,.stl';
@@ -149,7 +157,6 @@ class ModelViewerApp {
     }
 
     processSelectedFile(file) {
-        // Освобождаем предыдущий URL
         if (this.currentFileURL) {
             URL.revokeObjectURL(this.currentFileURL);
         }
@@ -263,21 +270,45 @@ class ModelViewerApp {
 
     async loadThreeJSPreview() {
         return new Promise((resolve, reject) => {
-            const loader = new THREE.STLLoader();
+            let loader;
+            
+            if (this.currentFileType === '.stl') {
+                loader = new THREE.STLLoader();
+            } else if (this.currentFileType === '.obj') {
+                loader = new THREE.OBJLoader();
+            } else {
+                reject(new Error('Неподдерживаемый формат для Three.js'));
+                return;
+            }
 
-            console.log('🎮 Загрузка Three.js превью...');
+            console.log('🎮 Загрузка Three.js превью, формат:', this.currentFileType);
 
-            loader.load(this.currentFileURL, (geometry) => {
+            const loadCallback = (object) => {
                 console.log('✅ Three.js превью загружено');
                 
                 this.clearThreeJSScene(this.previewScene);
                 
-                const material = new THREE.MeshStandardMaterial({ 
-                    color: 0xCCCCCC,
-                    roughness: 0.3,
-                    metalness: 0.1
-                });
-                const modelObject = new THREE.Mesh(geometry, material);
+                let modelObject;
+                if (this.currentFileType === '.stl') {
+                    const geometry = object;
+                    const material = new THREE.MeshStandardMaterial({ 
+                        color: 0xCCCCCC,
+                        roughness: 0.3,
+                        metalness: 0.1
+                    });
+                    modelObject = new THREE.Mesh(geometry, material);
+                } else {
+                    modelObject = object;
+                    modelObject.traverse((child) => {
+                        if (child.isMesh) {
+                            child.material = new THREE.MeshStandardMaterial({
+                                color: 0xCCCCCC,
+                                roughness: 0.3,
+                                metalness: 0.1
+                            });
+                        }
+                    });
+                }
                 
                 this.previewScene.add(modelObject);
                 this.previewModelObject = modelObject;
@@ -290,16 +321,29 @@ class ModelViewerApp {
                 
                 console.log('✅ Three.js превью отображен');
                 resolve();
-            }, 
-            (progress) => {
-                if (progress.lengthComputable) {
-                    this.updateProgress((progress.loaded / progress.total) * 100);
-                }
-            },
-            (error) => {
-                console.error('❌ Ошибка загрузки Three.js превью:', error);
-                reject(new Error('Не удалось загрузить STL модель'));
-            });
+            };
+
+            if (this.currentFileType === '.stl') {
+                loader.load(this.currentFileURL, loadCallback, 
+                    (progress) => {
+                        if (progress.lengthComputable) {
+                            this.updateProgress((progress.loaded / progress.total) * 100);
+                        }
+                    },
+                    (error) => {
+                        console.error('❌ Ошибка загрузки STL:', error);
+                        reject(new Error('Не удалось загрузить STL модель'));
+                    }
+                );
+            } else {
+                loader.load(this.currentFileURL, loadCallback,
+                    undefined,
+                    (error) => {
+                        console.error('❌ Ошибка загрузки OBJ:', error);
+                        reject(new Error('Не удалось загрузить OBJ модель'));
+                    }
+                );
+            }
         });
     }
 
@@ -528,21 +572,45 @@ class ModelViewerApp {
 
     async openThreeJSViewer() {
         return new Promise((resolve, reject) => {
-            const loader = new THREE.STLLoader();
+            let loader;
+            
+            if (this.currentFileType === '.stl') {
+                loader = new THREE.STLLoader();
+            } else if (this.currentFileType === '.obj') {
+                loader = new THREE.OBJLoader();
+            } else {
+                reject(new Error('Неподдерживаемый формат для Three.js'));
+                return;
+            }
 
-            console.log('🎮 Открытие Three.js просмотрщика...');
+            console.log('🎮 Открытие Three.js просмотрщика, формат:', this.currentFileType);
 
-            loader.load(this.currentFileURL, (geometry) => {
+            const loadCallback = (object) => {
                 console.log('✅ Three.js модель загружена');
                 
                 this.clearThreeJSScene(this.mainScene);
                 
-                const material = new THREE.MeshStandardMaterial({ 
-                    color: 0xCCCCCC,
-                    roughness: 0.3,
-                    metalness: 0.1
-                });
-                const modelObject = new THREE.Mesh(geometry, material);
+                let modelObject;
+                if (this.currentFileType === '.stl') {
+                    const geometry = object;
+                    const material = new THREE.MeshStandardMaterial({ 
+                        color: 0xCCCCCC,
+                        roughness: 0.3,
+                        metalness: 0.1
+                    });
+                    modelObject = new THREE.Mesh(geometry, material);
+                } else {
+                    modelObject = object;
+                    modelObject.traverse((child) => {
+                        if (child.isMesh) {
+                            child.material = new THREE.MeshStandardMaterial({
+                                color: 0xCCCCCC,
+                                roughness: 0.3,
+                                metalness: 0.1
+                            });
+                        }
+                    });
+                }
                 
                 this.mainScene.add(modelObject);
                 this.mainModelObject = modelObject;
@@ -561,14 +629,27 @@ class ModelViewerApp {
                 
                 this.updateProgress(100);
                 resolve();
-            }, 
-            (progress) => {
-                this.updateProgress((progress.loaded / progress.total) * 100);
-            },
-            (error) => {
-                console.error('❌ Ошибка загрузки:', error);
-                reject(new Error('Не удалось загрузить STL модель'));
-            });
+            };
+
+            if (this.currentFileType === '.stl') {
+                loader.load(this.currentFileURL, loadCallback,
+                    (progress) => {
+                        this.updateProgress((progress.loaded / progress.total) * 100);
+                    },
+                    (error) => {
+                        console.error('❌ Ошибка загрузки STL:', error);
+                        reject(new Error('Не удалось загрузить STL модель'));
+                    }
+                );
+            } else {
+                loader.load(this.currentFileURL, loadCallback,
+                    undefined,
+                    (error) => {
+                        console.error('❌ Ошибка загрузки OBJ:', error);
+                        reject(new Error('Не удалось загрузить OBJ модель'));
+                    }
+                );
+            }
         });
     }
 
