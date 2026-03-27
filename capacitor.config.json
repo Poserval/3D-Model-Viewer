@@ -4,5 +4,12 @@
   "webDir": "capacitor-web",
   "server": {
     "androidScheme": "https"
+  },
+  "plugins": {
+    "Filesystem": {
+      "android": {
+        "allowExternal": true
+      }
+    }
   }
 }
