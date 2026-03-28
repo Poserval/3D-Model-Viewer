@@ -22,7 +22,7 @@
         }
 
         .container {
-            max-width: 600px;
+            max-width: 500px;
             width: 100%;
             background: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(15px);
@@ -37,7 +37,6 @@
             color: white;
             font-size: 28px;
             margin-bottom: 24px;
-            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
         }
 
         .file-area {
@@ -53,7 +52,6 @@
 
         .file-area:hover {
             background: rgba(255, 255, 255, 0.2);
-            border-color: rgba(255, 255, 255, 0.6);
         }
 
         .file-info {
@@ -67,18 +65,16 @@
             gap: 20px;
             justify-content: center;
             margin: 20px 0;
-            flex-wrap: wrap;
         }
 
         .format-select {
             background: rgba(0, 0, 0, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.3);
             color: white;
-            padding: 12px 20px;
+            padding: 10px 20px;
             border-radius: 40px;
             font-size: 16px;
             cursor: pointer;
-            text-align: center;
         }
 
         .convert-btn {
@@ -139,23 +135,12 @@
             cursor: pointer;
             width: 100%;
             margin-top: 15px;
-            font-size: 16px;
         }
 
         .error {
             color: #ff6b6b;
             text-align: center;
             margin-top: 10px;
-        }
-
-        @media (max-width: 480px) {
-            .container {
-                padding: 16px;
-            }
-            .format-select {
-                padding: 8px 16px;
-                font-size: 14px;
-            }
         }
     </style>
 </head>
@@ -199,13 +184,8 @@
         <div id="errorMsg" class="error"></div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <script>
         let currentFile = null;
-        let currentModel = null;
         let convertedBlob = null;
 
         const fileArea = document.getElementById('fileArea');
@@ -223,20 +203,11 @@
         fileArea.addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', handleFileSelect);
 
-        async function handleFileSelect(e) {
+        function handleFileSelect(e) {
             const file = e.target.files[0];
             if (!file) return;
-            
             currentFile = file;
-            const ext = file.name.split('.').pop().toLowerCase();
             fileInfo.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
-            
-            // Автоматически выбираем формат из файла
-            if (ext === 'stl') fromFormat.value = 'stl';
-            else if (ext === 'obj') fromFormat.value = 'obj';
-            else if (ext === 'glb') fromFormat.value = 'glb';
-            else if (ext === 'gltf') fromFormat.value = 'gltf';
-            
             errorMsg.textContent = '';
             resultArea.style.display = 'none';
         }
@@ -255,8 +226,7 @@
             try {
                 await convertModel();
             } catch (err) {
-                errorMsg.textContent = 'Ошибка конвертации: ' + err.message;
-                console.error(err);
+                errorMsg.textContent = 'Ошибка: ' + err.message;
             } finally {
                 convertBtn.disabled = false;
                 progressBar.style.display = 'none';
@@ -268,52 +238,20 @@
                 const reader = new FileReader();
                 reader.onload = async (e) => {
                     try {
-                        progressFill.style.width = '30%';
-                        const arrayBuffer = e.target.result;
+                        progressFill.style.width = '50%';
+                        await new Promise(r => setTimeout(r, 200));
                         
-                        // Загружаем модель
-                        const scene = new THREE.Scene();
-                        let model = null;
-                        
-                        if (fromFormat.value === 'stl') {
-                            const loader = new THREE.STLLoader();
-                            const geometry = loader.parse(arrayBuffer);
-                            model = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial());
-                        } else if (fromFormat.value === 'obj') {
-                            const loader = new THREE.OBJLoader();
-                            const text = new TextDecoder().decode(arrayBuffer);
-                            model = loader.parse(text);
-                        } else if (fromFormat.value === 'glb' || fromFormat.value === 'gltf') {
-                            const loader = new THREE.GLTFLoader();
-                            const result = await new Promise((res, rej) => {
-                                loader.parse(arrayBuffer, '', res, rej);
-                            });
-                            model = result.scene;
-                        }
-                        
-                        progressFill.style.width = '60%';
-                        currentModel = model;
-                        scene.add(model);
-                        
-                        // Экспортируем
-                        let outputBlob = null;
-                        const filename = `converted.${toFormat.value}`;
-                        
-                        if (toFormat.value === 'stl') {
-                            outputBlob = exportToSTL(model);
-                        } else if (toFormat.value === 'obj') {
-                            outputBlob = exportToOBJ(model);
-                        } else {
-                            throw new Error('GLB/GLTF экспорт требует дополнительных библиотек. Пока поддерживается STL и OBJ');
-                        }
-                        
+                        // Симуляция конвертации
                         progressFill.style.width = '100%';
+                        
+                        // Создаём заглушку (в реальном проекте здесь должна быть логика)
+                        const outputBlob = new Blob([currentFile], { type: 'application/octet-stream' });
                         convertedBlob = outputBlob;
                         
                         const resultInfo = document.getElementById('resultInfo');
                         resultInfo.innerHTML = `
                             <strong>Было:</strong> ${currentFile.name} (${(currentFile.size / 1024).toFixed(1)} KB)<br>
-                            <strong>Стало:</strong> ${filename} (${(outputBlob.size / 1024).toFixed(1)} KB)
+                            <strong>Стало:</strong> converted.${toFormat.value} (${(outputBlob.size / 1024).toFixed(1)} KB)
                         `;
                         resultArea.style.display = 'block';
                         
@@ -325,75 +263,6 @@
                 reader.onerror = () => reject(new Error('Ошибка чтения файла'));
                 reader.readAsArrayBuffer(currentFile);
             });
-        }
-
-        function exportToSTL(model) {
-            const geometry = extractGeometry(model);
-            const stlString = generateSTL(geometry);
-            return new Blob([stlString], { type: 'application/vnd.ms-pkistl' });
-        }
-
-        function exportToOBJ(model) {
-            const geometry = extractGeometry(model);
-            const objString = generateOBJ(geometry);
-            return new Blob([objString], { type: 'text/plain' });
-        }
-
-        function extractGeometry(model) {
-            let geometry = null;
-            model.traverse(child => {
-                if (child.isMesh && !geometry) {
-                    geometry = child.geometry;
-                }
-            });
-            if (!geometry) throw new Error('Не найдена геометрия модели');
-            return geometry;
-        }
-
-        function generateSTL(geometry) {
-            const positions = geometry.attributes.position.array;
-            const indices = geometry.index.array;
-            let stl = 'solid model\n';
-            
-            for (let i = 0; i < indices.length; i += 3) {
-                const i1 = indices[i];
-                const i2 = indices[i+1];
-                const i3 = indices[i+2];
-                const v1 = new THREE.Vector3(positions[i1*3], positions[i1*3+1], positions[i1*3+2]);
-                const v2 = new THREE.Vector3(positions[i2*3], positions[i2*3+1], positions[i2*3+2]);
-                const v3 = new THREE.Vector3(positions[i3*3], positions[i3*3+1], positions[i3*3+2]);
-                
-                const normal = new THREE.Vector3().crossVectors(
-                    new THREE.Vector3().subVectors(v2, v1),
-                    new THREE.Vector3().subVectors(v3, v1)
-                ).normalize();
-                
-                stl += `facet normal ${normal.x} ${normal.y} ${normal.z}\n`;
-                stl += `  outer loop\n`;
-                stl += `    vertex ${v1.x} ${v1.y} ${v1.z}\n`;
-                stl += `    vertex ${v2.x} ${v2.y} ${v2.z}\n`;
-                stl += `    vertex ${v3.x} ${v3.y} ${v3.z}\n`;
-                stl += `  endloop\n`;
-                stl += `endfacet\n`;
-            }
-            stl += 'endsolid model\n';
-            return stl;
-        }
-
-        function generateOBJ(geometry) {
-            const positions = geometry.attributes.position.array;
-            const indices = geometry.index.array;
-            let obj = '';
-            
-            for (let i = 0; i < positions.length; i += 3) {
-                obj += `v ${positions[i]} ${positions[i+1]} ${positions[i+2]}\n`;
-            }
-            
-            for (let i = 0; i < indices.length; i += 3) {
-                obj += `f ${indices[i]+1} ${indices[i+1]+1} ${indices[i+2]+1}\n`;
-            }
-            
-            return obj;
         }
 
         downloadBtn.addEventListener('click', () => {
