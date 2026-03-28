@@ -92,10 +92,10 @@ class ModelViewerApp {
             this.handleResize();
         });
         
-        // Конвертер — работает как раньше
+        // Конвертер — рабочий URL
         if (this.goToConverterBtn) {
             this.goToConverterBtn.addEventListener('click', () => {
-                window.open('https://poserval.github.io/3d-converter/', '_blank');
+                window.open('https://poserval.github.io/3D-Model-Viewer/converter.html', '_blank');
             });
         }
     }
