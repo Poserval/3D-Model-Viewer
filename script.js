@@ -55,11 +55,13 @@ class ModelViewerApp {
         this.loadingIndicator = document.getElementById('loading-indicator');
         this.progressFill = document.querySelector('.progress-fill');
         this.progressText = document.querySelector('.progress-text');
+        
+        // Конвертер
+        this.goToConverterBtn = document.getElementById('go-to-converter-btn');
     }
 
     bindEvents() {
         this.selectFileBtn.addEventListener('click', () => {
-            // Пробуем использовать Capacitor WebView для выбора файла
             if (window.Capacitor && Capacitor.getPlatform() === 'android') {
                 this.pickFileWithCapacitor();
             } else {
@@ -90,14 +92,17 @@ class ModelViewerApp {
         window.addEventListener('resize', () => {
             this.handleResize();
         });
+        
+        // Конвертер
+        if (this.goToConverterBtn) {
+            this.goToConverterBtn.addEventListener('click', () => {
+                window.open('https://poserval.github.io/3d-converter/', '_blank');
+            });
+        }
     }
 
     async pickFileWithCapacitor() {
         try {
-            // Используем встроенный Filesystem Capacitor
-            const { Filesystem } = Capacitor.Plugins;
-            
-            // Создаём временный input для выбора файла
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = '.glb,.gltf,.obj,.stl';
@@ -106,9 +111,8 @@ class ModelViewerApp {
                 const file = event.target.files[0];
                 if (!file) return;
                 
-                // Читаем файл через Filesystem API
                 const reader = new FileReader();
-                reader.onload = async (e) => {
+                reader.onload = (e) => {
                     const blob = new Blob([e.target.result], { type: file.type });
                     const newFile = new File([blob], file.name, { type: file.type });
                     const fakeEvent = { target: { files: [newFile] } };
@@ -119,7 +123,7 @@ class ModelViewerApp {
             
             input.click();
         } catch (err) {
-            console.warn('Capacitor выбор не сработал, используем fallback', err);
+            console.warn('Capacitor fallback', err);
             this.fileInput.click();
         }
     }
