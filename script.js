@@ -56,7 +56,6 @@ class ModelViewerApp {
         this.progressFill = document.querySelector('.progress-fill');
         this.progressText = document.querySelector('.progress-text');
         
-        // Конвертер
         this.goToConverterBtn = document.getElementById('go-to-converter-btn');
     }
 
@@ -93,7 +92,7 @@ class ModelViewerApp {
             this.handleResize();
         });
         
-        // Конвертер
+        // Конвертер — работает как раньше
         if (this.goToConverterBtn) {
             this.goToConverterBtn.addEventListener('click', () => {
                 window.open('https://poserval.github.io/3d-converter/', '_blank');
