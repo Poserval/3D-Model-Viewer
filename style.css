@@ -481,3 +481,20 @@ canvas[hidden] {
         font-size: 14px;
     }
 }
+
+/* ===== ТУТОРИАЛ ===== */
+@keyframes tutorialFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+#tutorial-overlay div,
+#tutorial-overlay-2 div {
+    animation: tutorialFadeIn 0.2s ease-out;
+}
