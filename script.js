@@ -1,4 +1,4 @@
-// script.js - ДОПОЛНЕННАЯ ВЕРСИЯ (ТОЛЬКО ДОБАВЛЕНА СОВМЕСТИМОСТЬ)
+// script.js - ПОЛНАЯ ВЕРСИЯ С ТУТОРИАЛОМ И ДУБЛЕРОМ
 
 // Состояния приложения
 const APP_STATES = {
@@ -48,33 +48,153 @@ class ModelViewerApp {
         // КНОПКА КОНВЕРТЕРА
         this.converterBtn = null;
         
+        // Дублер выбора файла
+        this.forceFileInput = null;
+        
         this.init();
     }
 
     init() {
         this.initializeElements();
+        this.createForceFileInput();
         this.bindEvents();
         
-        // 🔥 ПРОВЕРКА WEBGL (НЕ ЛОМАЕТ, ТОЛЬКО ПРЕДУПРЕЖДАЕТ)
         this.checkWebGLSupport();
-        
         this.initThreeJS();
         
-        // 🔥 ОТЛАДОЧНАЯ ИНФОРМАЦИЯ ДЛЯ ANDROID 16 И XIAOMI
+        // 🔥 ПРОВЕРЯЕМ ПЕРВЫЙ ЗАПУСК
+        this.checkFirstLaunch();
+        
         console.log('🚀 3D Model Viewer запущен');
         console.log('📱 User Agent:', navigator.userAgent);
-        console.log('🔧 Capacitor:', window.Capacitor ? 'Да' : 'Нет');
         console.log('📁 Поддерживаемые форматы: .glb, .gltf, .obj, .stl');
     }
     
-    // 🔥 ПРОВЕРКА WEBGL (НЕ ЛОМАЕТ, ТОЛЬКО ПРЕДУПРЕЖДАЕТ)
+    // 🔥 СОЗДАЁМ СКРЫТЫЙ input ДЛЯ ДУБЛИРОВАНИЯ
+    createForceFileInput() {
+        this.forceFileInput = document.createElement('input');
+        this.forceFileInput.type = 'file';
+        this.forceFileInput.accept = '.glb,.gltf,.obj,.stl';
+        this.forceFileInput.style.display = 'none';
+        document.body.appendChild(this.forceFileInput);
+        
+        this.forceFileInput.addEventListener('change', (e) => {
+            console.log('🔄 Выбор файла через дублер');
+            this.handleFileSelect(e);
+        });
+    }
+    
+    // 🔥 ПРОВЕРКА ПЕРВОГО ЗАПУСКА
+    checkFirstLaunch() {
+        const tutorialShown = localStorage.getItem('tutorialShown_3dviewer');
+        if (!tutorialShown) {
+            setTimeout(() => {
+                this.showTutorialStep1();
+            }, 800);
+        }
+    }
+    
+    // 🔥 ТУТОРИАЛ - ШАГ 1 (ВЫБОР ФАЙЛА)
+    showTutorialStep1() {
+        const overlay = document.createElement('div');
+        overlay.id = 'tutorial-overlay';
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+        overlay.style.backgroundColor = 'rgba(0,0,0,0.75)';
+        overlay.style.zIndex = '10000';
+        overlay.style.display = 'flex';
+        overlay.style.flexDirection = 'column';
+        overlay.style.alignItems = 'center';
+        overlay.style.justifyContent = 'center';
+        overlay.style.backdropFilter = 'blur(5px)';
+        
+        const content = document.createElement('div');
+        content.style.backgroundColor = '#fff';
+        content.style.borderRadius = '24px';
+        content.style.padding = '24px 20px';
+        content.style.maxWidth = '300px';
+        content.style.textAlign = 'center';
+        content.style.boxShadow = '0 20px 40px rgba(0,0,0,0.3)';
+        content.style.fontFamily = 'system-ui, -apple-system, sans-serif';
+        
+        content.innerHTML = `
+            <div style="font-size: 48px; margin-bottom: 12px;">📁</div>
+            <div style="font-size: 20px; font-weight: 700; margin-bottom: 12px; color: #1a1a1a;">Как открыть модель</div>
+            <div style="font-size: 15px; color: #444; margin-bottom: 20px; line-height: 1.4;">
+                Нажмите <strong>«ВЫБРАТЬ ФАЙЛ»</strong> или <strong>на область с моделью</strong>
+            </div>
+            <div style="background: #f0f0f0; border-radius: 16px; padding: 12px; margin-bottom: 20px;">
+                <div style="font-size: 13px; color: #666;">📁 Поддерживаемые форматы</div>
+                <div style="font-size: 14px; font-weight: 600; color: #007AFF; margin-top: 4px;">GLB • GLTF • OBJ • STL</div>
+            </div>
+            <button id="tutorial-next-btn" style="background: #007AFF; color: white; border: none; padding: 14px 24px; border-radius: 40px; font-size: 16px; font-weight: 600; width: 100%; cursor: pointer;">Понятно, дальше →</button>
+        `;
+        
+        overlay.appendChild(content);
+        document.body.appendChild(overlay);
+        
+        document.getElementById('tutorial-next-btn').addEventListener('click', () => {
+            overlay.remove();
+            this.showTutorialStep2();
+        });
+    }
+    
+    // 🔥 ТУТОРИАЛ - ШАГ 2 (КОНВЕРТЕР)
+    showTutorialStep2() {
+        const overlay = document.createElement('div');
+        overlay.id = 'tutorial-overlay-2';
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+        overlay.style.backgroundColor = 'rgba(0,0,0,0.75)';
+        overlay.style.zIndex = '10000';
+        overlay.style.display = 'flex';
+        overlay.style.flexDirection = 'column';
+        overlay.style.alignItems = 'center';
+        overlay.style.justifyContent = 'center';
+        overlay.style.backdropFilter = 'blur(5px)';
+        
+        const content = document.createElement('div');
+        content.style.backgroundColor = '#fff';
+        content.style.borderRadius = '24px';
+        content.style.padding = '24px 20px';
+        content.style.maxWidth = '300px';
+        content.style.textAlign = 'center';
+        content.style.boxShadow = '0 20px 40px rgba(0,0,0,0.3)';
+        
+        content.innerHTML = `
+            <div style="font-size: 48px; margin-bottom: 12px;">🔄</div>
+            <div style="font-size: 20px; font-weight: 700; margin-bottom: 12px; color: #1a1a1a;">Конвертер форматов</div>
+            <div style="font-size: 15px; color: #444; margin-bottom: 20px; line-height: 1.4;">
+                Нажмите <strong>«КОНВЕРТЕР (ОНЛАЙН)»</strong>, чтобы изменить формат 3D-модели
+            </div>
+            <div style="background: #f0f0f0; border-radius: 16px; padding: 12px; margin-bottom: 20px;">
+                <div style="font-size: 13px; color: #666;">🔄 Доступные конвертации</div>
+                <div style="font-size: 14px; font-weight: 600; color: #007AFF; margin-top: 4px;">STL ↔ OBJ ↔ GLB ↔ GLTF</div>
+            </div>
+            <button id="tutorial-finish-btn" style="background: #007AFF; color: white; border: none; padding: 14px 24px; border-radius: 40px; font-size: 16px; font-weight: 600; width: 100%; cursor: pointer;">Начать работу →</button>
+        `;
+        
+        overlay.appendChild(content);
+        document.body.appendChild(overlay);
+        
+        document.getElementById('tutorial-finish-btn').addEventListener('click', () => {
+            overlay.remove();
+            localStorage.setItem('tutorialShown_3dviewer', 'true');
+        });
+    }
+    
     checkWebGLSupport() {
         try {
             const canvas = document.createElement('canvas');
             const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
             if (!gl) {
                 console.warn('⚠️ WebGL не поддерживается на этом устройстве');
-                // Не показываем alert, чтобы не бесить пользователя
             } else {
                 console.log('✅ WebGL поддерживается');
             }
@@ -84,7 +204,6 @@ class ModelViewerApp {
     }
 
     initializeElements() {
-        // Основные элементы
         this.mainScreen = document.getElementById('main-screen');
         this.viewerScreen = document.getElementById('viewer-screen');
         this.fileInput = document.getElementById('file-input');
@@ -98,29 +217,50 @@ class ModelViewerApp {
         this.previewPlaceholder = document.getElementById('preview-placeholder');
         this.previewArea = document.getElementById('preview-area');
 
-        // Рендереры
         this.previewModel = document.getElementById('preview-model');
         this.mainModel = document.getElementById('main-model');
         this.previewThreejs = document.getElementById('preview-threejs');
         this.mainThreejs = document.getElementById('main-threejs');
 
-        // Индикатор загрузки
         this.loadingIndicator = document.getElementById('loading-indicator');
         this.progressFill = document.querySelector('.progress-fill');
         this.progressText = document.querySelector('.progress-text');
         
-        // КНОПКА КОНВЕРТЕРА
         this.converterBtn = document.getElementById('go-to-converter-btn');
     }
 
     bindEvents() {
+        // Основная кнопка
         this.selectFileBtn.addEventListener('click', () => {
+            console.log('🖱️ Клик по кнопке ВЫБРАТЬ ФАЙЛ');
             this.fileInput.click();
         });
+        
+        // 🔥 ДУБЛЕР - клик по области превью
+        if (this.previewArea) {
+            this.previewArea.addEventListener('click', () => {
+                console.log('🖱️ Клик по области превью');
+                if (this.forceFileInput) {
+                    this.forceFileInput.click();
+                } else {
+                    this.fileInput.click();
+                }
+            });
+        }
 
+        // Основной input
         this.fileInput.addEventListener('change', (e) => {
+            console.log('📁 Основной input');
             this.handleFileSelect(e);
         });
+        
+        // Дублер input
+        if (this.forceFileInput) {
+            this.forceFileInput.addEventListener('change', (e) => {
+                console.log('📁 Дублер input');
+                this.handleFileSelect(e);
+            });
+        }
 
         this.open3dBtn.addEventListener('click', () => {
             this.openViewer();
@@ -142,7 +282,6 @@ class ModelViewerApp {
             this.handleResize();
         });
         
-        // КОНВЕРТЕР - ОТКРЫВАЕМ В БРАУЗЕРЕ
         if (this.converterBtn) {
             this.converterBtn.addEventListener('click', () => {
                 this.openConverterInBrowser();
@@ -252,7 +391,6 @@ class ModelViewerApp {
         return null;
     }
 
-    // 🔥 ОБНОВЛЕННЫЙ МЕТОД ДЛЯ XIAOMI И ANDROID 16
     handleFileSelect(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -291,14 +429,12 @@ class ModelViewerApp {
             return;
         }
 
-        // 🔥 АЛЬТЕРНАТИВНЫЙ СПОСОБ ДЛЯ XIAOMI (FileReader)
         try {
             this.currentFileURL = URL.createObjectURL(file);
             console.log('✅ URL создан через createObjectURL');
             this.showPreview();
         } catch (urlError) {
             console.warn('⚠️ createObjectURL не сработал, пробуем FileReader', urlError);
-            // Фолбэк для Xiaomi
             const reader = new FileReader();
             reader.onload = (e) => {
                 this.currentFileURL = e.target.result;
@@ -360,7 +496,6 @@ class ModelViewerApp {
         this.previewPlaceholder.style.display = 'flex';
     }
 
-    // 🔥 ДОБАВЛЕНА ЗАДЕРЖКА ДЛЯ MODEL-VIEWER (XIAOMI)
     async loadModelViewerPreview() {
         return new Promise((resolve) => {
             console.log('📱 Загрузка Model Viewer превью...');
@@ -374,7 +509,6 @@ class ModelViewerApp {
                 console.log('✅ Model Viewer загружен');
             });
             
-            // 🔥 ЗАДЕРЖКА ДЛЯ XIAOMI
             setTimeout(() => {
                 this.previewModel.src = this.currentFileURL;
                 this.previewModel.hidden = false;
