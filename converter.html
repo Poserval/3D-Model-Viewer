@@ -7,32 +7,12 @@
     <meta name="theme-color" content="#007AFF">
     
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(145deg, #4158D0 0%, #C850C0 46%, #FFCC70 100%);
             min-height: 100vh;
-            position: relative;
         }
-
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: radial-gradient(circle at 20% 30%, rgba(255,255,255,0.3) 0%, transparent 50%),
-                        radial-gradient(circle at 80% 70%, rgba(255,204,112,0.2) 0%, transparent 50%);
-            pointer-events: none;
-            z-index: 0;
-        }
-
         .container {
             max-width: 400px;
             margin: 0 auto;
@@ -41,125 +21,58 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            position: relative;
-            z-index: 2;
         }
-
-        .app-logo {
-            position: relative;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            margin: 0;
-            padding: 0;
-            top: -90px;
-            margin-bottom: -100px;
-            z-index: 10;
-        }
-
-        .logo-image {
-            width: 280px;
-            height: 280px;
-            object-fit: contain;
-            filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.4)) 
-                    drop-shadow(0 0 50px rgba(200, 80, 192, 0.6));
-            transform: perspective(1000px) rotateX(2deg) rotateY(1deg);
-            transition: transform 0.5s ease, filter 0.3s ease;
-            background: transparent;
-        }
-
-        .content-wrapper {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-top: -80px;
-        }
-
+        .app-logo { margin: 0 auto 20px; text-align: center; }
+        .logo-image { width: 200px; height: 200px; object-fit: contain; }
         .converter-content {
             width: 100%;
-            max-width: 450px;
             background: rgba(255, 255, 255, 0.15);
             border-radius: 16px;
-            border: 2px solid rgba(255, 255, 255, 0.25);
             padding: 30px;
             backdrop-filter: blur(15px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
         }
-
         .upload-area {
             background: rgba(255, 255, 255, 0.2);
             border: 2px dashed rgba(255, 255, 255, 0.4);
             border-radius: 12px;
-            padding: 15px 30px;
+            padding: 20px;
             text-align: center;
             cursor: pointer;
             margin-bottom: 20px;
         }
-
-        .upload-icon { font-size: 36px; color: white; margin-bottom: 5px; }
+        .upload-icon { font-size: 36px; color: white; }
         .upload-text { color: white; font-size: 16px; font-weight: 600; }
         .upload-hint { color: rgba(255, 255, 255, 0.7); font-size: 12px; margin-top: 5px; }
-
         .file-info {
-            width: 100%;
             background: rgba(255, 255, 255, 0.1);
             border-radius: 8px;
-            padding: 10px 12px;
+            padding: 10px;
             margin-bottom: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
             color: white;
             text-align: center;
         }
-
-        .formats-title {
-            text-align: center;
-            color: white;
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 20px;
-        }
-
         .format-row {
             display: flex;
             align-items: center;
             gap: 15px;
             margin-bottom: 20px;
         }
-
         .format-col { flex: 1; }
-        .select-wrapper { position: relative; width: 100%; }
-
         .format-select {
             width: 100%;
-            padding: 12px 12px 12px 40px;
+            padding: 12px;
             border-radius: 8px;
             background: rgba(255, 255, 255, 0.2);
             color: white;
             border: 1px solid rgba(255, 255, 255, 0.3);
             font-size: 16px;
             cursor: pointer;
-            appearance: none;
         }
-
         .format-select option { background: #333; color: white; }
-
-        .select-label {
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 14px;
-            font-weight: 600;
-            pointer-events: none;
-        }
-
-        .format-arrow { color: white; font-size: 24px; font-weight: bold; text-align: center; }
-
+        .format-arrow { color: white; font-size: 24px; text-align: center; }
         .convert-btn {
             width: 100%;
-            padding: 16px 0;
+            padding: 16px;
             border: none;
             border-radius: 16px;
             font-size: 16px;
@@ -169,9 +82,6 @@
             color: white;
             margin-bottom: 20px;
         }
-
-        .convert-btn:hover { background: linear-gradient(145deg, #0055BB, #003B80); }
-
         .progress-area { margin-bottom: 20px; display: none; }
         .progress-bar {
             width: 100%;
@@ -186,149 +96,102 @@
             width: 0%;
             transition: width 0.3s ease;
         }
-        .progress-text { color: white; text-align: center; margin-top: 5px; font-size: 14px; }
-
-        .result-area { width: 100%; margin-bottom: 20px; display: none; }
+        .progress-text { color: white; text-align: center; margin-top: 5px; }
+        .result-area { margin-bottom: 20px; display: none; }
         .result-info {
             background: rgba(255, 255, 255, 0.1);
             border-radius: 8px;
             padding: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
             color: white;
         }
-        .result-row { display: flex; flex-direction: column; gap: 8px; }
-        .result-item { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; }
-        .result-label { color: rgba(255, 255, 255, 0.7); font-weight: 500; min-width: 45px; }
-        .result-value { color: rgba(255, 255, 255, 0.95); font-weight: 500; word-break: break-word; }
-
-        .download-area { text-align: center; display: none; }
+        .result-item { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .download-area { display: none; }
         .download-link {
-            display: inline-block;
-            padding: 14px 28px;
+            display: block;
+            padding: 14px;
             background: linear-gradient(145deg, #4CAF50, #45a049);
             border-radius: 12px;
             color: white;
-            font-weight: 600;
-            text-decoration: none;
-            width: 100%;
             text-align: center;
+            text-decoration: none;
             cursor: pointer;
         }
-
-        @media (max-width: 480px) {
-            .logo-image { width: 320px; height: 320px; }
-            .format-select { padding: 10px 10px 10px 35px; font-size: 14px; }
-            .select-label { font-size: 12px; left: 10px; }
+        .back-btn {
+            background: #95a5a6;
+            border: none;
+            border-radius: 12px;
+            padding: 10px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="app-logo">
-            <img src="icons/logo-header2.png" alt="3D Constructor Logo" class="logo-image">
+            <img src="icons/logo-header2.png" alt="3D Constructor" class="logo-image">
         </div>
 
-        <div class="content-wrapper">
-            <div class="converter-content">
-                <input type="file" id="fileInput" accept=".stl,.obj,.glb,.gltf,.ply,.3ds" style="display: none;">
+        <div class="converter-content">
+            <input type="file" id="fileInput" accept=".stl,.obj,.glb,.gltf,.ply,.3ds" style="display: none;">
 
-                <div class="upload-area" id="dropArea">
-                    <div class="upload-icon">📁</div>
-                    <div class="upload-text">Нажмите для выбора файла</div>
-                    <div class="upload-hint">Поддерживаются: STL, OBJ, GLB, GLTF, PLY, 3DS</div>
+            <div class="upload-area" id="dropArea">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">Нажмите для выбора файла</div>
+                <div class="upload-hint">STL · OBJ · GLB · GLTF · PLY · 3DS</div>
+            </div>
+
+            <div id="fileInfo" class="file-info">Ничего не выбрано</div>
+
+            <div class="format-row">
+                <div class="format-col">
+                    <select id="fromFormat" class="format-select">
+                        <option value="stl">STL</option>
+                        <option value="obj">OBJ</option>
+                        <option value="glb">GLB</option>
+                        <option value="gltf">GLTF</option>
+                    </select>
                 </div>
-
-                <div id="fileInfo" class="file-info">Ничего не выбрано</div>
-
-                <div class="formats-title">ФОРМАТЫ</div>
-
-                <div class="format-row">
-                    <div class="format-col">
-                        <div class="select-wrapper">
-                            <span class="select-label">ИЗ</span>
-                            <select id="fromFormat" class="format-select">
-                                <option value="stl">STL</option>
-                                <option value="obj">OBJ</option>
-                                <option value="glb">GLB</option>
-                                <option value="gltf">GLTF</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="format-arrow">→</div>
-                    <div class="format-col">
-                        <div class="select-wrapper">
-                            <span class="select-label">В</span>
-                            <select id="toFormat" class="format-select">
-                                <option value="stl">STL</option>
-                                <option value="obj">OBJ</option>
-                                <option value="glb">GLB</option>
-                                <option value="gltf">GLTF</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <button class="convert-btn" id="convertBtn">🔄 Конвертировать</button>
-
-                <div id="progressArea" class="progress-area">
-                    <div class="progress-bar">
-                        <div id="progressFill" class="progress-fill"></div>
-                    </div>
-                    <div id="progressText" class="progress-text">0%</div>
-                </div>
-
-                <div id="resultArea" class="result-area">
-                    <div id="resultInfo" class="result-info">
-                        <div class="result-row">
-                            <div class="result-item">
-                                <span class="result-label">Было:</span>
-                                <span class="result-value" id="originalFileDetails"></span>
-                            </div>
-                            <div class="result-item">
-                                <span class="result-label">Стало:</span>
-                                <span class="result-value" id="convertedFileDetails"></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="downloadArea" class="download-area">
-                    <a id="downloadLink" class="download-link">📥 Скачать полученный файл</a>
+                <div class="format-arrow">→</div>
+                <div class="format-col">
+                    <select id="toFormat" class="format-select">
+                        <option value="stl">STL</option>
+                        <option value="obj">OBJ</option>
+                        <option value="glb">GLB</option>
+                        <option value="gltf">GLTF</option>
+                    </select>
                 </div>
             </div>
+
+            <button class="convert-btn" id="convertBtn">🔄 Конвертировать</button>
+
+            <div id="progressArea" class="progress-area">
+                <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+                <div id="progressText" class="progress-text">0%</div>
+            </div>
+
+            <div id="resultArea" class="result-area">
+                <div class="result-info">
+                    <div class="result-item"><span>📄 Было:</span><span id="originalFileDetails">-</span></div>
+                    <div class="result-item"><span>✅ Стало:</span><span id="convertedFileDetails">-</span></div>
+                </div>
+            </div>
+
+            <div id="downloadArea" class="download-area">
+                <a id="downloadLink" class="download-link">📥 Скачать файл</a>
+            </div>
+
+            <button class="back-btn" onclick="window.location.href='index.html'">← Назад</button>
         </div>
     </div>
 
     <script>
-        // ========== ПЕРЕМЕННЫЕ ==========
         let selectedFile = null;
         let convertedBlob = null;
         let convertedFileName = '';
-        let convertedFileSize = 0;
-        
-        // ========== ЭЛЕМЕНТЫ ==========
-        const fileInput = document.getElementById('fileInput');
-        const dropArea = document.getElementById('dropArea');
-        const fileInfo = document.getElementById('fileInfo');
-        const fromFormat = document.getElementById('fromFormat');
-        const toFormat = document.getElementById('toFormat');
-        const convertBtn = document.getElementById('convertBtn');
-        const progressArea = document.getElementById('progressArea');
-        const progressFill = document.getElementById('progressFill');
-        const progressText = document.getElementById('progressText');
-        const resultArea = document.getElementById('resultArea');
-        const originalFileDetails = document.getElementById('originalFileDetails');
-        const convertedFileDetails = document.getElementById('convertedFileDetails');
-        const downloadArea = document.getElementById('downloadArea');
-        const downloadLink = document.getElementById('downloadLink');
-        
-        // ========== ФУНКЦИИ ==========
-        function formatSize(bytes) {
-            if (!bytes) return '0 B';
-            if (bytes < 1024) return bytes + ' B';
-            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-            return (bytes / 1024 / 1024).toFixed(2) + ' MB';
-        }
         
         function showMessage(msg, isError) {
             const toast = document.createElement('div');
@@ -343,98 +206,128 @@
             toast.style.borderRadius = '50px';
             toast.style.fontSize = '14px';
             toast.style.zIndex = '1000';
-            toast.style.whiteSpace = 'nowrap';
             document.body.appendChild(toast);
             setTimeout(() => toast.remove(), 2500);
         }
         
-        function updateProgress(percent) {
-            progressFill.style.width = percent + '%';
-            progressText.textContent = percent + '%';
+        function formatSize(bytes) {
+            if (!bytes) return '0 B';
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / 1024 / 1024).toFixed(2) + ' MB';
         }
         
-        // ========== ВЫБОР ФАЙЛА ==========
+        function updateProgress(percent, text) {
+            document.getElementById('progressFill').style.width = percent + '%';
+            document.getElementById('progressText').textContent = text || percent + '%';
+        }
+        
+        // Выбор файла
+        const fileInput = document.getElementById('fileInput');
+        const dropArea = document.getElementById('dropArea');
+        
         dropArea.onclick = () => fileInput.click();
         
         fileInput.onchange = (e) => {
             if (e.target.files.length > 0) {
                 selectedFile = e.target.files[0];
                 const ext = selectedFile.name.split('.').pop().toLowerCase();
-                const sizeMB = (selectedFile.size / 1024 / 1024).toFixed(2);
-                
-                fileInfo.innerHTML = `
-                    <strong>${selectedFile.name}</strong><br>
-                    📦 ${sizeMB} MB · 🏷️ ${ext.toUpperCase()}
-                `;
-                
-                if (ext === 'stl') fromFormat.value = 'stl';
-                else if (ext === 'obj') fromFormat.value = 'obj';
-                else if (ext === 'glb') fromFormat.value = 'glb';
-                else if (ext === 'gltf') fromFormat.value = 'gltf';
-                
+                document.getElementById('fileInfo').innerHTML = `<strong>${selectedFile.name}</strong><br>📦 ${formatSize(selectedFile.size)} · 🏷️ ${ext.toUpperCase()}`;
                 showMessage('✅ Файл выбран: ' + selectedFile.name);
             }
         };
         
-        // ========== КОНВЕРТАЦИЯ ==========
-        convertBtn.onclick = () => {
+        // Drag & drop
+        dropArea.ondragover = (e) => { e.preventDefault(); dropArea.style.background = 'rgba(255,255,255,0.25)'; };
+        dropArea.ondragleave = () => { dropArea.style.background = 'rgba(255,255,255,0.2)'; };
+        dropArea.ondrop = (e) => {
+            e.preventDefault();
+            dropArea.style.background = 'rgba(255,255,255,0.2)';
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                selectedFile = file;
+                const ext = file.name.split('.').pop().toLowerCase();
+                document.getElementById('fileInfo').innerHTML = `<strong>${file.name}</strong><br>📦 ${formatSize(file.size)} · 🏷️ ${ext.toUpperCase()}`;
+                showMessage('✅ Файл выбран: ' + file.name);
+            }
+        };
+        
+        // Конвертация через сервер
+        document.getElementById('convertBtn').onclick = async () => {
             if (!selectedFile) {
                 showMessage('❌ Сначала выберите файл', true);
                 return;
             }
             
-            const from = fromFormat.value;
-            const to = toFormat.value;
+            const from = document.getElementById('fromFormat').value;
+            const to = document.getElementById('toFormat').value;
             
             if (from === to) {
-                showMessage('⚠️ Форматы одинаковые, конвертация не нужна', true);
+                showMessage('⚠️ Нельзя конвертировать в тот же формат', true);
                 return;
             }
             
+            const progressArea = document.getElementById('progressArea');
+            const resultArea = document.getElementById('resultArea');
+            const downloadArea = document.getElementById('downloadArea');
+            
+            progressArea.style.display = 'block';
             resultArea.style.display = 'none';
             downloadArea.style.display = 'none';
-            progressArea.style.display = 'block';
-            updateProgress(0);
+            updateProgress(0, 'Загрузка...');
             
-            let progress = 0;
-            const interval = setInterval(() => {
-                progress += 10;
-                updateProgress(progress);
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('fromFormat', from);
+            formData.append('toFormat', to);
+            
+            try {
+                updateProgress(20, 'Отправка на сервер...');
                 
-                if (progress >= 100) {
-                    clearInterval(interval);
-                    
-                    const baseName = selectedFile.name.replace(/\.[^/.]+$/, '');
-                    const newFileName = baseName + '.' + to;
-                    convertedFileName = newFileName;
-                    
-                    // Создаём реальный blob с содержимым файла
-                    const content = `Конвертированный файл\nИсходный: ${selectedFile.name}\nРазмер: ${formatSize(selectedFile.size)}\nФормат: ${from} → ${to}\nВремя: ${new Date().toLocaleString()}`;
-                    convertedBlob = new Blob([content], {type: 'application/octet-stream'});
-                    convertedFileSize = convertedBlob.size;
-                    
-                    originalFileDetails.innerHTML = `${selectedFile.name} · ${formatSize(selectedFile.size)}`;
-                    convertedFileDetails.innerHTML = `${newFileName} · ${formatSize(convertedFileSize)}`;
-                    
-                    resultArea.style.display = 'block';
-                    downloadArea.style.display = 'block';
-                    progressArea.style.display = 'none';
-                    
-                    showMessage('✅ Конвертация завершена!');
+                // СМЕНИ ЭТОТ URL НА ТВОЙ IP
+                const response = await fetch('http://10.237.155.221:3000/convert', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                updateProgress(70, 'Конвертация...');
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Ошибка сервера');
                 }
-            }, 200);
+                
+                const blob = await response.blob();
+                
+                updateProgress(100, 'Готово!');
+                
+                convertedBlob = blob;
+                convertedFileName = selectedFile.name.replace(/\.[^/.]+$/, '') + '.' + to;
+                
+                document.getElementById('originalFileDetails').innerHTML = `${selectedFile.name} · ${formatSize(selectedFile.size)}`;
+                document.getElementById('convertedFileDetails').innerHTML = `${convertedFileName} · ${formatSize(blob.size)}`;
+                
+                resultArea.style.display = 'block';
+                downloadArea.style.display = 'block';
+                progressArea.style.display = 'none';
+                
+                showMessage('✅ Конвертация завершена!');
+                
+            } catch (error) {
+                console.error(error);
+                progressArea.style.display = 'none';
+                showMessage(`❌ Ошибка: ${error.message}`, true);
+            }
         };
         
-        // ========== СОХРАНЕНИЕ ЧЕРЕЗ ANDROID ==========
-        downloadLink.onclick = (e) => {
+        // Сохранение через Android
+        document.getElementById('downloadLink').onclick = (e) => {
             e.preventDefault();
-            
             if (!convertedBlob || !convertedFileName) {
                 showMessage('❌ Нет файла для сохранения', true);
                 return;
             }
             
-            // Передаём в Android
             if (window.Android && window.Android.saveFile) {
                 const reader = new FileReader();
                 reader.onload = function() {
@@ -443,85 +336,29 @@
                 };
                 reader.readAsDataURL(convertedBlob);
             } else {
-                // Fallback: через ссылку
                 const url = URL.createObjectURL(convertedBlob);
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = convertedFileName;
                 a.click();
                 URL.revokeObjectURL(url);
-                showMessage('💾 Файл сохранён');
+                showMessage('💾 Файл сохранён в папку Downloads');
             }
         };
         
-        // ========== ЗАГРУЗКА ФАЙЛА ИЗ ПРИЛОЖЕНИЯ ==========
+        // Загрузка из параметров URL
         const urlParams = new URLSearchParams(window.location.search);
         const fileDataBase64 = urlParams.get('data');
-        
         if (fileDataBase64) {
             try {
                 const fileDataStr = decodeURIComponent(escape(atob(fileDataBase64)));
                 const fileData = JSON.parse(fileDataStr);
-                
-                selectedFile = {
-                    name: fileData.name,
-                    size: fileData.size,
-                    type: fileData.type
-                };
-                
+                selectedFile = { name: fileData.name, size: fileData.size, type: fileData.type };
                 const ext = fileData.name.split('.').pop().toLowerCase();
-                const sizeMB = (fileData.size / 1024 / 1024).toFixed(2);
-                
-                fileInfo.innerHTML = `
-                    <strong>${fileData.name}</strong><br>
-                    📦 ${sizeMB} MB · 🏷️ ${ext.toUpperCase()} ✅ Из приложения
-                `;
-                
-                if (ext === 'stl') fromFormat.value = 'stl';
-                else if (ext === 'obj') fromFormat.value = 'obj';
-                else if (ext === 'glb') fromFormat.value = 'glb';
-                else if (ext === 'gltf') fromFormat.value = 'gltf';
-                
+                document.getElementById('fileInfo').innerHTML = `<strong>${fileData.name}</strong><br>📦 ${formatSize(fileData.size)} · 🏷️ ${ext.toUpperCase()} ✅ Из приложения`;
                 showMessage('✅ Файл загружен из приложения');
-            } catch (e) {
-                console.error(e);
-                fileInfo.innerHTML = '❌ Ошибка загрузки файла';
-            }
+            } catch(e) { console.error(e); }
         }
-        
-        // ========== DRAG & DROP ==========
-        dropArea.ondragover = (e) => {
-            e.preventDefault();
-            dropArea.style.background = 'rgba(255, 255, 255, 0.25)';
-        };
-        
-        dropArea.ondragleave = () => {
-            dropArea.style.background = 'rgba(255, 255, 255, 0.2)';
-        };
-        
-        dropArea.ondrop = (e) => {
-            e.preventDefault();
-            dropArea.style.background = 'rgba(255, 255, 255, 0.2)';
-            
-            const file = e.dataTransfer.files[0];
-            if (file) {
-                selectedFile = file;
-                const ext = file.name.split('.').pop().toLowerCase();
-                const sizeMB = (file.size / 1024 / 1024).toFixed(2);
-                
-                fileInfo.innerHTML = `
-                    <strong>${file.name}</strong><br>
-                    📦 ${sizeMB} MB · 🏷️ ${ext.toUpperCase()}
-                `;
-                
-                if (ext === 'stl') fromFormat.value = 'stl';
-                else if (ext === 'obj') fromFormat.value = 'obj';
-                else if (ext === 'glb') fromFormat.value = 'glb';
-                else if (ext === 'gltf') fromFormat.value = 'gltf';
-                
-                showMessage('✅ Файл выбран: ' + file.name);
-            }
-        };
     </script>
 </body>
 </html>
