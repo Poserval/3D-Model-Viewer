@@ -2,112 +2,65 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3DViewer</title>
-    <meta name="theme-color" content="#007AFF">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>3D Constructor</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
-    
-    <!-- Favicon -->
-    <link rel="icon" href="icons/icon-app-192.png" type="image/png">
 </head>
 <body>
-    <!-- Главный экран -->
-    <div id="main-screen" class="screen active">
-        <div class="container">
-            <!-- ЛОГОТИП СВЕРХУ -->
-            <div class="app-logo">
-                <img src="icons/logo-header.png" alt="3D Model Viewer Logo" class="logo-image">
-            </div>
-            
-            <!-- ОКНО ПРЕДВАРИТЕЛЬНОГО ПРОСМОТРА -->
-            <div id="preview-area" class="preview-area">
-                <div id="preview-placeholder" class="preview-placeholder">
-                    <span>ВЫБЕРИТЕ 3D МОДЕЛЬ</span>
-                </div>
-                
-                <!-- Model Viewer для GLB/GLTF -->
-                <model-viewer id="preview-model" class="preview-model" hidden></model-viewer>
-                
-                <!-- Three.js Canvas для STL и OBJ -->
-                <canvas id="preview-threejs" class="preview-threejs" hidden></canvas>
-                
-                <!-- Индикатор загрузки -->
-                <div id="loading-indicator" class="loading-indicator">
-                    <div class="loading-spinner"></div>
-                    <div class="loading-text">Загрузка модели...</div>
-                    <div class="loading-progress">
-                        <div class="progress-bar">
-                            <div class="progress-fill"></div>
-                        </div>
-                        <div class="progress-text">0%</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- ТОНКАЯ ЧЁРНАЯ ПОЛОСА С НАЗВАНИЕМ ФАЙЛА -->
-            <div class="file-name-container">
-                <div id="file-name" class="file-name"></div>
-            </div>
-            
-            <!-- ПЕРВЫЙ РЯД КНОПОК (ГОРИЗОНТАЛЬНО) -->
-            <div class="button-row">
-                <input type="file" id="file-input" accept=".glb,.gltf,.obj,.stl" hidden>
-                <button id="select-file-btn" class="btn">ВЫБРАТЬ ФАЙЛ</button>
-                <button id="open-3d-btn" class="btn" disabled>ОТКРЫТЬ В 3D</button>
-            </div>
-            
-            <!-- ВТОРОЙ РЯД КНОПОК (ГОРИЗОНТАЛЬНО) -->
-            <div class="button-row">
-                <button id="go-to-converter-btn" class="btn">КОНВЕРТЕР (ОНЛАЙН)</button>
-            </div>
-        </div>
+<div class="main-container">
+    <div class="header">
+        <img src="icons/logo_constructor.png" alt="3D Constructor" class="logo">
+        <p class="subtitle">Создавай · Конвертируй · Вдохновляйся</p>
     </div>
 
-    <!-- Экран просмотра 3D -->
-    <div id="viewer-screen" class="screen">
-        <header class="header">
-            <button id="back-btn" class="back-btn">← Назад</button>
-            <div class="header-logo">
-                <img src="icons/logo-header.png" alt="3D Model Viewer" class="logo-image-small">
+    <div class="buttons-container">
+        <!-- Кнопка Конвертер -->
+        <button class="main-btn converter-btn" onclick="navigateTo('converter')">
+            <div class="btn-icon-wrapper">
+                <span class="btn-icon">🔄</span>
             </div>
-            <h2 id="viewer-title" class="viewer-title"></h2>
-        </header>
-        <div class="viewer-container">
-            <!-- Model Viewer для GLB/GLTF -->
-            <model-viewer id="main-model" class="main-model" 
-                camera-controls 
-                auto-rotate
-                shadow-intensity="1"
-                hidden>
-            </model-viewer>
-            
-            <!-- Three.js Canvas для STL и OBJ -->
-            <canvas id="main-threejs" class="main-threejs" hidden></canvas>
-        </div>
-        <div class="viewer-controls">
-            <button id="auto-rotate-btn" class="control-btn" data-active="true">
-                ⏸️ Автоповорот
-            </button>
-            <button id="reset-camera-btn" class="control-btn">
-                🎯 Сброс камеры
-            </button>
-        </div>
+            <div class="btn-text-wrapper">
+                <div class="btn-title">КОНВЕРТЕР</div>
+                <div class="btn-subtitle">STL · OBJ · GLB · GLTF · PLY · 3DS</div>
+            </div>
+        </button>
+
+        <!-- Кнопка Генератор 3D -->
+        <button class="main-btn generator-btn" onclick="navigateTo('generator')">
+            <div class="btn-icon-wrapper">
+                <span class="btn-icon">✨</span>
+            </div>
+            <div class="btn-text-wrapper">
+                <div class="btn-title">ГЕНЕРАТОР 3D</div>
+                <div class="btn-subtitle">Text‑to‑3D / Image‑to‑3D</div>
+            </div>
+        </button>
+
+        <!-- Кнопка Каталог 3D -->
+        <button class="main-btn catalog-btn" onclick="navigateTo('catalog')">
+            <div class="btn-icon-wrapper">
+                <span class="btn-icon">📚</span>
+            </div>
+            <div class="btn-text-wrapper">
+                <div class="btn-title">КАТАЛОГ 3D</div>
+                <div class="btn-subtitle">Cults3D · Бесплатные модели</div>
+            </div>
+        </button>
+
+        <!-- Кнопка 3D Viewer -->
+        <button class="main-btn viewer-btn-main" onclick="openViewerApp()">
+            <div class="btn-icon-wrapper">
+                <span class="btn-icon">📱</span>
+            </div>
+            <div class="btn-text-wrapper">
+                <div class="btn-title">3D VIEWER</div>
+                <div class="btn-subtitle">Просмотр · Конвертация</div>
+            </div>
+        </button>
     </div>
+</div>
 
-    <!-- Третья страница для конвертера (пустая, открывается в браузере) -->
-    <div id="converter-screen" class="screen" style="display: none;"></div>
-
-    <!-- Three.js и загрузчики -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    
-    <!-- Model Viewer -->
-    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-    
-    <!-- Основной скрипт -->
-    <script src="script.js"></script>
+<div id="toast-message" class="toast"></div>
+<script src="script.js"></script>
 </body>
 </html>
