@@ -409,8 +409,8 @@
         let currentBlob = null;
         let currentFileName = null;
         
-        // АДРЕС СЕРВЕРА НА RENDER.COM (ЗАМЕНИТЕ НА ВАШ)
-        const SERVER_URL = 'https://3d-converter-api.onrender.com/convert';
+        // ========== АДРЕС СЕРВЕРА НА RENDER.COM ==========
+        const SERVER_URL = 'https://threed-converter-api.onrender.com/convert';
         
         // ========== ФУНКЦИИ ==========
         function showMessage(msg, isError) {
@@ -524,8 +524,12 @@
                 updateProgress(60, 'Конвертация...');
                 
                 if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Ошибка сервера');
+                    let errorMsg = 'Ошибка сервера';
+                    try {
+                        const error = await response.json();
+                        errorMsg = error.error || errorMsg;
+                    } catch(e) {}
+                    throw new Error(errorMsg);
                 }
                 
                 const blob = await response.blob();
@@ -558,29 +562,16 @@
                 return;
             }
             
-            // Пытаемся сохранить через Android (если в WebView)
-            if (window.Android && window.Android.saveFile) {
-                const reader = new FileReader();
-                reader.onload = function() {
-                    const base64 = reader.result.split(',')[1];
-                    window.Android.saveFile(base64, currentFileName);
-                };
-                reader.onerror = function() {
-                    showMessage('❌ Ошибка чтения файла', true);
-                };
-                reader.readAsDataURL(currentBlob);
-            } else {
-                // Стандартное скачивание в браузере
-                const url = URL.createObjectURL(currentBlob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = currentFileName;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                showMessage('💾 Файл сохранён в папку Downloads');
-            }
+            // Стандартное скачивание в браузере
+            const url = URL.createObjectURL(currentBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = currentFileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showMessage('💾 Файл сохранён в папку Downloads');
         }
         
         // ========== ЗАГРУЗКА ФАЙЛА ИЗ ПРИЛОЖЕНИЯ ==========
