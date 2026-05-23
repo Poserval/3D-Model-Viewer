@@ -409,7 +409,7 @@
         let currentBlob = null;
         let currentFileName = null;
         
-        // ========== АДРЕС СЕРВЕРА НА RENDER.COM ==========
+        // АДРЕС СЕРВЕРА НА RENDER.COM
         const SERVER_URL = 'https://threed-converter-api.onrender.com/convert';
         
         // ========== ФУНКЦИИ ==========
@@ -555,23 +555,41 @@
             }
         }
         
-        // ========== СОХРАНЕНИЕ ==========
+        // ========== СОХРАНЕНИЕ (РАБОТАЕТ В ANDROID И БРАУЗЕРЕ) ==========
         function saveFile() {
             if (!currentBlob || !currentFileName) {
                 showMessage('❌ Нет файла для сохранения', true);
                 return;
             }
             
-            // Стандартное скачивание в браузере
-            const url = URL.createObjectURL(currentBlob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = currentFileName;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            showMessage('💾 Файл сохранён в папку Downloads');
+            // Для Android WebView (через JavaScript Interface)
+            if (window.Android && window.Android.saveFile) {
+                const reader = new FileReader();
+                reader.onload = function() {
+                    const base64 = reader.result.split(',')[1];
+                    window.Android.saveFile(base64, currentFileName);
+                };
+                reader.onerror = function() {
+                    showMessage('❌ Ошибка чтения файла', true);
+                };
+                reader.readAsDataURL(currentBlob);
+                return;
+            }
+            
+            // Для обычного браузера (стандартное скачивание)
+            try {
+                const url = URL.createObjectURL(currentBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = currentFileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showMessage('💾 Файл сохранён в папку Downloads');
+            } catch (e) {
+                showMessage('❌ Ошибка сохранения: ' + e.message, true);
+            }
         }
         
         // ========== ЗАГРУЗКА ФАЙЛА ИЗ ПРИЛОЖЕНИЯ ==========
@@ -621,6 +639,7 @@
         
         console.log('✅ Конвертер готов');
         console.log('📡 Сервер: ' + SERVER_URL);
+        console.log('📱 Android интерфейс: ' + (window.Android ? 'доступен' : 'не доступен'));
     </script>
 </body>
 </html>
