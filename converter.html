@@ -563,11 +563,11 @@
             }
             
             // Для Android WebView (через JavaScript Interface)
-            if (window.Android && window.Android.saveFile) {
+            if (window.Android && typeof window.Android.saveFileToStorage === 'function') {
                 const reader = new FileReader();
                 reader.onload = function() {
                     const base64 = reader.result.split(',')[1];
-                    window.Android.saveFile(base64, currentFileName);
+                    window.Android.saveFileToStorage(base64, currentFileName);
                 };
                 reader.onerror = function() {
                     showMessage('❌ Ошибка чтения файла', true);
@@ -639,7 +639,7 @@
         
         console.log('✅ Конвертер готов');
         console.log('📡 Сервер: ' + SERVER_URL);
-        console.log('📱 Android интерфейс: ' + (window.Android ? 'доступен' : 'не доступен'));
+        console.log('📱 Android интерфейс: ' + (window.Android && typeof window.Android.saveFileToStorage === 'function' ? 'доступен' : 'не доступен'));
     </script>
 </body>
 </html>
