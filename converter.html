@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>3D Constructor - Конвертер</title>
     <meta name="theme-color" content="#007AFF">
     
@@ -409,7 +409,6 @@
         let currentBlob = null;
         let currentFileName = null;
         
-        // АДРЕС СЕРВЕРА НА RENDER.COM
         const SERVER_URL = 'https://threed-converter-api.onrender.com/convert';
         
         // ========== ФУНКЦИИ ==========
@@ -468,7 +467,6 @@
             }
         };
         
-        // Drag & drop
         dropArea.ondragover = (e) => { e.preventDefault(); dropArea.style.background = 'rgba(255,255,255,0.25)'; };
         dropArea.ondragleave = () => { dropArea.style.background = 'rgba(255,255,255,0.2)'; };
         dropArea.ondrop = (e) => {
@@ -555,24 +553,16 @@
             }
         }
         
-        // ========== СОХРАНЕНИЕ ФАЙЛА (ЧЕРЕЗ BLOB И БРАУЗЕР) ==========
+        // ========== СОХРАНЕНИЕ ФАЙЛА (ОТКРЫТИЕ В БРАУЗЕРЕ) ==========
         function saveFile() {
             if (!currentBlob || !currentFileName) {
                 showMessage('❌ Нет файла для сохранения', true);
                 return;
             }
             
-            // Создаём ссылку на blob и имитируем клик для скачивания
             const url = URL.createObjectURL(currentBlob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = currentFileName;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            
-            showMessage('📥 Открываем браузер для скачивания...');
+            window.open(url, '_blank');
+            showMessage('📲 Файл откроется в браузере, нажмите "Сохранить"');
         }
         
         // ========== ЗАГРУЗКА ФАЙЛА ИЗ ПРИЛОЖЕНИЯ ==========
