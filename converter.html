@@ -555,44 +555,24 @@
             }
         }
         
-        // ========== СОХРАНЕНИЕ ФАЙЛА (ЧЕРЕЗ ARRAY BUFFER) ==========
+        // ========== СОХРАНЕНИЕ ФАЙЛА (ЧЕРЕЗ BLOB И БРАУЗЕР) ==========
         function saveFile() {
             if (!currentBlob || !currentFileName) {
                 showMessage('❌ Нет файла для сохранения', true);
                 return;
             }
             
-            // Для Android WebView
-            if (window.AndroidFileBridge && typeof window.AndroidFileBridge.saveFile === 'function') {
-                showMessage('📥 Сохранение файла...');
-                
-                const reader = new FileReader();
-                reader.onload = function() {
-                    const arrayBuffer = reader.result;
-                    const uint8Array = new Uint8Array(arrayBuffer);
-                    window.AndroidFileBridge.saveFile(uint8Array, currentFileName);
-                };
-                reader.onerror = function() {
-                    showMessage('❌ Ошибка чтения файла', true);
-                };
-                reader.readAsArrayBuffer(currentBlob);
-                return;
-            }
+            // Создаём ссылку на blob и имитируем клик для скачивания
+            const url = URL.createObjectURL(currentBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = currentFileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
             
-            // Для обычного браузера
-            try {
-                const url = URL.createObjectURL(currentBlob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = currentFileName;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                showMessage('💾 Файл сохранён');
-            } catch (e) {
-                showMessage('❌ Ошибка: ' + e.message, true);
-            }
+            showMessage('📥 Открываем браузер для скачивания...');
         }
         
         // ========== ЗАГРУЗКА ФАЙЛА ИЗ ПРИЛОЖЕНИЯ ==========
@@ -642,7 +622,6 @@
         
         console.log('✅ Конвертер готов');
         console.log('📡 Сервер: ' + SERVER_URL);
-        console.log('📱 Мост AndroidFileBridge: ' + (window.AndroidFileBridge ? 'доступен' : 'не доступен'));
     </script>
 </body>
 </html>
