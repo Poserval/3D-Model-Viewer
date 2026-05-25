@@ -555,30 +555,31 @@
             }
         }
         
-        // ========== СОХРАНЕНИЕ ФАЙЛА (РАБОТАЕТ В ANDROID И БРАУЗЕРЕ) ==========
+        // ========== СОХРАНЕНИЕ ФАЙЛА (ЧЕРЕЗ ARRAY BUFFER) ==========
         function saveFile() {
             if (!currentBlob || !currentFileName) {
                 showMessage('❌ Нет файла для сохранения', true);
                 return;
             }
             
-            // Для Android WebView (через мост)
-            if (window.AndroidFileBridge && typeof window.AndroidFileBridge.downloadBase64File === 'function') {
-                showMessage('📥 Подготовка файла для скачивания...');
+            // Для Android WebView
+            if (window.AndroidFileBridge && typeof window.AndroidFileBridge.saveFile === 'function') {
+                showMessage('📥 Сохранение файла...');
                 
                 const reader = new FileReader();
                 reader.onload = function() {
-                    window.AndroidFileBridge.downloadBase64File(reader.result, currentFileName);
-                    showMessage('✅ Файл передан приложению, идёт сохранение');
+                    const arrayBuffer = reader.result;
+                    const uint8Array = new Uint8Array(arrayBuffer);
+                    window.AndroidFileBridge.saveFile(uint8Array, currentFileName);
                 };
                 reader.onerror = function() {
-                    showMessage('❌ Ошибка при подготовке файла', true);
+                    showMessage('❌ Ошибка чтения файла', true);
                 };
-                reader.readAsDataURL(currentBlob);
+                reader.readAsArrayBuffer(currentBlob);
                 return;
             }
             
-            // Для обычного браузера (стандартное скачивание)
+            // Для обычного браузера
             try {
                 const url = URL.createObjectURL(currentBlob);
                 const a = document.createElement('a');
@@ -588,9 +589,9 @@
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
-                showMessage('💾 Файл сохранён в папку Downloads');
+                showMessage('💾 Файл сохранён');
             } catch (e) {
-                showMessage('❌ Ошибка сохранения: ' + e.message, true);
+                showMessage('❌ Ошибка: ' + e.message, true);
             }
         }
         
