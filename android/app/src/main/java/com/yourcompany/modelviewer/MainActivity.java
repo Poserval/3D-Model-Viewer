@@ -6,21 +6,18 @@ import android.webkit.WebViewClient;
 import android.webkit.WebSettings;
 import android.webkit.WebChromeClient;
 import android.webkit.ValueCallback;
+import android.webkit.DownloadListener;
 import android.net.Uri;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.content.Context;
-import android.os.Environment;
 import android.widget.Toast;
-import android.util.Base64;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import android.content.pm.PackageManager;
 import android.Manifest;
-import java.io.File;
-import java.io.FileOutputStream;
 
 public class MainActivity extends AppCompatActivity {
     private WebView webView;
@@ -57,14 +54,6 @@ public class MainActivity extends AppCompatActivity {
             WebView.setWebContentsDebuggingEnabled(true);
         }
 
-        // ВАЖНО: Интерфейс должен быть объявлен ПРЯМО здесь, без обертки
-        webView.addJavascriptInterface(new Object() {
-            @android.webkit.JavascriptInterface
-            public void saveFile(String base64Data, String fileName) {
-                saveFileToStorage(base64Data, fileName);
-            }
-        }, "Android");
-
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
@@ -85,44 +74,17 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         
-        webView.loadUrl("file:///android_asset/public/index.html");
-    }
-    
-    // Метод должен быть public, чтобы JavaScriptInterface его видел
-    @android.webkit.JavascriptInterface
-    public void saveFileToStorage(String base64Data, String fileName) {
-        // Проверяем разрешения
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            runOnUiThread(() -> {
-                Toast.makeText(this, "❌ Нет разрешения на запись", Toast.LENGTH_LONG).show();
-                checkAndRequestPermissions();
-            });
-            return;
-        }
-        
-        try {
-            byte[] decodedBytes = Base64.decode(base64Data, Base64.DEFAULT);
-            
-            File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-            if (!downloadsDir.exists()) {
-                downloadsDir.mkdirs();
+        // ПРОСТОЕ РЕШЕНИЕ - открываем ссылки в системном браузере
+        webView.setDownloadListener(new DownloadListener() {
+            @Override
+            public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setData(Uri.parse(url));
+                startActivity(intent);
             }
-            
-            File outputFile = new File(downloadsDir, fileName);
-            FileOutputStream fos = new FileOutputStream(outputFile);
-            fos.write(decodedBytes);
-            fos.close();
-            
-            runOnUiThread(() -> {
-                Toast.makeText(this, "✅ Файл сохранён: " + fileName, Toast.LENGTH_LONG).show();
-            });
-            
-        } catch (Exception e) {
-            e.printStackTrace();
-            runOnUiThread(() -> {
-                Toast.makeText(this, "❌ Ошибка: " + e.getMessage(), Toast.LENGTH_LONG).show();
-            });
-        }
+        });
+        
+        webView.loadUrl("file:///android_asset/public/index.html");
     }
     
     private void checkAndRequestPermissions() {
