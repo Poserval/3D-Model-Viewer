@@ -1,67 +1,77 @@
 package ru.dviewer.constructor3d;
 
+import android.Manifest;
+import android.app.DownloadManager;
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
+import android.util.Base64;
+import android.webkit.JavascriptInterface;
+import android.webkit.ValueCallback;
+import android.webkit.WebChromeClient;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.webkit.WebSettings;
-import android.webkit.WebChromeClient;
-import android.webkit.ValueCallback;
-import android.webkit.DownloadListener;
-import android.net.Uri;
-import android.content.Intent;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
-import android.content.Context;
 import android.widget.Toast;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import android.content.pm.PackageManager;
-import android.Manifest;
+import java.io.File;
+import java.io.FileOutputStream;
 
 public class MainActivity extends AppCompatActivity {
+
     private WebView webView;
     private ValueCallback<Uri[]> uploadMessage;
-    private static final int FILE_CHOOSER_REQUEST_CODE = 1;
-    private static final int PERMISSION_REQUEST_CODE = 100;
+    private ActivityResultLauncher<String[]> permissionLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        
+        // --- 1. НАСТРОЙКА РАЗРЕШЕНИЙ (Android 11+) ---
+        permissionLauncher = registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
+            if (Boolean.TRUE.equals(result.get(Manifest.permission.WRITE_EXTERNAL_STORAGE))) {
+                Toast.makeText(this, "Разрешения получены", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "Нужны разрешения для сохранения файлов", Toast.LENGTH_LONG).show();
+            }
+        });
 
-        // Запрос разрешений
-        checkAndRequestPermissions();
-
-        if (!isNetworkAvailable()) {
-            Toast.makeText(this, "Нет подключения к интернету", Toast.LENGTH_LONG).show();
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                permissionLauncher.launch(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE});
+            }
         }
+        // -----------------------------
 
         webView = findViewById(R.id.webView);
         WebSettings settings = webView.getSettings();
-        
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
-        settings.setLoadWithOverviewMode(true);
-        settings.setUseWideViewPort(true);
         settings.setAllowFileAccess(true);
         settings.setAllowFileAccessFromFileURLs(true);
         settings.setAllowUniversalAccessFromFileURLs(true);
-        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
-        
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
-            WebView.setWebContentsDebuggingEnabled(true);
-        }
 
-        webView.setWebViewClient(new WebViewClient() {
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                view.loadUrl(url);
-                return true;
+        // --- 2. СОЗДАНИЕ МОСТА (САМОЕ ВАЖНОЕ) ---
+        webView.addJavascriptInterface(new Object() {
+            @JavascriptInterface
+            public void downloadBase64File(String base64Data, String fileName) {
+                saveFileToStorage(base64Data, fileName);
             }
-        });
-        
+        }, "AndroidFileBridge");
+        // -------------------------------------
+
+        webView.setWebViewClient(new WebViewClient());
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
@@ -69,85 +79,65 @@ public class MainActivity extends AppCompatActivity {
                 Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
                 intent.addCategory(Intent.CATEGORY_OPENABLE);
                 intent.setType("*/*");
-                startActivityForResult(intent, FILE_CHOOSER_REQUEST_CODE);
+                startActivityForResult(intent, 1);
                 return true;
             }
         });
-        
-        // ПРОСТОЕ РЕШЕНИЕ - открываем ссылки в системном браузере
-        webView.setDownloadListener(new DownloadListener() {
-            @Override
-            public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
-                Intent intent = new Intent(Intent.ACTION_VIEW);
-                intent.setData(Uri.parse(url));
-                startActivity(intent);
-            }
-        });
-        
+
         webView.loadUrl("file:///android_asset/public/index.html");
     }
-    
-    private void checkAndRequestPermissions() {
-        String[] permissions = {
-            Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.READ_EXTERNAL_STORAGE
-        };
-        
-        boolean allGranted = true;
-        for (String permission : permissions) {
-            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
-                allGranted = false;
-                break;
-            }
-        }
-        
-        if (!allGranted) {
-            ActivityCompat.requestPermissions(this, permissions, PERMISSION_REQUEST_CODE);
-        }
-    }
-    
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == PERMISSION_REQUEST_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "✅ Разрешения получены", Toast.LENGTH_SHORT).show();
+
+    // --- 3. ЛОГИКА СОХРАНЕНИЯ ФАЙЛА ---
+    private void saveFileToStorage(String base64Data, String fileName) {
+        try {
+            // Очищаем данные от "data:application/octet-stream;base64,"
+            String pureBase64 = base64Data.substring(base64Data.indexOf(",") + 1);
+            byte[] decodedBytes = Base64.decode(pureBase64, Base64.DEFAULT);
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // Для Android 10+ используем MediaStore
+                ContentValues values = new ContentValues();
+                values.put(MediaStore.Downloads.DISPLAY_NAME, fileName);
+                values.put(MediaStore.Downloads.MIME_TYPE, "application/octet-stream");
+                values.put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+
+                Uri uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+                if (uri != null) {
+                    getContentResolver().openOutputStream(uri).write(decodedBytes);
+                }
             } else {
-                Toast.makeText(this, "❌ Нужны разрешения для сохранения", Toast.LENGTH_LONG).show();
+                // Для старых версий
+                File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                File outputFile = new File(downloadsDir, fileName);
+                FileOutputStream fos = new FileOutputStream(outputFile);
+                fos.write(decodedBytes);
+                fos.close();
             }
+
+            Toast.makeText(this, "✅ Файл сохранён: " + fileName, Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(this, "❌ Ошибка сохранения", Toast.LENGTH_LONG).show();
         }
     }
-    
+    // -------------------------------
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == FILE_CHOOSER_REQUEST_CODE) {
-            if (uploadMessage == null) return;
-            
+        if (requestCode == 1 && uploadMessage != null) {
             Uri[] results = null;
             if (resultCode == RESULT_OK && data != null) {
-                String dataString = data.getDataString();
-                if (dataString != null) {
-                    results = new Uri[]{Uri.parse(dataString)};
-                }
+                results = new Uri[]{data.getData()};
             }
             uploadMessage.onReceiveValue(results);
             uploadMessage = null;
         }
     }
-    
-    private boolean isNetworkAvailable() {
-        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
-    }
 
     @Override
     public void onBackPressed() {
-        if (webView.canGoBack()) {
-            webView.goBack();
-        } else {
-            super.onBackPressed();
-        }
+        if (webView.canGoBack()) webView.goBack();
+        else super.onBackPressed();
     }
 }
