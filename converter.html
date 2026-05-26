@@ -135,13 +135,17 @@
         <img src="icons/logo-header2.png" alt="3D Model Viewer Logo" class="logo-image">
     </div>
     <div class="converter-content">
+        <!-- КНОПКА ВЫБОРА ФАЙЛА (ВИДИМАЯ, НЕ СКРЫТАЯ) -->
         <input type="file" id="fileInput" accept=".stl,.STL" style="display: none;">
+        
         <div class="upload-area" id="dropArea">
             <div class="upload-icon">📁</div>
-            <div class="upload-text">Нажмите для выбора файла</div>
-            <div class="upload-hint">Поддерживаются: STL</div>
+            <div class="upload-text">Выберите STL файл</div>
+            <div class="upload-hint">Нажмите или перетащите файл</div>
         </div>
+        
         <div id="fileInfo" class="file-info">Ничего не выбрано</div>
+        
         <div class="format-row">
             <select id="toFormat" class="format-select">
                 <option value="obj">OBJ</option>
@@ -153,17 +157,21 @@
                 <option value="stl">STL</option>
             </select>
         </div>
+        
         <button class="convert-btn" id="convertBtn">🔄 Конвертировать</button>
+        
         <div id="progressArea" class="progress-area">
             <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
             <div class="progress-text" id="progressText">0%</div>
         </div>
+        
         <div id="resultArea" class="result-area">
             <div class="result-info">
                 <div class="result-item"><span>📄 Было:</span><span id="originalFileDetails">-</span></div>
                 <div class="result-item"><span>✅ Стало:</span><span id="convertedFileDetails">-</span></div>
             </div>
         </div>
+        
         <a id="downloadLink" class="download-link" style="display: none;">📥 Скачать файл</a>
         <a href="index.html" class="back-link">← На главную</a>
     </div>
@@ -184,6 +192,7 @@
     import { OBJExporter } from 'https://unpkg.com/three@0.128.0/examples/jsm/exporters/OBJExporter.js';
     import { GLTFExporter } from 'https://unpkg.com/three@0.128.0/examples/jsm/exporters/GLTFExporter.js';
 
+    // DOM элементы
     const fileInput = document.getElementById('fileInput');
     const dropArea = document.getElementById('dropArea');
     const fileInfo = document.getElementById('fileInfo');
@@ -245,18 +254,29 @@
         showMessage('✅ Файл выбран: ' + file.name);
     }
 
-    dropArea.onclick = () => fileInput.click();
+    // Открытие диалога выбора файла
+    dropArea.addEventListener('click', () => {
+        fileInput.click();
+    });
+    
     fileInput.addEventListener('change', (e) => {
         if (e.target.files.length) onFileSelected(e.target.files[0]);
     });
-    dropArea.ondragover = (e) => { e.preventDefault(); dropArea.style.background = 'rgba(255,255,255,0.3)'; };
-    dropArea.ondragleave = () => { dropArea.style.background = 'rgba(255,255,255,0.2)'; };
-    dropArea.ondrop = (e) => {
+    
+    // Drag & drop
+    dropArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropArea.style.background = 'rgba(255,255,255,0.3)';
+    });
+    dropArea.addEventListener('dragleave', () => {
+        dropArea.style.background = 'rgba(255,255,255,0.2)';
+    });
+    dropArea.addEventListener('drop', (e) => {
         e.preventDefault();
         dropArea.style.background = 'rgba(255,255,255,0.2)';
         const file = e.dataTransfer.files[0];
         if (file) onFileSelected(file);
-    };
+    });
 
     async function convertFile() {
         if (!selectedFile) {
