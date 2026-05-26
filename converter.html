@@ -6,12 +6,6 @@
     <title>3DViewer - Конвертер</title>
     <meta name="theme-color" content="#007AFF">
     
-    <!-- Three.js глобально (старый способ, работает в WebView) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/OBJExporter.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
-
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -141,27 +135,36 @@
         <img src="icons/logo-header2.png" alt="3D Model Viewer Logo" class="logo-image">
     </div>
     <div class="converter-content">
-        <!-- БЕЗ accept - работает на телефоне -->
-        <input type="file" id="fileInput" style="display: none;">
+        <input type="file" id="fileInput" accept=".stl,.STL" style="display: none;">
         
         <div class="upload-area" id="dropArea">
             <div class="upload-icon">📁</div>
-            <div class="upload-text">Выберите STL файл</div>
-            <div class="upload-hint">Нажмите или перетащите файл</div>
+            <div class="upload-text">Нажмите для выбора файла</div>
+            <div class="upload-hint">Поддерживаются: STL, OBJ, GLB, GLTF</div>
         </div>
         
-        <div id="fileInfo" class="file-info">Ничего не выбрано</div>
+        <div id="fileInfo" class="file-info">
+            <div id="fileInfoContent" class="placeholder-text">Ничего не выбрано</div>
+        </div>
         
         <div class="format-row">
-            <select id="toFormat" class="format-select">
-                <option value="obj">OBJ</option>
-                <option value="glb">GLB</option>
-                <option value="gltf">GLTF</option>
-            </select>
+            <div class="format-col">
+                <select id="fromFormat" class="format-select">
+                    <option value="stl">STL</option>
+                    <option value="obj">OBJ</option>
+                    <option value="glb">GLB</option>
+                    <option value="gltf">GLTF</option>
+                </select>
+            </div>
             <div class="arrow">→</div>
-            <select id="fromFormat" class="format-select" disabled>
-                <option value="stl">STL</option>
-            </select>
+            <div class="format-col">
+                <select id="toFormat" class="format-select">
+                    <option value="stl">STL</option>
+                    <option value="obj">OBJ</option>
+                    <option value="glb">GLB</option>
+                    <option value="gltf">GLTF</option>
+                </select>
+            </div>
         </div>
         
         <button class="convert-btn" id="convertBtn">🔄 Конвертировать</button>
@@ -173,200 +176,216 @@
         
         <div id="resultArea" class="result-area">
             <div class="result-info">
-                <div class="result-item"><span>📄 Было:</span><span id="originalFileDetails">-</span></div>
-                <div class="result-item"><span>✅ Стало:</span><span id="convertedFileDetails">-</span></div>
+                <div class="result-row">
+                    <div class="result-item"><span class="result-label">Было:</span><span class="result-value" id="originalFileDetails"></span></div>
+                    <div class="result-item"><span class="result-label">Стало:</span><span class="result-value" id="convertedFileDetails"></span></div>
+                </div>
             </div>
         </div>
         
-        <a id="downloadLink" class="download-link" style="display: none;">📥 Скачать файл</a>
+        <div id="downloadArea" class="download-area">
+            <a id="downloadLink" class="download-link" href="#">📥 Скачать полученный файл</a>
+        </div>
+        
         <a href="index.html" class="back-link">← На главную</a>
     </div>
 </div>
 <div id="toastMsg" class="toast"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/STLExporter.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/OBJExporter.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
+
 <script>
-    (function() {
-        // Ждём загрузки Three.js
-        function initConverter() {
-            if (typeof THREE === 'undefined') {
-                setTimeout(initConverter, 100);
+    // DOM элементы
+    const fileInput = document.getElementById('fileInput');
+    const dropArea = document.getElementById('dropArea');
+    const fileInfoContent = document.getElementById('fileInfoContent');
+    const fromFormat = document.getElementById('fromFormat');
+    const toFormat = document.getElementById('toFormat');
+    const convertBtn = document.getElementById('convertBtn');
+    const progressArea = document.getElementById('progressArea');
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+    const resultArea = document.getElementById('resultArea');
+    const originalFileDetails = document.getElementById('originalFileDetails');
+    const convertedFileDetails = document.getElementById('convertedFileDetails');
+    const downloadLink = document.getElementById('downloadLink');
+    const toastEl = document.getElementById('toastMsg');
+    
+    let selectedFile = null;
+    let currentBlob = null;
+    let currentFileName = '';
+    let originalFileSize = 0;
+    
+    function showMessage(msg, isError) {
+        toastEl.textContent = msg;
+        toastEl.style.background = isError ? '#b91c1ccc' : '#0f172acc';
+        toastEl.classList.add('show');
+        setTimeout(() => toastEl.classList.remove('show'), 2800);
+    }
+    
+    function formatSize(bytes) {
+        if (!bytes) return '0 B';
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    }
+    
+    function updateProgress(percent, text) {
+        progressFill.style.width = percent + '%';
+        progressText.textContent = text || (percent + '%');
+    }
+    
+    // ВЫБОР ФАЙЛА
+    dropArea.onclick = () => fileInput.click();
+    
+    fileInput.onchange = (e) => {
+        if (e.target.files.length > 0) {
+            selectedFile = e.target.files[0];
+            const ext = selectedFile.name.split('.').pop().toLowerCase();
+            const sizeMB = (selectedFile.size / 1024 / 1024).toFixed(2);
+            originalFileSize = selectedFile.size;
+            
+            fileInfoContent.innerHTML = `
+                <div class="file-name">${selectedFile.name}</div>
+                <div class="file-details">
+                    <span>📦 ${sizeMB} MB</span>
+                    <span>🏷️ ${ext.toUpperCase()}</span>
+                </div>
+            `;
+            
+            if (ext === 'stl') fromFormat.value = 'stl';
+            else if (ext === 'obj') fromFormat.value = 'obj';
+            else if (ext === 'glb') fromFormat.value = 'glb';
+            else if (ext === 'gltf') fromFormat.value = 'gltf';
+            
+            showMessage('✅ Файл выбран: ' + selectedFile.name);
+        }
+    };
+    
+    // Drag & drop
+    dropArea.ondragover = (e) => { e.preventDefault(); dropArea.style.background = 'rgba(255,255,255,0.25)'; };
+    dropArea.ondragleave = () => { dropArea.style.background = 'rgba(255,255,255,0.2)'; };
+    dropArea.ondrop = (e) => {
+        e.preventDefault();
+        dropArea.style.background = 'rgba(255,255,255,0.2)';
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            selectedFile = file;
+            const ext = file.name.split('.').pop().toLowerCase();
+            const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+            fileInfoContent.innerHTML = `<div class="file-name">${file.name}</div><div class="file-details"><span>📦 ${sizeMB} MB</span><span>🏷️ ${ext.toUpperCase()}</span></div>`;
+            if (ext === 'stl') fromFormat.value = 'stl';
+            else if (ext === 'obj') fromFormat.value = 'obj';
+            else if (ext === 'glb') fromFormat.value = 'glb';
+            else if (ext === 'gltf') fromFormat.value = 'gltf';
+            showMessage('✅ Файл выбран: ' + file.name);
+        }
+    };
+    
+    // ЛОКАЛЬНАЯ КОНВЕРТАЦИЯ
+    async function convertFile() {
+        if (!selectedFile) {
+            showMessage('❌ Сначала выберите файл', true);
+            return;
+        }
+        
+        const from = fromFormat.value;
+        const to = toFormat.value;
+        
+        if (from === to) {
+            showMessage('⚠️ Нельзя конвертировать в тот же формат', true);
+            return;
+        }
+        
+        resultArea.style.display = 'none';
+        downloadLink.style.display = 'none';
+        progressArea.style.display = 'block';
+        updateProgress(0, 'Подготовка...');
+        
+        try {
+            updateProgress(20, 'Чтение файла...');
+            const arrayBuffer = await selectedFile.arrayBuffer();
+            
+            updateProgress(40, 'Загрузка геометрии...');
+            
+            let scene = new THREE.Scene();
+            let geometry = null;
+            
+            if (from === 'stl') {
+                const loader = new THREE.STLLoader();
+                geometry = loader.parse(arrayBuffer);
+                const material = new THREE.MeshStandardMaterial({ color: 0x66ccff });
+                const mesh = new THREE.Mesh(geometry, material);
+                scene.add(mesh);
+            } else if (from === 'obj') {
+                const text = new TextDecoder().decode(arrayBuffer);
+                const loader = new THREE.OBJLoader();
+                const obj = loader.parse(text);
+                scene.add(obj);
+            } else {
+                showMessage('❌ Формат пока не поддерживается для локальной конвертации', true);
+                progressArea.style.display = 'none';
+                convertBtn.disabled = false;
                 return;
             }
             
-            console.log('✅ Three.js загружен');
+            scene.add(new THREE.AmbientLight(0xffffff));
+            scene.add(new THREE.DirectionalLight(0xffffff, 1));
             
-            // DOM элементы
-            const fileInput = document.getElementById('fileInput');
-            const dropArea = document.getElementById('dropArea');
-            const fileInfo = document.getElementById('fileInfo');
-            const toFormatSelect = document.getElementById('toFormat');
-            const convertBtn = document.getElementById('convertBtn');
-            const progressArea = document.getElementById('progressArea');
-            const progressFill = document.getElementById('progressFill');
-            const progressText = document.getElementById('progressText');
-            const resultArea = document.getElementById('resultArea');
-            const originalFileDetails = document.getElementById('originalFileDetails');
-            const convertedFileDetails = document.getElementById('convertedFileDetails');
-            const downloadLink = document.getElementById('downloadLink');
-            const toastEl = document.getElementById('toastMsg');
-
-            let selectedFile = null;
-            let currentBlob = null;
-            let currentFileName = '';
-
-            function showMessage(msg, isError) {
-                toastEl.textContent = msg;
-                toastEl.style.background = isError ? '#b91c1ccc' : '#0f172acc';
-                toastEl.classList.add('show');
-                setTimeout(() => toastEl.classList.remove('show'), 2800);
-            }
-
-            function formatSize(bytes) {
-                if (!bytes) return '0 B';
-                if (bytes < 1024) return bytes + ' B';
-                if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-                return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
-            }
-
-            function updateProgress(percent, text) {
-                progressFill.style.width = percent + '%';
-                progressText.textContent = text || (percent + '%');
-            }
-
-            function resetUI() {
-                resultArea.style.display = 'none';
-                downloadLink.style.display = 'none';
-                progressArea.style.display = 'none';
-                convertBtn.disabled = false;
-            }
-
-            function onFileSelected(file) {
-                if (!file) return;
-                const ext = file.name.split('.').pop().toLowerCase();
-                if (ext !== 'stl') {
-                    showMessage('❌ Поддерживаются только STL файлы', true);
-                    return;
-                }
-                if (file.size > 200 * 1024 * 1024) {
-                    showMessage('❌ Файл больше 200 МБ', true);
-                    return;
-                }
-                resetUI();
-                selectedFile = file;
-                fileInfo.innerHTML = '<strong>' + file.name + '</strong><br>📦 ' + formatSize(file.size) + ' · STL';
-                showMessage('✅ Файл выбран: ' + file.name);
-            }
-
-            // Открытие диалога выбора файла
-            dropArea.addEventListener('click', function(e) {
-                fileInput.click();
-            });
+            updateProgress(70, 'Экспорт в ' + to.toUpperCase() + '...');
             
-            fileInput.addEventListener('change', function(e) {
-                if (e.target.files.length) onFileSelected(e.target.files[0]);
-                // Сбрасываем input, чтобы можно было выбрать тот же файл повторно
-                fileInput.value = '';
-            });
-            
-            // Drag & drop
-            dropArea.addEventListener('dragover', function(e) {
-                e.preventDefault();
-                dropArea.style.background = 'rgba(255,255,255,0.3)';
-            });
-            dropArea.addEventListener('dragleave', function(e) {
-                dropArea.style.background = 'rgba(255,255,255,0.2)';
-            });
-            dropArea.addEventListener('drop', function(e) {
-                e.preventDefault();
-                dropArea.style.background = 'rgba(255,255,255,0.2)';
-                const file = e.dataTransfer.files[0];
-                if (file) onFileSelected(file);
-            });
-
-            async function convertFile() {
-                if (!selectedFile) {
-                    showMessage('❌ Сначала выберите STL файл', true);
-                    return;
-                }
-                
-                const targetFormat = toFormatSelect.value;
-                convertBtn.disabled = true;
-                progressArea.style.display = 'block';
-                resultArea.style.display = 'none';
-                downloadLink.style.display = 'none';
-                updateProgress(10, 'Чтение файла...');
-                
-                try {
-                    const arrayBuffer = await selectedFile.arrayBuffer();
-                    updateProgress(30, 'Загрузка геометрии...');
-                    
-                    const loader = new THREE.STLLoader();
-                    const geometry = loader.parse(arrayBuffer);
-                    const material = new THREE.MeshStandardMaterial({ color: 0x66ccff });
-                    const mesh = new THREE.Mesh(geometry, material);
-                    const scene = new THREE.Scene();
-                    scene.add(mesh);
-                    scene.add(new THREE.AmbientLight(0xffffff));
-                    
-                    updateProgress(60, 'Конвертация в ' + targetFormat.toUpperCase() + '...');
-                    
-                    let blob;
-                    if (targetFormat === 'obj') {
-                        const exporter = new THREE.OBJExporter();
-                        const data = exporter.parse(scene);
-                        blob = new Blob([data], { type: 'text/plain' });
-                    } else if (targetFormat === 'glb' || targetFormat === 'gltf') {
-                        const exporter = new THREE.GLTFExporter();
-                        const data = await new Promise(function(resolve, reject) {
-                            exporter.parse(scene, resolve, reject, { binary: targetFormat === 'glb' });
-                        });
-                        blob = new Blob([data], { type: targetFormat === 'glb' ? 'application/octet-stream' : 'application/json' });
-                    } else {
-                        throw new Error('Формат не поддерживается');
-                    }
-                    
-                    updateProgress(100, 'Готово!');
-                    const originalName = selectedFile.name.replace(/\.stl$/i, '');
-                    const finalName = originalName + '_converted.' + targetFormat;
-                    currentBlob = blob;
-                    currentFileName = finalName;
-                    
-                    originalFileDetails.innerHTML = selectedFile.name + ' · ' + formatSize(selectedFile.size);
-                    convertedFileDetails.innerHTML = finalName + ' · ' + formatSize(blob.size);
-                    resultArea.style.display = 'block';
-                    downloadLink.style.display = 'block';
-                    
-                    const url = URL.createObjectURL(blob);
-                    downloadLink.href = url;
-                    downloadLink.download = finalName;
-                    showMessage('✅ Конвертация завершена!');
-                } catch (err) {
-                    console.error(err);
-                    showMessage('❌ Ошибка: ' + err.message, true);
-                } finally {
-                    progressArea.style.display = 'none';
-                    convertBtn.disabled = false;
-                    updateProgress(0);
-                }
+            let blob;
+            if (to === 'stl') {
+                const exporter = new THREE.STLExporter();
+                const data = exporter.parse(scene, { binary: false });
+                blob = new Blob([data], { type: 'text/plain' });
+            } else if (to === 'obj') {
+                const exporter = new THREE.OBJExporter();
+                const data = exporter.parse(scene);
+                blob = new Blob([data], { type: 'text/plain' });
+            } else if (to === 'glb' || to === 'gltf') {
+                const exporter = new THREE.GLTFExporter();
+                const data = await new Promise((resolve, reject) => {
+                    exporter.parse(scene, resolve, reject, { binary: to === 'glb' });
+                });
+                blob = new Blob([data], { type: to === 'glb' ? 'application/octet-stream' : 'application/json' });
+            } else {
+                throw new Error('Формат не поддерживается');
             }
-
-            convertBtn.addEventListener('click', convertFile);
-            downloadLink.addEventListener('click', function() {
-                setTimeout(function() {
-                    if (currentBlob) URL.revokeObjectURL(downloadLink.href);
-                }, 1000);
-            });
             
-            console.log('✅ Конвертер STL → OBJ/GLB/GLTF готов');
+            updateProgress(100, 'Готово!');
+            
+            const baseName = selectedFile.name.replace(/\.[^/.]+$/, '');
+            currentFileName = `${baseName}_converted.${to}`;
+            currentBlob = blob;
+            
+            originalFileDetails.innerHTML = `${selectedFile.name} · ${formatSize(originalFileSize)}`;
+            convertedFileDetails.innerHTML = `${currentFileName} · ${formatSize(blob.size)}`;
+            
+            const url = URL.createObjectURL(blob);
+            downloadLink.href = url;
+            downloadLink.download = currentFileName;
+            
+            resultArea.style.display = 'block';
+            downloadLink.style.display = 'block';
+            progressArea.style.display = 'none';
+            
+            showMessage('✅ Конвертация завершена!');
+        } catch (err) {
+            console.error(err);
+            showMessage(`❌ Ошибка: ${err.message}`, true);
+            progressArea.style.display = 'none';
         }
-        
-        // Запускаем после загрузки страницы
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initConverter);
-        } else {
-            initConverter();
-        }
-    })();
+    }
+    
+    convertBtn.onclick = convertFile;
+    
+    console.log('✅ Конвертер готов');
 </script>
 </body>
 </html>
