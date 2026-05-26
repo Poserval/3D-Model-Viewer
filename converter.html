@@ -555,41 +555,25 @@
             }
         }
         
-        // ========== СОХРАНЕНИЕ (РАБОТАЕТ В ANDROID И БРАУЗЕРЕ) ==========
+        // ========== ПРОСТОЕ СОХРАНЕНИЕ - ОТКРЫВАЕМ В СИСТЕМНОМ БРАУЗЕРЕ ==========
         function saveFile() {
             if (!currentBlob || !currentFileName) {
                 showMessage('❌ Нет файла для сохранения', true);
                 return;
             }
             
-            // Для Android WebView (через JavaScript Interface)
-            if (window.Android && typeof window.Android.saveFileToStorage === 'function') {
-                const reader = new FileReader();
-                reader.onload = function() {
-                    const base64 = reader.result.split(',')[1];
-                    window.Android.saveFileToStorage(base64, currentFileName);
-                };
-                reader.onerror = function() {
-                    showMessage('❌ Ошибка чтения файла', true);
-                };
-                reader.readAsDataURL(currentBlob);
-                return;
-            }
+            // Создаём временную ссылку
+            const url = URL.createObjectURL(currentBlob);
             
-            // Для обычного браузера (стандартное скачивание)
-            try {
-                const url = URL.createObjectURL(currentBlob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = currentFileName;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
+            // Открываем в системном браузере — ТАМ ТОЧНО БУДЕТ МЕНЮ СКАЧИВАНИЯ!
+            window.open(url, '_blank');
+            
+            // Очищаем ссылку через несколько секунд
+            setTimeout(() => {
                 URL.revokeObjectURL(url);
-                showMessage('💾 Файл сохранён в папку Downloads');
-            } catch (e) {
-                showMessage('❌ Ошибка сохранения: ' + e.message, true);
-            }
+            }, 5000);
+            
+            showMessage('📲 Открыто в браузере, нажмите "Сохранить"');
         }
         
         // ========== ЗАГРУЗКА ФАЙЛА ИЗ ПРИЛОЖЕНИЯ ==========
@@ -639,7 +623,6 @@
         
         console.log('✅ Конвертер готов');
         console.log('📡 Сервер: ' + SERVER_URL);
-        console.log('📱 Android интерфейс: ' + (window.Android && typeof window.Android.saveFileToStorage === 'function' ? 'доступен' : 'не доступен'));
     </script>
 </body>
 </html>
